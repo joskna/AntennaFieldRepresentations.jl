@@ -142,10 +142,10 @@ end
 
 Return Eθ,Eϕ-far-field tuple for  of radiating field representation into direction(s) specified by θ and ϕ.
 """
-function farfield(fieldrepresentation, θ::Number, ϕ::Number, k₀::Number)
-    Eθ, Eϕ = farfield(fieldrepresentation, [θ], [ϕ], k₀)
-    return Eθ[1, 1], Eϕ[1, 1]
-end
+# function farfield(fieldrepresentation, θ::Number, ϕ::Number, k₀::Number)
+#     Eθ, Eϕ = farfield(fieldrepresentation, [θ], [ϕ], k₀)
+#     return Eθ[1, 1], Eϕ[1, 1]
+# end
 function farfield(fieldrepresentation, θvec::Vector{<:Number}, ϕvec::Vector{<:Number}, k₀::Number)
     Etuples = [farfield(fieldrepresentation, θ, ϕ, k₀) for θ in θvec, ϕ in ϕvec]
     return [e[1] for e in Etuples], [e[2] for e in Etuples]
