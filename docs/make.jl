@@ -38,3 +38,6 @@ makedocs(;
         
     ],
 )
+deploydocs(
+    repo="github.com/joskna/AntennaFieldRepresentations.jl.git"
+)
