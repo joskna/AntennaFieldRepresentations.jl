@@ -8,12 +8,12 @@
 
 ## Introduction
 This package contains various representations of electromagnetic fields and their interactions with antennas. 
-The goal provide (efficient) methods to transfrom any representation into another which might be more suitable for the problem at hand.
-The purpose of this package is primarily academic and educational at the moment and the package is primarily under heavy at the moment and represents by no means a finished state. Use with care!
+The goal is to provide (efficient) methods to transfrom any representation into another to be able to choose the most suitable representation for the problem at hand.
+The purpose of this package is primarily academic and educational. At the moment and the package is under heavy development and represents by no means a finished state. Use with care!
 
 ## Installation
-At the moment, the package is not registered in the Julia General Registry, but a future version of this package might.
+The package is not registered in the Julia General Registry, yet, but a future version of this package might.
 For the time being, you can install the package by switching into the package manager (type `]` in the REPL) and run
 ```
-add https://github.com/joskna/AntennaFieldRepresentations.jl
+pkg> add https://github.com/joskna/AntennaFieldRepresentations.jl
 ```
