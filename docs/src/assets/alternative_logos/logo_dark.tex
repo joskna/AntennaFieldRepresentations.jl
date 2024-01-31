@@ -1,0 +1,397 @@
+%!TEX program = lualatex
+\documentclass[ font=libertinus,]{standalone}
+\def\rmdefault{LinuxLibertineT-LF}
+\RequirePackage{amsthm}
+\RequirePackage[ISO,mathsfit]{libertinust1math}
+\RequirePackage[no-math]{fontspec}
+\setmainfont[Mapping=tex-text, Ligatures={TeX,Required, Contextual, Common, Rare, Discretionary}]{Linux Libertine O}
+\setsansfont[Ligatures={TeX,Required, Contextual, Common, Rare, Discretionary}]{Libertinus Sans}
+\RequirePackage[cal=cm, bb=ams, calscaled=.95,
+bbscaled=.95]{mathalfa}
+
+%Legacy
+\newcommand{\bm}{\mathbfit}
+\newcommand{\mathbfsf}{\mathsfbf}
+%\usepackage{../knappdoktor}
+\usepackage{tikz,tikz-3dplot}
+\usepackage{tikz-3dplot-circleofsphere}
+%% >> MINIMALIST CIRCLE OF SHPERE DRAWING CODE _______________________________________________________________________
+\newcommand\scircle[4]{%
+	\tdplotsetrotatedcoords{#2}{#3}{0} % Rotate coordinate system
+	\let\a\tdplotalpha % alpha (rotated coord. system)
+	\let\b\tdplotbeta % beta (rotated coord. system)
+	\let\p\tdplotmainphi % phi (main coord. system)
+	\let\t\tdplotmaintheta % theta (main coord. system)
+	\pgfmathsetmacro\azx{cos(\a)*cos(\b)*sin(\p)*sin(\t) - sin(\b)*cos(\t) - cos(\b)*cos(\p)*sin(\a)*sin(\t)}
+	\pgfmathsetmacro\azy{-cos(\a)*cos(\p)*sin(\t) - sin(\a)*sin(\p)*sin(\t)}
+	\pgfmathsetmacro\azz{cos(\b)*cos(\t) + cos(\a)*sin(\b)*sin(\p)*sin(\t) - cos(\p)*sin(\a)*sin(\b)*sin(\t)}
+	\pgfmathsetmacro\re {#1*cos(#4)} % Radius of circle
+	\pgfmathsetmacro\ze {#1*sin(#4)} % z-coordinate of drawing plane
+	\pgfmathsetmacro\coX{\ze*cos(#2)*sin(#3)} % x-coordinate offset for ze
+	\pgfmathsetmacro\coY{\ze*sin(#2)*sin(#3)} % y-coordinate offset for ze
+	\pgfmathsetmacro\coZ{\ze*cos(#3)} % z-coordinate offset for ze
+	\coordinate (coffs) at (\coX,\coY,\coZ); % Offset as coordinate value
+	\tdplotsetrotatedcoordsorigin{(coffs)} % Offset coordinate system
+	\begin{scope}[tdplot_rotated_coords] % Drawing scope >>
+		\pgfmathsetmacro\tanEps{tan(#4)} % Tangent of elevation angle
+		\pgfmathsetmacro\bOneside{((\tanEps)^2)>=(((\azx)^2+(\azy)^2)/(\azz)^2)} % Circle entirely on one side?
+		\ifthenelse{\bOneside=1}{% % Circle on one side of sphere >>
+			\pgfmathsetmacro\bFrontside{(\azx*\re+\azz*\ze)>=0} % Circle entirely on front side?
+			\ifthenelse{\bFrontside=1} % |
+			{\draw (0,0) circle (\re);} % Draw on front side
+			{\draw[dashed] (0,0) circle (\re);} % Draw on back side
+		}{% % << Circle on both sides >>
+			\pgfmathsetmacro\u{\azy} % Substitution u=...
+			\pgfmathsetmacro\v{sqrt( (\azx)^2 + (\azy)^2 - (\azz)^2*(\tanEps)^2 )} % Substitution v=...
+			\pgfmathsetmacro\w{\azx - \azz*\tanEps} % Substitution w=...
+			\pgfmathsetmacro\phiBf{2*atan2(\u-\v,\w)} % Back->front crossing angle
+			\pgfmathsetmacro\phiFb{2*atan2(\u+\v,\w)} % Front->back crossing angle
+			\pgfmathsetmacro\bUnwrapA{(\phiFb-\phiBf)>360} % Unwrap front->back angle #1?
+			\pgfmathsetmacro\bUnwrapB{\phiBf>\phiFb} % Unwrap front->back angle #2?
+			\ifthenelse{\bUnwrapA=1}{\pgfmathsetmacro\phiBf{\phiBf+360}}{} % Unwrap front->back angle #1
+			\ifthenelse{\bUnwrapB=1}{\pgfmathsetmacro\phiBf{\phiBf-360}}{} % Unwrap front->back angle #2
+			\draw[dashed] (\phiFb:\re) arc (\phiFb:{\phiBf+360}:\re); % Draw back side arc
+			\draw (\phiBf:\re) arc (\phiBf:\phiFb:\re); % Draw back side arc
+		} % <<
+	\end{scope} % << (Drawing scope)
+}
+%% <<
+
+\newcommand{\sphToCart}[3]
+{
+	\def\rpar{#1}
+	\def\thetapar{#2}
+	\def\phipar{#3}
+	
+	\pgfmathsetmacro{\x}{\rpar*sin(\phipar)*cos(\thetapar)}
+	\pgfmathsetmacro{\y}{\rpar*sin(\phipar)*sin(\thetapar)}
+	\pgfmathsetmacro{\z}{\rpar*cos(\phipar)}
+}
+
+\definecolor{TUMBlue}{RGB}{0,101,189}
+
+\definecolor{ownA}{RGB}{57,106,177}
+
+\definecolor{ownB}{RGB}{218,124,48}
+
+\definecolor{ownC}{RGB}{62,150,81}
+
+\definecolor{ownD}{RGB}{204,37,41}
+
+\definecolor{ownE}{RGB}{83,81,84}
+
+\definecolor{ownF}{RGB}{107,76,154}
+
+\definecolor{ownG}{RGB}{146,36,40}
+
+\definecolor{ownH}{RGB}{148,139,61}
+
+\definecolor{ownBlue}{RGB}{55,126,184}
+
+\definecolor{ownOrange}{RGB}{255,127,0}
+
+\definecolor{ownGreen}{RGB}{77,175,74}
+
+\definecolor{ownRed}{RGB}{228,26,28}
+
+\definecolor{ownGray}{RGB}{83,81,84}
+
+\definecolor{ownPurple}{RGB}{152,78,163}
+
+\definecolor{ownWineRed}{RGB}{146,36,40}
+
+\definecolor{ownOlive}{RGB}{148,139,61}
+
+%\makeatletter
+%\tikzoption{canvas is plane}[]{\@setOxy#1}
+%\def\@setOxy O(#1,#2,#3)x(#4,#5,#6)y(#7,#8,#9)%
+%{\def\tikz@plane@origin{\pgfpointxyz{#1}{#2}{#3}}%
+	%	\def\tikz@plane@x{\pgfpointxyz{#4}{#5}{#6}}%
+	%	\def\tikz@plane@y{\pgfpointxyz{#7}{#8}{#9}}%
+	%	\tikz@canvas@is@plane
+	%}
+%\makeatother  
+\usetikzlibrary{arrows,calc, math}\tikzset{>=latex}
+% ________________________________________________________________________________________________________________
+ \begin{document}
+ \tdplotsetmaincoords{60}{125} % Set main coordintate system
+ \begin{tikzpicture}[ultra thick,tdplot_main_coords, scale=0.8] % TikZ picture >>
+ \sphToCart{2.5}{-30}{40}
+ \coordinate (A) at (\x,\y,\z);
+ 
+ \sphToCart{2.5}{-30}{20}
+ \coordinate (B) at (\x,\y,\z);
+ 
+ \sphToCart{1}{-30}{40}
+ \coordinate (C) at (\x,\y,\z);
+ 
+  \sphToCart{1}{-30}{20}
+ \coordinate (D) at (\x,\y,\z);
+ 
+
+ 
+
+ 
+% \filldraw[ownGreen, opacity=0.4] (0,0,0) -- (A) -- (B) -- cycle;
+% 
+% \draw [->] (C) to[in=190, out=100] (D) node[below]{$\gamma$};
+% \draw[ownGreen] (0,0,0) -- (A) -- (B) -- cycle;
+%  \filldraw[tdplot_screen_coords, very thick] (0,0,0) circle (0.01);
+
+ 
+% \begin{scope}[rotate=-30]
+
+ \begin{scope}[ownOrange,ultra thick] % Draw in gray >>
+ 
+ 	\def\x{1.9558}
+ \def\xx{3.9116}
+ \def\y{0.9779}
+ \def\yy{1.9558}
+ \def\z{.2334}
+ \def\zz{2.3336}
+ \def\zs{-1.3}
+ 
+ \coordinate (A1) at (-\x /2,\y /2,\zs);
+ \coordinate (A2) at (\x /2,\y /2,\zs);
+ \coordinate (A3) at (-\x /2,-\y /2,\zs);
+ \coordinate (A4) at (\x /2,-\y /2,\zs);
+ 
+ \coordinate (B1) at (-\x /2,\y /2,\z+\zs);
+ \coordinate (B2) at (\x /2,\y /2,\z+\zs);
+ \coordinate (B3) at (-\x /2,-\y /2,\z+\zs);
+ \coordinate (B4) at (\x /2,-\y /2,\z+\zs);
+ 
+ \coordinate (C1) at (-\xx /2,\yy /2,\zz+\zs);
+ \coordinate (C2) at (\xx /2,\yy /2,\zz+\zs);
+ \coordinate (C3) at (-\xx /2,-\yy /2,\zz+\zs);
+ \coordinate (C4) at (\xx /2,-\yy /2,\zz+\zs);
+
+
+
+\filldraw[ownOrange!40!white, draw=white!80!black,  ultra thick] (B1) -- (B3) -- (C3) -- (C1) --cycle;
+ \filldraw[ownOrange!40!white, draw=white!80!black,  ultra thick] (B3) -- (B4) -- (C4) -- (C3) --cycle;
+
+ \filldraw[ownOrange!60!white, draw=white!80!black,  ultra thick] (B2) -- (B4) -- (A4) -- (A2) --cycle;
+
+\filldraw[ownOrange!60!white, draw=white!80!black,  ultra thick] (B2) -- (B4) -- (C4) -- (C2) --cycle;
+
+
+
+\filldraw[ownOrange!60!white, draw=white!80!black,  ultra thick] (A1) -- (A3) -- (B3) -- (B1) --cycle;
+\filldraw[ownOrange!60!white, draw=white!80!black,  ultra thick] (A1) -- (B1) -- (B2) -- (A2) --cycle;
+\filldraw[ownOrange!60!white, draw=white!80!black,  ultra thick] (B1) -- (C1) -- (C2) -- (B2) --cycle;
+%\draw[densely dotted, black](0,0,-3.5) -- (0,0,5);
+\end{scope}
+
+
+
+\begin{scope}[ownGreen]
+	 \def\Rcirc{3}
+	\def\lwidht{5}
+    
+    \tdplotCsDrawLonCircle[tdplotCsBack/.style={draw=none}, line width=\lwidht]{\Rcirc}{0}
+  %  \tdplotCsDrawLonCircle{2.5}{30}
+  \tdplotCsDrawLonCircle[tdplotCsBack/.style={draw=none}, line width=\lwidht]{\Rcirc}{45}
+  \tdplotCsDrawLonCircle[tdplotCsBack/.style={draw=none}, line width=\lwidht]{\Rcirc}{90}
+  %  \tdplotCsDrawLonCircle{2.5}{120}
+  \tdplotCsDrawLonCircle[tdplotCsBack/.style={draw=none}, line width=\lwidht]{\Rcirc}{135}
+
+    \tdplotCsDrawLatCircle[tdplotCsBack/.style={draw=none}, line width=\lwidht]{\Rcirc}{-30}
+      \tdplotCsDrawLatCircle[tdplotCsBack/.style={draw=none}, line width=\lwidht]{\Rcirc}{-60}
+        \tdplotCsDrawLatCircle[tdplotCsBack/.style={draw=none}, line width=\lwidht]{\Rcirc}{0}
+  \tdplotCsDrawLatCircle[tdplotCsBack/.style={draw=none}, line width=\lwidht]{\Rcirc}{30}
+
+  \tdplotCsDrawLatCircle[tdplotCsBack/.style={draw=none}, line width=\lwidht]{\Rcirc}{60}
+
+  
+ \draw[tdplot_screen_coords, line width=\lwidht] (0,0,0) circle (\Rcirc); % Sphere outline
+ 
+
+ \end{scope}
+
+\begin{scope}[ownPurple]
+	\def\Rcirc{4.5}
+	\def\lwidht{4}
+	
+	
+	\tdplotCsDrawLonCircle[tdplotCsBack/.style={draw=none}, line width=\lwidht]{\Rcirc}{0}
+	%  \tdplotCsDrawLonCircle{2.5}{30}
+	\tdplotCsDrawLonCircle[tdplotCsBack/.style={draw=none}, line width=\lwidht]{\Rcirc}{45}
+	\tdplotCsDrawLonCircle[tdplotCsBack/.style={draw=none}, line width=\lwidht]{\Rcirc}{90}
+	%  \tdplotCsDrawLonCircle{2.5}{120}
+	\tdplotCsDrawLonCircle[tdplotCsBack/.style={draw=none}, line width=\lwidht]{\Rcirc}{135}
+	
+	\tdplotCsDrawLatCircle[tdplotCsBack/.style={draw=none}, line width=\lwidht]{\Rcirc}{-30}
+	\tdplotCsDrawLatCircle[tdplotCsBack/.style={draw=none}, line width=\lwidht]{\Rcirc}{-60}
+	\tdplotCsDrawLatCircle[tdplotCsBack/.style={draw=none}, line width=\lwidht]{\Rcirc}{0}
+	\tdplotCsDrawLatCircle[tdplotCsBack/.style={draw=none}, line width=\lwidht]{\Rcirc}{30}
+	
+	\tdplotCsDrawLatCircle[tdplotCsBack/.style={draw=none}, line width=\lwidht]{\Rcirc}{60}
+	
+	
+	\draw[tdplot_screen_coords, line width=\lwidht] (0,0,0) circle (\Rcirc); % Sphere outline
+	
+	
+\end{scope}
+
+\begin{scope}[ownRed]
+	\def\Rcirc{6}
+	\def\lwidht{3}
+	
+	
+	\tdplotCsDrawLonCircle[tdplotCsBack/.style={draw=none}, line width=\lwidht]{\Rcirc}{0}
+	%  \tdplotCsDrawLonCircle{2.5}{30}
+	\tdplotCsDrawLonCircle[tdplotCsBack/.style={draw=none}, line width=\lwidht]{\Rcirc}{45}
+	\tdplotCsDrawLonCircle[tdplotCsBack/.style={draw=none}, line width=\lwidht]{\Rcirc}{90}
+	%  \tdplotCsDrawLonCircle{2.5}{120}
+	\tdplotCsDrawLonCircle[tdplotCsBack/.style={draw=none}, line width=\lwidht]{\Rcirc}{135}
+	
+	\tdplotCsDrawLatCircle[tdplotCsBack/.style={draw=none}, line width=\lwidht]{\Rcirc}{-30}
+	\tdplotCsDrawLatCircle[tdplotCsBack/.style={draw=none}, line width=\lwidht]{\Rcirc}{-60}
+	\tdplotCsDrawLatCircle[tdplotCsBack/.style={draw=none}, line width=\lwidht]{\Rcirc}{0}
+	\tdplotCsDrawLatCircle[tdplotCsBack/.style={draw=none}, line width=\lwidht]{\Rcirc}{30}
+	
+	\tdplotCsDrawLatCircle[tdplotCsBack/.style={draw=none}, line width=\lwidht]{\Rcirc}{60}
+	
+	
+	\draw[tdplot_screen_coords, line width=\lwidht] (0,0,0) circle (\Rcirc); % Sphere outline
+	
+	
+\end{scope}
+
+\begin{scope}[xshift=400]
+			\sphToCart{2.5}{-30}{40}
+	\coordinate (A) at (\x,\y,\z);
+	
+	\sphToCart{2.5}{-30}{20}
+	\coordinate (B) at (\x,\y,\z);
+	
+	\sphToCart{1}{-30}{40}
+	\coordinate (C) at (\x,\y,\z);
+	
+	\sphToCart{1}{-30}{20}
+	\coordinate (D) at (\x,\y,\z);
+	
+	\def\Rcirc{3}
+	
+	
+	
+	% \filldraw[ownGreen, opacity=0.4] (0,0,0) -- (A) -- (B) -- cycle;
+	% 
+	% \draw [->] (C) to[in=190, out=100] (D) node[below]{$\gamma$};
+	% \draw[ownGreen] (0,0,0) -- (A) -- (B) -- cycle;
+	%  \filldraw[tdplot_screen_coords, very thick] (0,0,0) circle (0.01);
+	
+	
+	\begin{scope}[rotate=-0]
+		
+		\begin{scope}[ownBlue,ultra thick, rotate=0] % Draw in gray >>
+			
+			\def\x{1.9558}
+			\def\xx{3.9116}
+			\def\y{0.9779}
+			\def\yy{1.9558}
+			\def\z{.2334}
+			\def\zz{2.3336}
+			\def\zs{-1.3}
+			
+			\coordinate (A1) at (-\x /2,\y /2,\zs);
+			\coordinate (A2) at (\x /2,\y /2,\zs);
+			\coordinate (A3) at (-\x /2,-\y /2,\zs);
+			\coordinate (A4) at (\x /2,-\y /2,\zs);
+			
+			\coordinate (B1) at (-\x /2,\y /2,\z+\zs);
+			\coordinate (B2) at (\x /2,\y /2,\z+\zs);
+			\coordinate (B3) at (-\x /2,-\y /2,\z+\zs);
+			\coordinate (B4) at (\x /2,-\y /2,\z+\zs);
+			
+			\coordinate (C1) at (-\xx /2,\yy /2,\zz+\zs);
+			\coordinate (C2) at (\xx /2,\yy /2,\zz+\zs);
+			\coordinate (C3) at (-\xx /2,-\yy /2,\zz+\zs);
+			\coordinate (C4) at (\xx /2,-\yy /2,\zz+\zs);
+			
+			
+			
+			\filldraw[ownBlue!40!white, draw=white!95!black,  ultra thick] (B1) -- (B3) -- (C3) -- (C1) --cycle;
+			\filldraw[ownBlue!40!white, draw=white!95!black,  ultra thick] (B3) -- (B4) -- (C4) -- (C3) --cycle;
+			
+			
+		\end{scope}
+		
+		
+		
+		\begin{scope}[ownBlue,ultra thick, rotate=0]
+			\filldraw[ownBlue!60!white, draw=white!95!black,  ultra thick] (B2) -- (B4) -- (A4) -- (A2) --cycle;
+			
+			\filldraw[ownBlue!60!white, draw=white!95!black,  ultra thick] (B2) -- (B4) -- (C4) -- (C2) --cycle;
+			
+			
+			
+			\filldraw[ownBlue!60!white, draw=white!95!black,  ultra thick] (A1) -- (A3) -- (B3) -- (B1) --cycle;
+			\filldraw[ownBlue!60!white, draw=white!95!black,  ultra thick] (A1) -- (B1) -- (B2) -- (A2) --cycle;
+			\filldraw[ownBlue!60!white, draw=white!95!black,  ultra thick] (B1) -- (C1) -- (C2) -- (B2) --cycle;
+			% 
+			
+			\tdplotCsDrawLonCircle[tdplotCsBack/.style={draw=none}]{\Rcirc}{0}
+			%  \tdplotCsDrawLonCircle{2.5}{30}
+			\tdplotCsDrawLonCircle[tdplotCsBack/.style={draw=none}]{\Rcirc}{45}
+			\tdplotCsDrawLonCircle[tdplotCsBack/.style={draw=none}]{\Rcirc}{90}
+			%  \tdplotCsDrawLonCircle{2.5}{120}
+			\tdplotCsDrawLonCircle[tdplotCsBack/.style={draw=none}]{\Rcirc}{135}
+			
+			\tdplotCsDrawLatCircle[tdplotCsBack/.style={draw=none}]{\Rcirc}{-30}
+			\tdplotCsDrawLatCircle[tdplotCsBack/.style={draw=none}]{\Rcirc}{-60}
+			\tdplotCsDrawLatCircle[tdplotCsBack/.style={draw=none}]{\Rcirc}{0}
+			\tdplotCsDrawLatCircle[tdplotCsBack/.style={draw=none}]{\Rcirc}{30}
+			
+			\tdplotCsDrawLatCircle[tdplotCsBack/.style={draw=none}]{\Rcirc}{60}
+			
+			
+			\draw[tdplot_screen_coords] (0,0,0) circle (\Rcirc); % Sphere outline
+			
+			
+			
+			%				}
+		%				
+	\end{scope}
+	
+	
+	\begin{scope}[canvas is xy plane at z={\Rcirc+1}]
+		\filldraw[ownGreen, opacity=0.5] (-1.5,-1.5) rectangle (3,3);
+	\end{scope}
+	\begin{scope}[canvas is xy plane at z={\Rcirc+2}]
+		\filldraw[ownGreen, opacity=0.5] (-1.5,-1.5) rectangle (3,3);
+	\end{scope}
+	\begin{scope}[canvas is xy plane at z={\Rcirc+3}]
+		\filldraw[ownGreen, opacity=0.5] (-1.5,-1.5) rectangle (3,3);
+	\end{scope}
+	
+\end{scope} 
+\begin{scope}[canvas is xz plane at y={\Rcirc+1}]
+\filldraw[ownPurple, opacity=0.5] (-1.5,-1.5) rectangle (3,3);
+\end{scope}
+\begin{scope}[canvas is xz plane at y={\Rcirc+2}]
+\filldraw[ownPurple, opacity=0.5] (-1.5,-1.5) rectangle (3,3);
+\end{scope}
+\begin{scope}[canvas is xz plane at y={\Rcirc+3}]
+\filldraw[ownPurple, opacity=0.5] (-1.5,-1.5) rectangle (3,3);
+\end{scope}
+
+\begin{scope}[canvas is yz plane at x={\Rcirc+1}]
+\filldraw[ownRed, opacity=0.5] (-1.5,-1.5) rectangle (3,3);
+\end{scope}
+\begin{scope}[canvas is yz plane at x={\Rcirc+2}]
+\filldraw[ownRed, opacity=0.5] (-1.5,-1.5) rectangle (3,3);
+\end{scope}
+\begin{scope}[canvas is yz plane at x={\Rcirc+3}]
+\filldraw[ownRed, opacity=0.5] (-1.5,-1.5) rectangle (3,3);
+\end{scope}
+
+\end{scope}
+
+\node at (0,8,-9){\includegraphics[scale=0.4]{logo_darkmode_dipole}};
+
+ 
+
+ \end{tikzpicture} % <<
+ \end{document}

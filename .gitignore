@@ -1,0 +1,7 @@
+*.jl.*.cov
+*.jl.cov
+*.jl.mem
+AntennaFieldTransformations.code-workspace
+/Manifest.toml
+/docs/build/
+/docs/Manifest.toml
