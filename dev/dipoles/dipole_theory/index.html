@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Theory · AntennaFieldRepresentations.jl</title><meta name="title" content="Theory · AntennaFieldRepresentations.jl"/><meta property="og:title" content="Theory · AntennaFieldRepresentations.jl"/><meta property="twitter:title" content="Theory · AntennaFieldRepresentations.jl"/><meta name="description" content="Documentation for AntennaFieldRepresentations.jl."/><meta property="og:description" content="Documentation for AntennaFieldRepresentations.jl."/><meta property="twitter:description" content="Documentation for AntennaFieldRepresentations.jl."/><script data-outdated-warner src="../../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.050/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../search_index.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><a class="docs-logo" href="../../"><img class="docs-light-only" src="../../assets/logo.svg" alt="AntennaFieldRepresentations.jl logo"/><img class="docs-dark-only" src="../../assets/logo-dark.svg" alt="AntennaFieldRepresentations.jl logo"/></a><div class="docs-package-name"><span class="docs-autofit"><a href="../../">AntennaFieldRepresentations.jl</a></span></div><button class="docs-search-query input is-rounded is-small is-clickable my-2 mx-auto py-1 px-2" id="documenter-search-query">Search docs (Ctrl + /)</button><ul class="docs-menu"><li><a class="tocitem" href="../../">Home</a></li><li><span class="tocitem">Representations</span><ul><li><input class="collapse-toggle" id="menuitem-2-1" type="checkbox" checked/><label class="tocitem" for="menuitem-2-1"><span class="docs-label">Dipoles</span><i class="docs-chevron"></i></label><ul class="collapsed"><li class="is-active"><a class="tocitem" href>Theory</a><ul class="internal"><li><a class="tocitem" href="#Radiated-Fields"><span>Radiated Fields</span></a></li><li><a class="tocitem" href="#Far-Fields-of-Dipoles"><span>Far Fields of Dipoles</span></a></li><li><a class="tocitem" href="#Received-signal"><span>Received signal</span></a></li><li><a class="tocitem" href="#Dipole-to-Dipole-Interactions"><span>Dipole to Dipole Interactions</span></a></li></ul></li><li><a class="tocitem" href="../dipole_examples/">Examples</a></li></ul></li><li><input class="collapse-toggle" id="menuitem-2-2" type="checkbox"/><label class="tocitem" for="menuitem-2-2"><span class="docs-label">Spherical Vector Wave Expansion</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../spherical/spherical_theory/">Theory</a></li><li><a class="tocitem" href="../../spherical/spherical_fast/">Fast Algorithms</a></li><li><a class="tocitem" href="../../spherical/spherical_examples/">Examples</a></li></ul></li><li><input class="collapse-toggle" id="menuitem-2-3" type="checkbox"/><label class="tocitem" for="menuitem-2-3"><span class="docs-label">Plane Wave Expansion</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../planewaves/planewave_theory/">Theory</a></li><li><a class="tocitem" href="../../planewaves/planewave_examples/">Examples</a></li></ul></li><li><input class="collapse-toggle" id="menuitem-2-4" type="checkbox"/><label class="tocitem" for="menuitem-2-4"><span class="docs-label">Equivalent Surface Currents</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../surfacecurrents/surface_theory/">Theory</a></li><li><a class="tocitem" href="../../surfacecurrents/surface_examples/">Examples</a></li></ul></li></ul></li><li><span class="tocitem">Operations</span><ul><li><a class="tocitem" href="../../operations/fields/">Field Evaluations</a></li><li><a class="tocitem" href="../../operations/coordinate_trafos/">Coordinate Transformations</a></li><li><a class="tocitem" href="../../operations/conversions/">Conversions</a></li><li><a class="tocitem" href="../../operations/interactions/">Transmissions</a></li></ul></li><li><a class="tocitem" href="../../examples/">Examples</a></li><li><a class="tocitem" href="../../api/">API</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><a class="docs-sidebar-button docs-navbar-link fa-solid fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Representations</a></li><li><a class="is-disabled">Dipoles</a></li><li class="is-active"><a href>Theory</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Theory</a></li></ul></nav><div class="docs-right"><a class="docs-settings-button docs-navbar-link fa-solid fa-gear" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-article-toggle-button fa-solid fa-chevron-up" id="documenter-article-toggle-button" href="javascript:;" title="Collapse all docstrings"></a></div></header><article class="content" id="documenter-page"><h1 id="Electromagnetic-Fields-of-Elementary-Dipoles"><a class="docs-heading-anchor" href="#Electromagnetic-Fields-of-Elementary-Dipoles">Electromagnetic Fields of Elementary Dipoles</a><a id="Electromagnetic-Fields-of-Elementary-Dipoles-1"></a><a class="docs-heading-anchor-permalink" href="#Electromagnetic-Fields-of-Elementary-Dipoles" title="Permalink"></a></h1><h2 id="Radiated-Fields"><a class="docs-heading-anchor" href="#Radiated-Fields">Radiated Fields</a><a id="Radiated-Fields-1"></a><a class="docs-heading-anchor-permalink" href="#Radiated-Fields" title="Permalink"></a></h2><h3 id="General-Current-Distribution"><a class="docs-heading-anchor" href="#General-Current-Distribution">General Current Distribution</a><a id="General-Current-Distribution-1"></a><a class="docs-heading-anchor-permalink" href="#General-Current-Distribution" title="Permalink"></a></h3><p>For a general source, consisting of an electric volume current distribution <span>$\bm{J}(\bm{r})$</span> and a magnetic current distribution <span>$\bm{M}(\bm{r})$</span>, the radiated electric and magnetic fields can be described by </p><p class="math-container">\[\bm{E}(\bm{r})=
+\iiint \limits_{V_{\text{src}}}
+\left[
+\bm{\mathcal{G}}_{JE}
+(\bm{r},\bm{r}&#39;)
+\cdot
+\bm{J}(\bm{r}&#39;)
++
+\bm{\mathcal{G}}_{ME}
+(\bm{r},\bm{r}&#39;)
+\cdot
+\bm{M}(\bm{r}&#39;)
+\right]\, \mathrm{d}v&#39; \]</p><p>and</p><p class="math-container">\[\bm{H}(\bm{r})=
+\iiint \limits_{V_{\text{src}}}
+\left[
+\bm{\mathcal{G}}_{JH}
+(\bm{r},\bm{r}&#39;)
+\cdot
+\bm{J}(\bm{r}&#39;)
++
+\bm{\mathcal{G}}_{MH}
+(\bm{r},\bm{r}&#39;)
+\cdot
+\bm{M}(\bm{r}&#39;)
+\right]\, \mathrm{d}v&#39;\, , \]</p><p>where </p><p class="math-container">\[\bm{\mathcal{G}}_{JE}=
+-\mathrm{j} k_0\, Z_\mathrm{F}
+\left[
+\left(\mathbf{I} +\dfrac{1}{k^2} \nabla \nabla\right) g_0(\bm{r},\bm{r}&#39;)
+\right]\]</p><p class="math-container">\[\bm{\mathcal{G}}_{ME}=
+-\nabla g_0(\bm{r},\bm{r}&#39;) \times \mathbf{I}\]</p><p class="math-container">\[\bm{\mathcal{G}}_{JH}=
+\nabla g_0(\bm{r},\bm{r}&#39;) \times \mathbf{I}\]</p><p class="math-container">\[\bm{\mathcal{G}}_{MH}=
+-\mathrm{j} \dfrac{k_0}{Z_\mathrm{F}}
+\left[
+\left(\mathbf{I} +\dfrac{1}{k^2} \nabla \nabla\right) g_0(\bm{r},\bm{r}&#39;)
+\right]\]</p><p>are the dyadic Green&#39;s functions derived from the scalar greens function</p><p class="math-container">\[ g_0(\bm{r},\bm{r}&#39;)
+=
+\dfrac{\mathrm{e}^{-\mathrm{j}k_0\, ||\bm{r}-\bm{r}&#39;||}}{4\pi\, ||\bm{r}-\bm{r}&#39;||}\, .\]</p><p>The involved dyadic operators have the explicit expressions</p><p class="math-container">\[\left(\mathbf{I} +\dfrac{1}{k^2} \nabla \nabla\right) g_0(\bm{r},\bm{r}&#39;)
+=
+\left(
+\dfrac{3}{k^2\,||\bm{r}-\bm{r}&#39;||^2}
++
+\dfrac{3\mathrm{j}}{k\,||\bm{r}-\bm{r}&#39;||} 
+-1   
+\right)
+g_0(\bm{r},\bm{r}&#39;)
+\,
+\bm{e}_r \bm{e}_r 
+-
+\left(
+\dfrac{\mathrm{j}}{k\,||\bm{r}-\bm{r}&#39;||}
++\dfrac{1}{k^2\,||\bm{r}-\bm{r}&#39;||^2}
+-1
+\right)
+g_0(\bm{r},\bm{r}&#39;)
+\,
+\mathbf{I}\]</p><p>and</p><p class="math-container">\[\nabla g_0(\bm{r},\bm{r}&#39;) \times \mathbf{I}
+=
+\left(-\mathrm{j}k-\dfrac{1}{||\bm{r}-\bm{r}&#39;||}\right) \bm{e}_r \times \mathbf{I}\, .\]</p><h3 id="Hertzian-Dipole"><a class="docs-heading-anchor" href="#Hertzian-Dipole">Hertzian Dipole</a><a id="Hertzian-Dipole-1"></a><a class="docs-heading-anchor-permalink" href="#Hertzian-Dipole" title="Permalink"></a></h3><p>A Hertzian dipole is a model for an elementary electric dipole. Formally, it can be regardes as a special electric current distribution of the form</p><p class="math-container">\[\bm{J}_{\text{Hertz}}(\bm{r})
+=
+I\bm{\ell}
+\,
+\delta({\bm{r}-\bm{r}&#39;})\, ,\]</p><p>where <span>$I$</span> has the unit Ampère and denotes the excitation of the dipole, <span>$\bm{\ell}$</span> denotes the oriented dipole length and <span>$\delta({\bm{r}-\bm{r}&#39;})$</span> is the Dirac-Delta distribution. In the idealized model, <span>$||\bm{\ell}||$</span> tends to zero, while <span>$I$</span> increases such that the product <span>$I\bm{\ell}$</span> remains constant. Using the dyadic Green&#39;s functions from above, the fields of a Hertzian dipole can be calculated as</p><p class="math-container">\[\bm{E}_{\text{Hertz}}(\bm{r})
+=
+-\mathrm{j} k_0\, Z_\mathrm{F}\, I\,
+\left[
+\left(
+\dfrac{3}{k^2\,||\bm{r}-\bm{r}&#39;||^2}
++
+\dfrac{3\mathrm{j}}{k\,||\bm{r}-\bm{r}&#39;||} 
+-1   
+\right)
+g_0(\bm{r},\bm{r}&#39;)
+\,
+\bm{e}_r \left(\bm{e}_r \cdot \bm{\ell}\right)
+-
+\left(
+\dfrac{\mathrm{j}}{k\,||\bm{r}-\bm{r}&#39;||}
++\dfrac{1}{k^2\,||\bm{r}-\bm{r}&#39;||^2}
+-1
+\right)
+g_0(\bm{r},\bm{r}&#39;)
+\,
+\bm{\ell}
+\right]\]</p><p>and </p><p class="math-container">\[\bm{H}_{\text{Hertz}}(\bm{r})
+=I\,
+\left(-\mathrm{j}k-\dfrac{1}{||\bm{r}-\bm{r}&#39;||}\right) \bm{e}_r \times \bm{\ell}\, .\]</p><h3 id="Fitzgerald-Dipole"><a class="docs-heading-anchor" href="#Fitzgerald-Dipole">Fitzgerald Dipole</a><a id="Fitzgerald-Dipole-1"></a><a class="docs-heading-anchor-permalink" href="#Fitzgerald-Dipole" title="Permalink"></a></h3><p>A Fitzgerald dipole is a model for an elementary magnetic dipole. Formally, it can be regardes as a special magnetic current distribution of the form</p><p class="math-container">\[\bm{M}_{\text{Fitzgerald}}(\bm{r})
+=
+I_{\mathrm{m}}\bm{\ell}
+\,
+\delta({\bm{r}-\bm{r}&#39;})\, ,\]</p><p>where <span>$I_{m}$</span> has the unit Volt and denotes the excitation of the dipole, <span>$\bm{\ell}$</span> denotes the oriented dipole length and <span>$\delta({\bm{r}-\bm{r}&#39;})$</span> is the Dirac-Delta distribution. In the idealized model, <span>$||\bm{\ell}||$</span> tends to zero, while <span>$I_{\mathrm{m}}$</span> increases such that the product <span>$I_{\mathrm{m}}\bm{\ell}$</span> remains constant. Using the dyadic Green&#39;s functions from above, the fields of a Fitzgerald dipole can be calculated as</p><p class="math-container">\[\bm{E}_{\text{Fitzgerald}}(\bm{r})
+=-I_{\mathrm{m}}\,
+\left(-\mathrm{j}k-\dfrac{1}{||\bm{r}-\bm{r}&#39;||}\right) \bm{e}_r \times \bm{\ell}\]</p><p>and</p><p class="math-container">\[\bm{H}_{\text{Fitzgerald}}(\bm{r})
+=
+-\mathrm{j} \dfrac{k_0}{Z_\mathrm{F}}\, I_{\mathrm{m}}\,
+\left[
+\left(
+\dfrac{3}{k^2\,||\bm{r}-\bm{r}&#39;||^2}
++
+\dfrac{3\mathrm{j}}{k\,||\bm{r}-\bm{r}&#39;||} 
+-1   
+\right)
+g_0(\bm{r},\bm{r}&#39;)
+\,
+\bm{e}_r \left(\bm{e}_r \cdot \bm{\ell}\right)
+-
+\left(
+\dfrac{\mathrm{j}}{k\,||\bm{r}-\bm{r}&#39;||}
++\dfrac{1}{k^2\,||\bm{r}-\bm{r}&#39;||^2}
+-1
+\right)
+g_0(\bm{r},\bm{r}&#39;)
+\,
+\bm{\ell}
+\right]\, .\]</p><h2 id="Far-Fields-of-Dipoles"><a class="docs-heading-anchor" href="#Far-Fields-of-Dipoles">Far Fields of Dipoles</a><a id="Far-Fields-of-Dipoles-1"></a><a class="docs-heading-anchor-permalink" href="#Far-Fields-of-Dipoles" title="Permalink"></a></h2><p>Often, we are interested in the radiated electric field of a dipole or a collection of dipoles at observation locations <span>$\bm{r}$</span> which are far away from the coordinate origin compared to the location <span>$\bm{r}&#39;$</span> of the dipoles, i.e., <span>$r=||\bm{r}||\gg ||\bm{r}&#39;||=r&#39;$</span>. In these cases, the term <span>$R=||\bm{r}-\bm{r}&#39;||$</span> can be approximated by</p><p class="math-container">\[\lim \limits_{r\rightarrow \infty} ||\bm{r}-\bm{r}&#39;|| = r -\bm{e}_r \cdot \bm{r}&#39;\, , \]</p><p>where <span>$\bm{e}_r=\bm{r}/r$</span> denotes the unit vector into the direction of the far-field observation location <span>$\bm{r}$</span>. The dyadic Green&#39;s functions for the electric field take the form  </p><p class="math-container">\[\lim \limits_{r\rightarrow \infty}
+\bm{\mathcal{G}}_{JE}(\bm{r},\bm{r}&#39;)
+=
+-\mathrm{j} k_0\, Z_{\mathrm{F}} \, \dfrac{\mathrm{e}^{-\mathrm{j}k_0 r}}{4\pi r}\, 
+\left(
+    \mathbf{I} -\bm{e}_r\bm{e}_r
+\right)
+\mathrm{e}^{\,\mathrm{j}k_0 \bm{e}_r\cdot \bm{r}&#39;}\]</p><p class="math-container">\[\lim \limits_{r\rightarrow \infty}
+\bm{\mathcal{G}}_{ME}(\bm{r},\bm{r}&#39;)
+=
+\mathrm{j} k_0 \, \dfrac{\mathrm{e}^{-\mathrm{j}k_0 r}}{4\pi r}\, 
+\left(
+    \bm{e}_r \times \mathbf{I}
+\right)
+\mathrm{e}^{\,\mathrm{j}k_0 \bm{e}_r\cdot \bm{r}&#39;}\]</p><p>The radiated fields asymptotically far away from the sources have no components on radial direction and depend on the radial variable <span>$r$</span> only by the term <span>$\dfrac{\mathrm{e}^{-\mathrm{j}k_0 r}}{r}$</span>. We have</p><p class="math-container">\[\lim \limits_{r\rightarrow \infty} 
+\bm{E}(r,\vartheta, \varphi)
+=
+\bm{F}(\vartheta,\varphi)
+\dfrac{\mathrm{e}^{-\mathrm{j}k_0 r}}{r}\]</p><p>where <span>$\bm{F}(\vartheta,\varphi)$</span> denotes the electric far-field pattern (unit: <span>$V$</span>). </p><p>Obviously, the far-field pattern of a Hertzian dipole can be calculated by</p><p class="math-container">\[\bm{F}_{\text{Hertz}}(\vartheta,\varphi)
+=
+I\, \dfrac{-\mathrm{j} k_0\, Z_{\mathrm{F}}}{4\pi}\,
+\mathrm{e}^{\,\mathrm{j}k_0 \,\bm{e}_r(\vartheta,\varphi)\cdot \bm{r}&#39;}\, 
+\left(
+    \mathbf{I} -\bm{e}_r(\vartheta,\varphi)\bm{e}_r(\vartheta,\varphi)
+\right)\cdot \ell
+\, ,\]</p><p>where <span>$I$</span> is the excitation of the dipole, <span>$\bm{\ell}$</span> is the oriented dipole length and <span>$\bm{r}&#39;$</span> is the dipole location. The dyadic operator <span>$\left(     \mathbf{I} -\bm{e}_r(\vartheta,\varphi)\bm{e}_r(\vartheta,\varphi) \right)\cdot$</span> removes the field component in radial direction.</p><p>The far-field pattern of a Fitzgerald dipole can be calculated by</p><p class="math-container">\[\bm{F}_{\text{Fitzgerald}}(\vartheta,\varphi)
+=
+I_{\mathrm{m}}\, \dfrac{\mathrm{j} k_0}{4\pi}\,
+\mathrm{e}^{\,\mathrm{j}k_0\, \bm{e}_r(\vartheta,\varphi)\cdot \bm{r}&#39;}\, 
+\bm{e}_r(\vartheta,\varphi)\times  \ell
+\, ,\]</p><p>where <span>$I_{\mathrm{m}}$</span> is the excitation of the dipole, <span>$\bm{\ell}$</span> is the oriented dipole length and <span>$\bm{r}&#39;$</span> is the dipole location. Due to the cross product with the radial unit vector, the far field has a zero component in radial direction.</p><p>The far fields of a Hertzian or a Fitzgerald dipole can be evaluated by calling the function <code>farfield(sourcedipole::AbstractDipole,θ::Number,ϕ::Number,k₀::Flaot64) -&gt; Tuple(Complex64,2)</code></p><h2 id="Received-signal"><a class="docs-heading-anchor" href="#Received-signal">Received signal</a><a id="Received-signal-1"></a><a class="docs-heading-anchor-permalink" href="#Received-signal" title="Permalink"></a></h2><p>It can be shown that an antenna of which the radiated fields can be expressed via the (normalized) equivalent electric and magnetic current distributions <span>$\hat{\bm{J}}(\bm{r})$</span> and <span>$\hat{\bm{M}}(\bm{r})$</span> will receive the signal </p><p class="math-container">\[b=
+\dfrac{1}{2}
+\iiint \limits_{V_{\text{src}}}
+\left[
+\bm{E}(\bm{r}) \cdot \hat{\bm{J}}(\bm{r})
+-\bm{H}(\bm{r}) \cdot \hat{\bm{M}}(\bm{r})
+\right]
+\, \mathrm{d}v\]</p><p>when it is illuminated with an external electromagntic field <span>$\bm{E}(\bm{r})$</span>, <span>$\bm{H}(\bm{r})$</span>.</p><p>Consequently, a Hertzian dipole which has a (normalized) electric equivalent current distribution of <span>$\hat{\bm{J}}_{\text{Hertz}}(\bm{r}) = I\bm{\ell}\, \delta({\bm{r}-\bm{r}&#39;})$</span> receives the signal <span>$b_{\text{Hertz}}=0.5\,I\, \bm{\ell} \cdot \bm{E}(\bm{r}&#39;)$</span> which is proportional to the parallel component of the incident electric field at the discrete location <span>$\bm{r}&#39;$</span>.</p><p>A Fitzgerald which has a (normalized) magnetic equivalent current distribution of <span>$\hat{\bm{M}}_{\text{Fitzgerald}}(\bm{r}) = I_{\mathrm{m}}\bm{\ell}\, \delta({\bm{r}-\bm{r}&#39;})$</span> receives the signal <span>$b_{\text{Fitzgerald}}=-0.5\,I_{\mathrm{m}}\, \bm{\ell} \cdot \bm{H}(\bm{r}&#39;)$</span> which is proportional to the parallel component of the incident negative magnetic field at the discrete location <span>$\bm{r}&#39;$</span>.</p><h2 id="Dipole-to-Dipole-Interactions"><a class="docs-heading-anchor" href="#Dipole-to-Dipole-Interactions">Dipole to Dipole Interactions</a><a id="Dipole-to-Dipole-Interactions-1"></a><a class="docs-heading-anchor-permalink" href="#Dipole-to-Dipole-Interactions" title="Permalink"></a></h2><p>The interaction between two elementary dipoles is modeled by letting one of the dipoles generate an electromagnetic field, which is therafter received by the other dipole.</p><p>Since the recieved signal of a Hertzian dipole is directly proportional to the parallel component of the incident electric field at the dipole position, the received signals of Hertzian dipoles can be used to ideally probe the electric field. The interaction between two Hertzian dipoles can be used to represent the radiated electric field of one of the dipoles at the location of the other dipole.</p><p>Since the recieved signal of a Fitzgerald dipole is directly proportional to the parallel component of the negative incident magnetic field at the dipole position, the received signals of Fitzgerald  dipoles can be used to ideally probe the magnetic field. The interaction between two Fitzgerald dipoles can be used to represent the radiated magnetic field of one of the dipoles at the location of the other dipole.</p><p>The detailed derivation can be found in the &quot;Theory&quot; section. The interaction between two dipoles is implemented in the function (TODO: insert correct function) Each elementary dipole is defined by its position <span>$\bm{r}$</span>, its oriented length <span>$\bm{\ell}$</span> and its excitation magnitude <span>$I$</span>. Hertzian and Fitzgerald dipoles may be constructed using the constructors as in the following example.</p><h3 id="Interaction-between-two-Hertzian-Dipoles"><a class="docs-heading-anchor" href="#Interaction-between-two-Hertzian-Dipoles">Interaction between two Hertzian Dipoles</a><a id="Interaction-between-two-Hertzian-Dipoles-1"></a><a class="docs-heading-anchor-permalink" href="#Interaction-between-two-Hertzian-Dipoles" title="Permalink"></a></h3><p>Let <span>$I_1$</span>, <span>$\bm{\ell}_1$</span>, and <span>$\bm{r}_1$</span> denote the excitation, oriented (equivalent) length, and location of the transmitting Hertzian dipole and let <span>$I_2$</span>, <span>$\bm{\ell}_2$</span>, and <span>$\bm{r}_2$</span> be the excitation, oriented (equivalent) length, and location of the receiving Hertzian dipole. The received signal which represents the interaction between these two dipoles is given by</p><p class="math-container">\[b=
+\dfrac{-\mathrm{j}}{2} k_0\, Z_\mathrm{F}\, I_1\, I_2\,
+\left[
+\left(
+\dfrac{3}{k^2\,||\bm{r}_2-\bm{r}_1||^2}
++
+\dfrac{3\mathrm{j}}{k\,||\bm{r}_2-\bm{r}_1||} 
+-1   
+\right)
+g_0(\bm{r}_2,\bm{r}_1)
+\,
+\left(\bm{\ell}_2 \cdot \bm{e}_r\right)\, \left(\bm{e}_r \cdot \bm{\ell}_1\right)
+-
+\left(
+\dfrac{\mathrm{j}}{k\,||\bm{r}_2-\bm{r}_1||}
++\dfrac{1}{k^2\,||\bm{r}_2-\bm{r}_1||^2}
+-1
+\right)
+g_0(\bm{r}_2,\bm{r}_1)
+\,
+\left(\bm{\ell_2} \cdot \bm{\ell_1}
+\right)
+\right]\, ,\]</p><p>where <span>$\bm{e}_r$</span> denotes the unit vector pointing in the direction from one dipole location to the other.</p><h3 id="Interaction-between-two-Fitzgerald-Dipoles"><a class="docs-heading-anchor" href="#Interaction-between-two-Fitzgerald-Dipoles">Interaction between two Fitzgerald Dipoles</a><a id="Interaction-between-two-Fitzgerald-Dipoles-1"></a><a class="docs-heading-anchor-permalink" href="#Interaction-between-two-Fitzgerald-Dipoles" title="Permalink"></a></h3><p>Let <span>$I_{\mathrm{m},1}$</span>, <span>$\bm{\ell}_1$</span>, and <span>$\bm{r}_1$</span> denote the excitation, oriented (equivalent) length, and location of the transmitting Fitzgerald dipole and let <span>$I_{\mathrm{m},2}$</span>, <span>$\bm{\ell}_2$</span>, and <span>$\bm{r}_2$</span> be the excitation, oriented (equivalent) length, and location of the receiving Fitzgerald dipole. The received signal which represents the interaction between these two dipoles is given by</p><p class="math-container">\[b=
+\dfrac{-\mathrm{j}}{2} \dfrac{k_0}{Z_\mathrm{F}}\, I_{\mathrm{m},1}\, I_{\mathrm{m},2}\,
+\left[
+\left(
+\dfrac{3}{k^2\,||\bm{r}_2-\bm{r}_1||^2}
++
+\dfrac{3\mathrm{j}}{k\,||\bm{r}_2-\bm{r}_1||} 
+-1   
+\right)
+g_0(\bm{r}_2,\bm{r}_1)
+\,
+\left(\bm{\ell}_2 \cdot \bm{e}_r\right)\, \left(\bm{e}_r \cdot \bm{\ell}_1\right)
+-
+\left(
+\dfrac{\mathrm{j}}{k\,||\bm{r}_2-\bm{r}_1||}
++\dfrac{1}{k^2\,||\bm{r}_2-\bm{r}_1||^2}
+-1
+\right)
+g_0(\bm{r}_2,\bm{r}_1)
+\,
+\left(\bm{\ell_2} \cdot \bm{\ell_1}
+\right)
+\right]\, ,\]</p><p>where <span>$\bm{e}_r$</span> denotes the unit vector pointing in the direction from one dipole location to the other.</p><h3 id="Interaction-between-Hertzian-and-Fitzgerald-Dipole"><a class="docs-heading-anchor" href="#Interaction-between-Hertzian-and-Fitzgerald-Dipole">Interaction between Hertzian and Fitzgerald Dipole</a><a id="Interaction-between-Hertzian-and-Fitzgerald-Dipole-1"></a><a class="docs-heading-anchor-permalink" href="#Interaction-between-Hertzian-and-Fitzgerald-Dipole" title="Permalink"></a></h3><p>Let <span>$I_{1}$</span>, <span>$\bm{\ell}_1$</span>, and <span>$\bm{r}_1$</span> denote the excitation, oriented (equivalent) length, and location of the transmitting Hertzian dipole and let <span>$I_{\mathrm{m},2}$</span>, <span>$\bm{\ell}_2$</span>, and <span>$\bm{r}_2$</span> be the excitation, oriented (equivalent) length, and location of the receiving Fitzgerald dipole. The received signal which represents the interaction between these two dipoles is given by</p><p class="math-container">\[b= \dfrac{1}{2}
+I_1\, I_{\mathrm{m},2}
+\left(-\mathrm{j}k-\dfrac{1}{||\bm{r}-\bm{r}&#39;||}\right) \bm{\ell_2} \cdot \left( \bm{e}_r \times \bm{\ell_1}\right)\]</p><p>where <span>$\bm{e}_r$</span> denotes the unit vector pointing in the direction from one dipole location to the other.</p><p>The role of the transmitting and the receiving dipole may be exchanged without changing the result of the calculation (i.e., the electric field of a Fitzgerald dipole matches the electric field of a Fitzgerald dipole).</p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../../">« Home</a><a class="docs-footer-nextpage" href="../dipole_examples/">Examples »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="auto">Automatic (OS)</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.2.1 on <span class="colophon-date" title="Wednesday 31 January 2024 22:29">Wednesday 31 January 2024</span>. Using Julia version 1.10.0.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
