@@ -6,6 +6,6 @@ using LinearAlgebra: LinearAlgebra
 
 include("PBMLFMMtree.jl")
 include("AbstractMLFMMTree.jl")
-include("MLFMMtree.jl")
+include("MLFMMTree.jl")
 
 end # module MLFMMTrees
