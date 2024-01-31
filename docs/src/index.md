@@ -43,10 +43,7 @@ TODO: add link to operations
 
 - Functions to (help) transfer data into another representation with identical data structure
 TODO: add link to typerelevant functions
-
-## Related Packages
-- `BEAST`
-- `ClusterTrees` 
+ 
 
 ### Planned Features
 - ⏳[^1] **Scalar spherical mode expansions** 
