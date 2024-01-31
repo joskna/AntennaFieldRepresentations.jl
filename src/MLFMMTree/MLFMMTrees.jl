@@ -2,7 +2,7 @@ module MLFMMTrees
 using ClusterTrees: ClusterTrees
 using StaticArrays: StaticArrays
 using LinearAlgebra: LinearAlgebra
-using Exceptions: Exceptions
+# using Exceptions: Exceptions
 
 include("PBMLFMMtree.jl")
 include("AbstractMLFMMTree.jl")
