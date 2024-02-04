@@ -2,30 +2,26 @@ using Documenter, AntennaFieldRepresentations
 
 makedocs(;
     modules=[AntennaFieldRepresentations],
-    authors="Josef Knapp <josef.knapp@tum.de>, Danijel Jukic, and Simon B.Adrian",
+    authors="Josef Knapp <josef.knapp@tum.de>, Danijel Jukic, and Simon B. Adrian",
     sitename="AntennaFieldRepresentations.jl",
     remotes= nothing,
     pages=[
         "Home" => "index.md",
-        "Representations" =>Any[
-            "Dipoles" => [
-                "Theory" =>"dipoles/dipole_theory.md",
-                "Examples" => "dipoles/dipole_examples.md"],
-            "Spherical Vector Wave Expansion" => Any[
-                "Theory" => "spherical/spherical_theory.md",
-                "Fast Algorithms" => "spherical/spherical_fast.md",
-                "Examples" => "spherical/spherical_examples.md"
-            ],
-            "Plane Wave Expansion" => 
-            Any[
-                "Theory" => "planewaves/planewave_theory.md",
-                "Examples" => "planewaves/planewave_examples.md"
-            ],
-            "Equivalent Surface Currents" => 
-            Any[
-                "Theory" => "surfacecurrents/surface_theory.md",
-                "Examples" => "surfacecurrents/surface_examples.md"
-            ],
+        "Electromagnetic Theory"=> Any[
+            "Dipoles" => "dipoles/dipole_theory.md",
+            "Spherical Vector Wave Expansion" => "spherical/spherical_theory.md",
+            "Plane Wave Expansion" => "planewaves/planewave_theory.md",
+            "Equivalent Surface Currents" => "surfacecurrents/surface_theory.md",
+            "Fast Algorithms" => Any[
+                "Spherical Wacker Algorith" => "spherical/spherical_fast.md"
+                "Multilevel Fast Multipole Method" => "mlfmm/mlfmm_theory.md"
+            ]
+        ], 
+        "Examples" =>Any[
+            "Dipoles" => "dipoles/dipole_examples.md",
+            "Spherical Vector Wave Expansion" => "spherical/spherical_examples.md",
+            "Plane Wave Expansion" => "planewaves/planewave_examples.md",
+            "Equivalent Surface Currents" => "surfacecurrents/surface_examples.md",
         ],
         "Operations" => Any[
             "Field Evaluations" => "operations/fields.md",
