@@ -22,8 +22,8 @@ export udot, sqrtdot, cdist, rot_mat_zyz
 export c₀, ε₀, μ₀, Z₀
 export AbstractElectromagneticFieldRepresentation
 
-using PlotlyJS
-import PlotlyJS: plot
+# using PlotlyJS
+# import PlotlyJS: plot
 
 using LinearMaps
 # using IterativeSolvers

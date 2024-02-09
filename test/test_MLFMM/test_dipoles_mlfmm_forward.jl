@@ -128,7 +128,7 @@ end
 functionspacesrc=(sourcefunctions=autdips_ref, points=pos)
 
 
-sourcestruct=ElectromagneticFieldRepresentations.MLFMMSource(
+sourcestruct=AntennaFieldRepresentations.MLFMMSource(
 functionspacesrc,
 κ;
 verbose=true,
@@ -149,7 +149,7 @@ for (index, dipole) in enumerate(obsdips_ref)
 end
 
 functionspace=(sourcefunctions=obsdips_ref, points=pos)
-receivestruct=ElectromagneticFieldRepresentations.MLFMMReceive(
+receivestruct=AntennaFieldRepresentations.MLFMMReceive(
         functionspace,
         sourcestruct,
         verbose=true,
@@ -161,11 +161,11 @@ x=[dipole.mag for dipole in autdips]
 dipolematrix=DipoleInteractionMatrix(autdips_magone, obsdips, κ)
 b=dipolematrix*x
 
-ElectromagneticFieldRepresentations._forward!(sourcestruct, receivestruct,x)
+AntennaFieldRepresentations._forward!(sourcestruct, receivestruct,x)
 
 @test norm(b - receivestruct.bvector) < ϵ * norm(b)
 
 y= adjoint(dipolematrix) * b
-ElectromagneticFieldRepresentations._adjoint_forward!(sourcestruct, receivestruct, b)
+AntennaFieldRepresentations._adjoint_forward!(sourcestruct, receivestruct, b)
 
 @test norm(y - sourcestruct.xvector) < ϵ * norm(y)
