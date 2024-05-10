@@ -326,7 +326,7 @@ include(joinpath("MLFMMMatrix", "beastglue.jl"))
 # include(joinpath("Plotting", "plotting.jl"))
 
 ## SourceReconstruction
-include(joinpath("SourceReconstruction", "interactionmatrices.jl"))
+include(joinpath("InteractionMatrices", "interactionmatrices.jl"))
 export DipoleInteractionMatrix, MLFMMInteractionMatrix
 # using ClusterTrees: ClusterTrees
 # using StaticArrays: StaticArrays, SVector

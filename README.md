@@ -9,9 +9,23 @@
 # AntennaFieldTransformations
 
 ## Introduction
-This package contains various representations of electromagnetic fields and their interactions with antennas. 
-The goal is to provide (efficient) methods to transfrom any representation into another to be able to choose the most suitable representation for the problem at hand.
+This package contains various representations of the electromagnetic fields radiated by antennas.
+Most importantly, the package implements the linear operator between any (parametrized) antenna representation and a predefined field sampling. 
+The declared goal is to provide (efficient) methods to transfrom anyantenna representation into another to be able to choose the most suitable (most efficient) antenna representation for the problem at hand.
 The purpose of this package is primarily academic and educational. At the moment and the package is under heavy development and represents by no means a finished state. Use with care!
+
+## Featured Antenna Representations
+- Collection of elctric and/or magnetic dipoles
+- Vector Spherical Mode Expansion
+- Far-field Pattern
+- Equivalent Surface Currents (Rao-Wilton-Glisson basis)
+
+## Featured Field Samplings
+- Electric and/or magnetic field components at arbitrary (near-field) locations
+- Regular spherical sampling with
+  - first order probes
+  - arbitrary order probes
+- Irregularly sampled near-fields using probe antennas with arbitrary patterns
 
 ## Installation
 The package is not registered in the Julia General Registry, yet, but a future version of this package might.

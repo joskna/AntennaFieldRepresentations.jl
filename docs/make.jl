@@ -17,13 +17,7 @@ makedocs(;
                 "Multilevel Fast Multipole Method" => "mlfmm/mlfmm_theory.md"
             ]
         ], 
-        "Examples" =>Any[
-            "Dipoles" => "dipoles/dipole_examples.md",
-            "Spherical Vector Wave Expansion" => "spherical/spherical_examples.md",
-            "Plane Wave Expansion" => "planewaves/planewave_examples.md",
-            "Equivalent Surface Currents" => "surfacecurrents/surface_examples.md",
-            "More Examples" => "examples.md"
-        ],
+        "Examples" => "examples.md",
         "Operations" => Any[
             "Field Evaluations" => "operations/fields.md",
             "Coordinate Transformations" => "operations/coordinate_trafos.md",

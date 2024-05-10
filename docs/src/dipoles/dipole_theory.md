@@ -264,20 +264,6 @@ Consequently, a Hertzian dipole which has a (normalized) electric equivalent cur
 
 A Fitzgerald which has a (normalized) magnetic equivalent current distribution of ``\hat{\bm{M}}_{\text{Fitzgerald}}(\bm{r}) = I_{\mathrm{m}}\bm{\ell}\, \delta({\bm{r}-\bm{r}'})`` receives the signal ``b_{\text{Fitzgerald}}=-0.5\,I_{\mathrm{m}}\, \bm{\ell} \cdot \bm{H}(\bm{r}')`` which is proportional to the parallel component of the incident negative magnetic field at the discrete location ``\bm{r}'``.
 
-## Dipole to Dipole Interactions
-The interaction between two elementary dipoles is modeled by letting one of the dipoles generate an electromagnetic field, which is therafter received by the other dipole.
-
-Since the recieved signal of a Hertzian dipole is directly proportional to the parallel component of the incident electric field at the dipole position, the received signals of Hertzian dipoles can be used to ideally probe the electric field. The interaction between two Hertzian dipoles can be used to represent the radiated electric field of one of the dipoles at the location of the other dipole.
-
-Since the recieved signal of a Fitzgerald dipole is directly proportional to the parallel component of the negative incident magnetic field at the dipole position, the received signals of Fitzgerald  dipoles can be used to ideally probe the magnetic field. The interaction between two Fitzgerald dipoles can be used to represent the radiated magnetic field of one of the dipoles at the location of the other dipole.
-
-The detailed derivation can be found in the "Theory" section.
-The interaction between two dipoles is implemented in the function
-(TODO: insert correct function)
-Each elementary dipole is defined by its position ``\bm{r}``, its oriented length ``\bm{\ell}`` and its excitation magnitude ``I``.
-Hertzian and Fitzgerald dipoles may be constructed using the constructors as in the following example.
-
-
 ### Interaction between two Hertzian Dipoles
 Let ``I_1``, ``\bm{\ell}_1``, and ``\bm{r}_1`` denote the excitation, oriented (equivalent) length, and location of the transmitting Hertzian dipole and let ``I_2``, ``\bm{\ell}_2``, and ``\bm{r}_2`` be the excitation, oriented (equivalent) length, and location of the receiving Hertzian dipole. The received signal which represents the interaction between these two dipoles is given by
 ```math
