@@ -1,22 +1,23 @@
 # AntennaFieldRepresentations.jl
 
 This package contains various representations of the electromagnetic fields radiated by antennas.
-Most importantly, the package implements the linear operator between any (parametrized) antenna representation and a predefined field sampling. 
-The declared goal is to provide (efficient) methods to transfrom anyantenna representation into another to be able to choose the most suitable (most efficient) antenna representation for the problem at hand.
-The purpose of this package is primarily academic and educational. At the moment and the package is under heavy development and represents by no means a finished state. Use with care!
+The declared goal is to implement the linear operator between any (parametrized) antenna representation and a predefined field sampling, and possibly its inverse to solve electromagnetic source reconstruction problems. 
+To reach this goal, (efficient) methods to transform any antenna representation into another are provided. 
+The possibility to switch between antenna field representations enables the user to choose the most suitable (most efficient) representation for the problem at hand.
+The purpose of this package is primarily academic and educational. 
+The package is under heavy development at the moment and represents by no means a finished state. Use with care!
 
 !!! note
-    A time convention of ``\mathrm{e}^{\,\mathrm{j}\omega t}`` and SI units are used everywhere.
+    A time convention of ``\mathrm{e}^{\,\mathrm{j}\omega t}`` and SI units are implied everywhere.
 ---
 
 ## Installation
 
-Install `AntennaFieldRepresentations` by cloning the package to your ~\\.julia\dev folder and registering the package in the package manager (enter `]` at the julia REPL) and type 
-
+The package is not registered in the Julia General Registry, yet, but a future version of this package might.
+For the time being, you can install the package by switching into the package manager (type `]` in the REPL) and run
 ```
 pkg> add https://github.com/joskna/AntennaFieldRepresentations.jl 
 ```
-to register the package to your `Julia` environment. Make sure that the required related packages are available.
 
 ## Featured Antenna Representations
 The following types of antenna representations are provided by `AntennaFieldRepresentations`:
@@ -33,16 +34,19 @@ The following types of field samplings can be used with any antenna representati
   - arbitrary order probes
 - Irregularly sampled near-fields using probe antennas with arbitrary patterns
 
-## Operations on Antenna Representations
+## Featured Operations on Antenna Representations
 The main purpose of `AntennaFieldRepresentations` is to calculate the interaction between a given antenna under test (AUT) and a predefined field sampling, i.e., to calculate the received signal of a probe antenna at predefined positions (the term *position* refers to the probe's location and orientation) when the AUT is radiating. However, the functionality of the package `AntennaFieldRepresentations` is not limited to this. Furthermore, it can
 - calculate the near- and far-fields of the AUT at arbitrary positions
 - convert an antenna field representation into a representation of different type
 - convert an antenna field representation into a representation of the same type in a different coordinate system (the new coordinate system may be rotated or translated from the original coordinate system)
+- evaluate the transposed, Hermitian, and inverses of most featured linear operators
 - calculate the expansion coefficients of an antenna representation given a field sampling and the received signals (i.e, solve a source reconstruction problem)
+- accelerate the evaluation of the interaction operator beween suitable antenna representations and field samplings by means of the multilevel fast multipole method
 
 
 ### Planned Features
-- ⏳[^1] **Scalar spherical mode expansions** 
+- ⏳[^1] **Scalar spherical mode expansions**
+- ⏳[^1] **Distributec spherical mode expansions**
 - ⏳[^1] **Inhomogeneous plane wave expansions**
 - ⏳[^1] **Cylindrical vector modes**
 - ⏳[^1] **Spheroidal wave functions**

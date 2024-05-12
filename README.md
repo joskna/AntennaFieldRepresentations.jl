@@ -10,9 +10,11 @@
 
 ## Introduction
 This package contains various representations of the electromagnetic fields radiated by antennas.
-Most importantly, the package implements the linear operator between any (parametrized) antenna representation and a predefined field sampling. 
-The declared goal is to provide (efficient) methods to transfrom anyantenna representation into another to be able to choose the most suitable (most efficient) antenna representation for the problem at hand.
-The purpose of this package is primarily academic and educational. At the moment and the package is under heavy development and represents by no means a finished state. Use with care!
+The declared goal is to implement the linear operator between any (parametrized) antenna representation and a predefined field sampling, and possibly its inverse to solve electromagnetic source reconstruction problems. 
+To reach this goal, (efficient) methods to transform any antenna representation into another are provided. 
+The possibility to switch between antenna field representations enables the user to choose the most suitable (most efficient) representation for the problem at hand.
+The purpose of this package is primarily academic and educational. 
+The package is under heavy development at the moment and represents by no means a finished state. Use with care!
 
 ## Featured Antenna Representations
 - Collection of elctric and/or magnetic dipoles
