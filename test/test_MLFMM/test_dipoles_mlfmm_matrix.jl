@@ -134,7 +134,7 @@ end
 functionspacesrc=(sourcefunctions=autdips_ref, points=pos)
 
 @time begin
-    sourcestruct=ElectromagneticFieldRepresentations.MLFMMSource(
+    sourcestruct=AntennaFieldRepresentations.MLFMMSource(
     functionspacesrc,
     κ;
     verbose=false,
@@ -162,7 +162,7 @@ end
 functionspacerec=(sourcefunctions=obsdips_ref, points=pos)
 
 @time begin
-    receivestruct=ElectromagneticFieldRepresentations.MLFMMReceive(
+    receivestruct=AntennaFieldRepresentations.MLFMMReceive(
         functionspacerec,
         sourcestruct,
         verbose=false,

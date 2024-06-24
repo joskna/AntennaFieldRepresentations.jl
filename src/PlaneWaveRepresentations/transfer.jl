@@ -68,6 +68,7 @@ end
 function translate(pattern::P, transfer::OnTheFlyTransfer{T}) where{T,P<:FarfieldPattern}
     # L=transfer.L
     # pattern.L != L && ErrorException("FarFieldPattern and PlannedTransfer must have the same order L !")
+    L=pattern.L
 
     patternout = converttype(reciprocaltype(P), pattern)
     R = transfer.R
