@@ -1,7 +1,7 @@
 """
 Abstract type container type for HertzDipole and FitzgeraldDipole
 """
-abstract type AbstractDipole <: AbstractElectromagneticFieldRepresentation end
+abstract type AbstractDipole <: AntennaFieldRepresentation end
 
 """
     HertzDipole{T<:Number} <: AbstractDipole

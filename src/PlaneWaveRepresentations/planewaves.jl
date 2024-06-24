@@ -1,5 +1,5 @@
 # const Z₀ = 376.730313669
-abstract type PlaneWaveRepresentation <: AbstractElectromagneticFieldRepresentation end
+abstract type PlaneWaveRepresentation <: AntennaFieldRepresentation end
 
 """
 Radiated far-field pattern sampled in angular domain.

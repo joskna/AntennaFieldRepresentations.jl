@@ -1,33 +1,35 @@
-abstract type AbstractFieldSampling
+abstract type FieldSampling
+end
+abstract type DipoleProbes  <: FieldSampling
 end
 
-struct HertzDipoleProbes{T,C} <: AbstractFieldSampling
+struct HertzDipoleProbes{T,C} <: DipoleProbes
     dipoles::Vector{HertzDipole{T,C}}
 end
 
-struct FitzgeraldDipoleProbes{T,C} <: AbstractFieldSampling
+struct FitzgeraldDipoleProbes{T,C} <: DipoleProbes
     dipoles::Vector{FitzgeraldDipole{T,C}}
 end
 
-struct SphericalSamplingFirstOrderProbe{C} <: AbstractFieldSampling
-    coefficients::Array{C,1},  
-    Jθ::Integer 
-    Jϕ::Integer 
-    Jχ::Integer
-end
-function SphericalSamplingFirstOrderProbe(α_inc::IncidentSphericalExpansion{C} ,Jθ, Jϕ, Jχ) where{C<:Complex}
-    return SphericalSamplingFirstOrderProbe(α_inc.coefficients ,Jθ, Jϕ, Jχ)
+abstract type SphericalSampling  <: FieldSampling
 end
 
-struct SphericalSamplingAnyOrderProbe{C} <: AbstractFieldSampling
-    coefficients::Array{C,1},  
+struct RegularSphericalSampling{T<:Union{IncidentSphericalExpansion, FirstOrder{IncidentSphericalExpansion} }} <: SphericalSampling
+    incidentexpansion::T
     Jθ::Integer 
     Jϕ::Integer 
     Jχ::Integer
 end
-function SphericalSamplingAnyOrderProbe(α_inc::IncidentSphericalExpansion{C} ,Jθ, Jϕ, Jχ) where{C<:Complex}
-    return SphericalSamplingAnyOrderProbe(α_inc.coefficients ,Jθ, Jϕ, Jχ)
-end
+# struct RegularSphericalSampling{ } <: SphericalSampling
+#     incidentexpansion::FirstOrder{IncidentSphericalExpansion} 
+#     Jθ::Integer 
+#     Jϕ::Integer 
+# end
+
+# function SphericalSampling(α_inc::IncidentSphericalExpansion{C} ,Jθ, Jϕ, Jχ) where{C<:Complex}
+#     return SphericalSampling(α_inc.coefficients ,Jθ, Jϕ, Jχ)
+# end
+
 
 struct IrregularNearFieldSampling{T<:Real, C<:Complex}
     positions::Vector{SVector{3,T}}

@@ -1,8 +1,66 @@
 # const Z₀ = 376.730313669
+
+# TODO: Separate spherical coefficients from spherical expansions () the latter are an antenna representation
 """
 SphericalExpansions can be Radiating, Incident, or Absorbed
 """
-abstract type AbstractSphericalExpansion <: AbstractElectromagneticFieldRepresentation end
+abstract type AbstractSphericalExpansion <: AntennaFieldRepresentation end
+
+function Base.getindex(α::AbstractSphericalExpansion,s::Integer,ℓ::Integer,m::Integer)
+    s<1 && DomainError("s must be 1 or 2.")
+    s>2 && DomainError("s must be 1 or 2.")
+    ℓ<1 && DomainError("ℓ must be positive.")
+    abs(m) > ℓ && DomainError("|m| must be ≤ ℓ.")
+
+    return α.coefficients[sℓm_to_j(s,ℓ,m)]
+end
+function Base.getindex(α::AbstractSphericalExpansion,j::Integer)
+    return α.coefficients[j]
+end
+
+struct FirstOrder{T<: AbstractSphericalExpansion, C<: Complex}
+    coeffs_s1_m_plus::Vector{C}
+    coeffs_s1_m_minus::Vector{C}
+    coeffs_s2_m_plus::Vector{C}
+    coeffs_s2_m_minus::Vector{C}
+end
+
+function FirstOrder{T}(α::T) where{T<: AbstractSphericalExpansion}
+    _,L,__ = j_to_sℓm(length(α.coefficients))
+    coeffs_s1_m_plus = α[1, 1:L, 1]
+    coeffs_s1_m_minus = α[1, 1:L, -1]
+    coeffs_s2_m_plus = α[2, 1:L, 1]
+    coeffs_s2_m_minus = α[2, 1:L, -1]  
+    return FirstOrder{T}(coeffs_s1_m_plus, coeffs_s1_m_minus, coeffs_s2_m_plus, coeffs_s2_m_minus)
+end
+function Base.getindex(α::FirstOrder{T,C}, s::Integer,ℓ::Integer,m::Integer) where{T<: AbstractSphericalExpansion, C<:Complex}
+    s<1 && DomainError("s must be 1 or 2.")
+    s>2 && DomainError("s must be 1 or 2.")
+    ℓ<1 && DomainError("ℓ must be positive.")
+    abs(m) > ℓ && DomainError("|m| must be ≤ ℓ.")
+
+    abs(m) != 1 && return C(0)
+    if m== 1 
+        if s==1 
+            return α.coeffs_s1_m_plus
+        else return α.coeffs_s2_m_plus
+        end
+    else 
+        if s==1 
+            return α.coeffs_s1_m_minus
+        else return α.coeffs_s2_m_minus
+        end
+    end
+
+end
+function Base.getindex(α::FirstOrder{T,C}, j::Integer) where{T<: AbstractSphericalExpansion, C<:Complex}
+    return α[j_to_sℓm(j)]
+end
+function Base.length(α::FirstOrder{T,C})  where{T<: AbstractSphericalExpansion, C<:Complex}
+    L=length(α.coeffs_s1_m_plus)
+    return sℓm_to_j(2,L,L)
+end
+
 
 """
     RadiatingSphericalExpansion{C<:Complex} <: AbstractSphericalExpansion
@@ -14,6 +72,20 @@ Store spherical vector wave expansion coefficients for an expansion of radiating
 mutable struct RadiatingSphericalExpansion{C<:Complex} <: AbstractSphericalExpansion
     coefficients::Array{C,1}
 end
+
+function RadiatingSphericalExpansion{C}(α::FirstOrder{RadiatingSphericalExpansion{C}}) where C
+    L= length(α.coeffs_s1_m_minus)
+    J= sℓm_to_j(2,L,L)
+    coefficients=zeros(eltype(α.coeffs_s1_m_minus), J)
+    for ℓ = 1:L
+        coefficients[sℓm_to_j(1, ℓ, 1)] = α.coeffs_s1_m_plus
+        coefficients[sℓm_to_j(2, ℓ, 1)] = α.coeffs_s2_m_plus
+        coefficients[sℓm_to_j(1, ℓ, -1)] = α.coeffs_s1_m_minus
+        coefficients[sℓm_to_j(2, ℓ, -1)] = α.coeffs_s2_m_minus
+    end
+    return RadiatingSphericalExpansion{C}(coefficients)
+end
+
 
 
 """
@@ -27,6 +99,19 @@ mutable struct IncidentSphericalExpansion{C<:Complex} <: AbstractSphericalExpans
     coefficients::Array{C,1}
 end
 
+function IncidentSphericalExpansion{C}(α::FirstOrder{IncidentSphericalExpansion{C}}) where C
+    L= length(α.coeffs_s1_m_minus)
+    J= sℓm_to_j(2,L,L)
+    coefficients=zeros(eltype(α.coeffs_s1_m_minus), J)
+    for ℓ = 1:L
+        coefficients[sℓm_to_j(1, ℓ, 1)] = α.coeffs_s1_m_plus
+        coefficients[sℓm_to_j(2, ℓ, 1)] = α.coeffs_s2_m_plus
+        coefficients[sℓm_to_j(1, ℓ, -1)] = α.coeffs_s1_m_minus
+        coefficients[sℓm_to_j(2, ℓ, -1)] = α.coeffs_s2_m_minus
+    end
+    return IncidentSphericalExpansion{C}(coefficients)
+end
+
 """
     AbsorbedSphericalExpansion{C<:Complex} <: AbstractSphericalExpansion
 Store spherical vector wave expansion coefficients for an expansion of absorbed type
@@ -38,6 +123,19 @@ mutable struct AbsorbedSphericalExpansion{C<:Complex} <: AbstractSphericalExpans
     coefficients::Array{C,1}
 end
 
+function AbsorbedSphericalExpansion{C}(α::FirstOrder{AbsorbedSphericalExpansion{C}}) where C
+    L= length(α.coeffs_s1_m_minus)
+    J= sℓm_to_j(2,L,L)
+    coefficients=zeros(eltype(α.coeffs_s1_m_minus), J)
+    for ℓ = 1:L
+        coefficients[sℓm_to_j(1, ℓ, 1)] = α.coeffs_s1_m_plus
+        coefficients[sℓm_to_j(2, ℓ, 1)] = α.coeffs_s2_m_plus
+        coefficients[sℓm_to_j(1, ℓ, -1)] = α.coeffs_s1_m_minus
+        coefficients[sℓm_to_j(2, ℓ, -1)] = α.coeffs_s2_m_minus
+    end
+    return AbsorbedSphericalExpansion{C}(coefficients)
+end
+
 """
     UnorthodoxSphericalExpansion{C<:Complex} <: AbstractSphericalExpansion
 Store spherical vector wave expansion coefficients for an expansion of absorbed type
@@ -47,6 +145,19 @@ Store spherical vector wave expansion coefficients for an expansion of absorbed 
 """
 mutable struct UnorthodoxSphericalExpansion{C<:Complex} <: AbstractSphericalExpansion
     coefficients::Array{C,1}
+end
+
+function UnorthodoxSphericalExpansion{C}(α::FirstOrder{UnorthodoxSphericalExpansion{C}}) where C
+    L= length(α.coeffs_s1_m_minus)
+    J= sℓm_to_j(2,L,L)
+    coefficients=zeros(eltype(α.coeffs_s1_m_minus), J)
+    for ℓ = 1:L
+        coefficients[sℓm_to_j(1, ℓ, 1)] = α.coeffs_s1_m_plus
+        coefficients[sℓm_to_j(2, ℓ, 1)] = α.coeffs_s2_m_plus
+        coefficients[sℓm_to_j(1, ℓ, -1)] = α.coeffs_s1_m_minus
+        coefficients[sℓm_to_j(2, ℓ, -1)] = α.coeffs_s2_m_minus
+    end
+    return UnorthodoxSphericalExpansion{C}(coefficients)
 end
 
 function converttype(T::Type{RadiatingSphericalExpansion{C}}, α::AbstractSphericalExpansion) where {C<:Complex}
@@ -124,7 +235,8 @@ end
 
     Convert single index j to multi-index s ℓ m
 """
-function j_to_sℓm(j)
+function j_to_sℓm(j::Integer)
+    jtype=typeof(j)
     s = 0
     if isodd(j)
         s = 1
@@ -133,7 +245,7 @@ function j_to_sℓm(j)
     end
     ℓ = floor(sqrt((j - s) / 2 + 1))
     m = (j - s) / 2 + 1 - ℓ * (ℓ + 1)
-    return Int(s), Int(ℓ), Int(m)
+    return jtype(s), jtype(ℓ), jtype(m)
 end
 
 """

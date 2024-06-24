@@ -1,7 +1,7 @@
 """
 Abstract type container type for Surface current densities
 """
-abstract type AbstractSurfaceCurrentDensity <: AbstractElectromagneticFieldRepresentation end
+abstract type AbstractSurfaceCurrentDensity <: AntennaFieldRepresentation end
 
 
 struct ElectricSurfaceCurrentDensity{T<:Real, S<:BEAST.Space{T}} <: AbstractSurfaceCurrentDensity

@@ -145,7 +145,7 @@ function _initialize_tree(points::AbstractArray{SVector{3,R}}, minhalfsize::R) w
     rootsize=2^halfsize_powerof2*minhalfsize
 
     root_center = SVector{3,Float64}(rootcenter)
-    return ElectromagneticFieldRepresentations.MLFMMTrees.MLFMMTree(root_center, points, rootsize, minhalfsize)
+    return AntennaFieldRepresentations.MLFMMTrees.MLFMMTree(root_center, points, rootsize, minhalfsize)
 end
 
 """
@@ -484,7 +484,7 @@ end
 Fill storage for leaf node patterns due to excitation vector `A.xvector`.
 """
 function _aggregate_leafnodes!(A::MLFMMSource)
-    treetype = MLFMMTrees.PBMLFMMTree{ElectromagneticFieldRepresentations.MLFMMTrees.Data{3, Float64}, 3, Float64}
+    treetype = MLFMMTrees.PBMLFMMTree{AntennaFieldRepresentations.MLFMMTrees.Data{3, Float64}, 3, Float64}
     tree::treetype=MLFMMTrees.tree(A.tree)
 
     # for leafnode in A.leafnodeindices
@@ -503,7 +503,7 @@ end
 Fill pattern storage of parentnode with aggregated pattern from all its children.
 """
 function _aggregate_children!(A::MLFMMSource, parentnode)
-    treetype = MLFMMTrees.PBMLFMMTree{ElectromagneticFieldRepresentations.MLFMMTrees.Data{3, Float64}, 3, Float64}
+    treetype = MLFMMTrees.PBMLFMMTree{AntennaFieldRepresentations.MLFMMTrees.Data{3, Float64}, 3, Float64}
     tree::treetype=MLFMMTrees.tree(A.tree)
 
     level = MLFMMTrees.level(tree, parentnode)
@@ -536,7 +536,7 @@ function _aggregate_to_minlevel!(A::MLFMMSource, x; min_aggregationlevel::Intege
 end
 function _aggregate_to_minlevel!(A::MLFMMSource; min_aggregationlevel::Integer=0)
     A.verbose && @info "Aggregate node far fields"
-    treetype = MLFMMTrees.PBMLFMMTree{ElectromagneticFieldRepresentations.MLFMMTrees.Data{3, Float64}, 3, Float64}
+    treetype = MLFMMTrees.PBMLFMMTree{AntennaFieldRepresentations.MLFMMTrees.Data{3, Float64}, 3, Float64}
     tree::treetype=MLFMMTrees.tree(A.tree)
 
     _aggregate_leafnodes!(A)
@@ -578,7 +578,7 @@ end
 Perform the adjoint operation (i.e., conjugate of transposed operation) to `_aggregate_leafnodes!`
 """
 function _adjoint_aggregate_leafnodes!(A::MLFMMSource)
-    treetype = MLFMMTrees.PBMLFMMTree{ElectromagneticFieldRepresentations.MLFMMTrees.Data{3, Float64}, 3, Float64}
+    treetype = MLFMMTrees.PBMLFMMTree{AntennaFieldRepresentations.MLFMMTrees.Data{3, Float64}, 3, Float64}
     tree::treetype=MLFMMTrees.tree(A.tree)
 
 
@@ -611,7 +611,7 @@ end
 Perform the transpose operation to `_aggregate_leafnodes!`
 """
 function _transpose_aggregate_leafnodes!(A::MLFMMSource)
-    treetype = MLFMMTrees.PBMLFMMTree{ElectromagneticFieldRepresentations.MLFMMTrees.Data{3, Float64}, 3, Float64}
+    treetype = MLFMMTrees.PBMLFMMTree{AntennaFieldRepresentations.MLFMMTrees.Data{3, Float64}, 3, Float64}
     tree::treetype=MLFMMTrees.tree(A.tree)
 
 
@@ -644,7 +644,7 @@ end
 Perform transposed operation to `_aggregate_children!`
 """
 function _transpose_aggregate_children!(A, parentnode)
-    treetype = MLFMMTrees.PBMLFMMTree{ElectromagneticFieldRepresentations.MLFMMTrees.Data{3, Float64}, 3, Float64}
+    treetype = MLFMMTrees.PBMLFMMTree{AntennaFieldRepresentations.MLFMMTrees.Data{3, Float64}, 3, Float64}
     tree::treetype=MLFMMTrees.tree(A.tree)
     
     level = MLFMMTrees.level(tree, parentnode)
@@ -722,7 +722,7 @@ end
 Test leaf node patterns with all test functions of corresponding leafnode and store result in `receivestruct.bvector`
 """
 function _disaggregate_leafnodes!(receivestruct::MLFMMReceive)
-    treetype = MLFMMTrees.PBMLFMMTree{ElectromagneticFieldRepresentations.MLFMMTrees.Data{3, Float64}, 3, Float64}    
+    treetype = MLFMMTrees.PBMLFMMTree{AntennaFieldRepresentations.MLFMMTrees.Data{3, Float64}, 3, Float64}    
     receivetree::treetype = MLFMMTrees.tree(receivestruct.tree)
 
     Threads.@threads for leafnode in receivestruct.leafnodeindices
@@ -743,7 +743,7 @@ end
 Perform ajoint operation (i.e., complex conjugate of transposed operation) of `_disaggregate_leafnodes!`
 """
 function _adjoint_disaggregate_leafnodes!(A::MLFMMReceive)
-    treetype = MLFMMTrees.PBMLFMMTree{ElectromagneticFieldRepresentations.MLFMMTrees.Data{3, Float64}, 3, Float64}    
+    treetype = MLFMMTrees.PBMLFMMTree{AntennaFieldRepresentations.MLFMMTrees.Data{3, Float64}, 3, Float64}    
     receivetree::treetype = MLFMMTrees.tree(A.tree)
 
     Threads.@threads for leafnode in A.leafnodeindices
@@ -768,7 +768,7 @@ end
 Perform transposed operation to `disaggregate_leafnodes!`
 """
 function _transpose_disaggregate_leafnodes!(A::MLFMMReceive)
-    treetype = MLFMMTrees.PBMLFMMTree{ElectromagneticFieldRepresentations.MLFMMTrees.Data{3, Float64}, 3, Float64}    
+    treetype = MLFMMTrees.PBMLFMMTree{AntennaFieldRepresentations.MLFMMTrees.Data{3, Float64}, 3, Float64}    
     receivetree::treetype = MLFMMTrees.tree(A.tree)
 
     Threads.@threads for leafnode in A.leafnodeindices
@@ -788,7 +788,7 @@ end
 Disaggregate pattern of parentnode to all its children and store the resulting patterns in `receivestruct.nodespectra[child]`
 """
 function _disaggregate_children!(receivestruct, parentnode)
-    treetype = MLFMMTrees.PBMLFMMTree{ElectromagneticFieldRepresentations.MLFMMTrees.Data{3, Float64}, 3, Float64}    
+    treetype = MLFMMTrees.PBMLFMMTree{AntennaFieldRepresentations.MLFMMTrees.Data{3, Float64}, 3, Float64}    
     receivetree::treetype = MLFMMTrees.tree(receivestruct.tree)
 
     level = MLFMMTrees.level(receivetree, parentnode)
@@ -813,7 +813,7 @@ end
 Perform transposed operation to `disaggrgate_children!`
 """
 function _transpose_disaggregate_children!(A, parentnode)
-    treetype = MLFMMTrees.PBMLFMMTree{ElectromagneticFieldRepresentations.MLFMMTrees.Data{3, Float64}, 3, Float64}    
+    treetype = MLFMMTrees.PBMLFMMTree{AntennaFieldRepresentations.MLFMMTrees.Data{3, Float64}, 3, Float64}    
     receivetree::treetype = MLFMMTrees.tree(A.tree)
     level = MLFMMTrees.level(receivetree, parentnode)
 

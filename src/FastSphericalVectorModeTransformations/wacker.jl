@@ -485,7 +485,7 @@ end
 
 Return regularly sampled S12 measurement data on sphere.
 """
-function Wackerforward(α_inc::Array{C,1}, β_aut::Array{C,1}, Jθ::Integer, Jϕ::Integer) where {C<:Complex}
+function Wackerforward(α_inc, β_aut::Array{C,1}, Jθ::Integer, Jϕ::Integer) where {C<:Complex}
     # First-order probe
 
     L, Nθ, Lθ = _inputdimensions(α_inc, β_aut, Jθ)

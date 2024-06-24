@@ -52,6 +52,9 @@ struct DipoleInteractionMatrix <: AbstractArray{ComplexF64,2}
     probedipoles::Array{<:AbstractDipole,1}
     k₀::Float64
 end
+function DipoleInteractionMatrix(source::DipoleArray, sampling::DipoleProbes, k₀)
+    return DipoleInteractionMatrix(source.dipoles, sampling.dipoles, k₀)
+end
 Base.size(D::DipoleInteractionMatrix) = (length(D.probedipoles), length(D.sourcedipoles))
 Base.getindex(D::DipoleInteractionMatrix, i::Int, j::Int) = transmission(D.sourcedipoles[j], D.probedipoles[i], D.k₀)
 Base.getindex(D::DipoleInteractionMatrix, i::Number, j::Number) = D[convert(Int, i), convert(Int, j)]
@@ -101,3 +104,27 @@ function Base.getindex(D::SurfaceCurrentDipoleInteractionMatrix, i::Int, j::Unit
     incident_field = 0.5 * BEAST.assemble(((BEAST.n × (x -> efield(D.probedipoles[i], x, D.k₀))) × BEAST.n), D.surfacecurrents.functionspace)
     return incident_field[j]
 end
+
+
+struct RegularSphericalFirstOrderInteractionMatrix{C} <: LinearMaps.LinearMap{C}
+    α_inc::FirstOrder{IncidentSphericalExpansion{C}}
+    β_aut::Vector{C}
+    S_21::Matrix{C}
+    Jθ::Integer
+    Jϕ::Integer
+end
+function RegularSphericalFirstOrderInteractionMatrix{C}(sampling::RegularSphericalSampling{FirstOrder{IncidentSphericalExpansion{C}}}) where C
+    α_inc=sampling.incidentexpansion
+    J= length(α_inc)
+    β_aut=Vector{C}(undef, J)
+    L, Nθ, Lθ = _inputdimensions(α_inc, β_aut, Jθ)
+    S_21= Array{C}(undef,Nθ, sampling.Jϕ, 2)
+    return RegularSphericalFirstOrderInteractionMatrix{C}(α_inc, β_aut, S_21, sampling.Jθ, sampling.Jϕ)
+end
+
+function LinearMaps._unsafe_mul!(y, A::RegularSphericalFirstOrderInteractionMatrix{C}, x::V) where{C, V<:AbstractVector}
+    A.β_aut .= αtoβ(x)
+    A.S_21 .= Wackerforward(A.α_inc, A.β_aut, A.Jθ, A.Jϕ)
+    y .= (vec(A.S_21))
+end
+Base.size(A::RegularSphericalFirstOrderInteractionMatrix)= (length(A.S_21),length(A.α_inc))

@@ -32,7 +32,7 @@ storedPattern=FarfieldPattern(Lpattern,Fθ, Fϕ)
 orderθ, orderϕ= 14,14
 
 Lpatternnew=Lpattern+20
-interpattern=resample(storedPattern, ElectromagneticFieldRepresentations.LocalInterpolation{Lpattern,Lpatternnew,orderθ,orderϕ,Float64}() )
+interpattern=resample(storedPattern, AntennaFieldRepresentations.LocalInterpolation{Lpattern,Lpatternnew,orderθ,orderϕ,Float64}() )
 _,θvec,ϕvec=  samplingrule(Lpatternnew)
 
 Fθ=zeros(ComplexF64,length(θvec),length(ϕvec))

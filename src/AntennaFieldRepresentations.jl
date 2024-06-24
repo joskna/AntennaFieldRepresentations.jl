@@ -20,7 +20,7 @@ export transmission, rotate, translate, shiftrepresentation
 export efield, hfield, ehfield, farfield, converttype, convertrepresentation, elementtype, reciprocaltype
 export udot, sqrtdot, cdist, rot_mat_zyz
 export c₀, ε₀, μ₀, Z₀
-export AbstractElectromagneticFieldRepresentation
+export AntennaFieldRepresentation
 
 # using PlotlyJS
 # import PlotlyJS: plot
@@ -34,17 +34,18 @@ const μ₀ = 1.2566370621219e-6 # N/A²
 const Z₀ = sqrt(μ₀ / ε₀) # Ω
 
 
-abstract type AbstractElectromagneticFieldRepresentation end
+abstract type AntennaFieldRepresentation end
+
 
 """
     transmission(sender<:FieldRepresentation, receiver<:FieldRepresentation, k₀::Number) -> val::Complex
 
 Return interaction between two field representations ( or source representations)
 """
-function transmission(sender, receiver::T, k₀::Number) where {T<:AbstractElectromagneticFieldRepresentation}
+function transmission(sender, receiver::T, k₀::Number) where {T<:AntennaFieldRepresentation}
     return transmission(convertrepresentation(reciprocaltype(T), sender, k₀), receiver, k₀)
 end
-# function transmission(sender::Array{<:AbstractElectromagneticFieldRepresentation}, receiver::T, k₀::Number) where{T<:AbstractElectromagneticFieldRepresentation}
+# function transmission(sender::Array{<:AntennaFieldRepresentation}, receiver::T, k₀::Number) where{T<:AntennaFieldRepresentation}
 #     return transmission(convertrepresentation(reciprocaltype(T), sender), receiver, k₀)
 # end
 
@@ -82,10 +83,10 @@ function shiftrepresentation end
 
 
 """
-    reciprocaltype(type::Type{<:AbstractElectromagneticFieldRepresentation}) -> Type{<:AbstractElectromagneticFieldRepresentation}
+    reciprocaltype(type::Type{<:AntennaFieldRepresentation}) -> Type{<:AntennaFieldRepresentation}
 Return type of the field representation which is reciprocal to the input type.    
 """
-function reciprocaltype(type::Type{<:AbstractElectromagneticFieldRepresentation}) end
+function reciprocaltype(type::Type{<:AntennaFieldRepresentation}) end
 
 
 """
@@ -97,7 +98,7 @@ Return the E-field vector (in cartesian coordinates) of the field representation
 function efield(fieldrepresentation, Rvec::AbstractVector{<:Number}, k₀::Number)
     return efield(fieldrepresentation, [Rvec], k₀)[1]
 end
-function efield(fields::Array{<:AbstractElectromagneticFieldRepresentation}, R::AbstractVector{<:Number}, k₀::Real)
+function efield(fields::Array{<:AntennaFieldRepresentation}, R::AbstractVector{<:Number}, k₀::Real)
     return sum(efield(field, R, k₀) for field in fields)
 end
 function efield(fieldrepresentation, Rvecs::Array{<:AbstractVector{<:Number}}, k₀::Number)
@@ -114,7 +115,7 @@ Return the H-field vector (in cartesian coordinates) of the field representation
 function hfield(fieldrepresentation, Rvec::AbstractVector{<:Number}, k₀::Number)
     return hfield(fieldrepresentation, [Rvec], k₀)[1]
 end
-function hfield(fields::Array{<:AbstractElectromagneticFieldRepresentation}, R::AbstractVector{<:Number}, k₀::Real)
+function hfield(fields::Array{<:AntennaFieldRepresentation}, R::AbstractVector{<:Number}, k₀::Real)
     return sum(hfield(field, R, k₀) for field in fields)
 end
 function hfield(fieldrepresentation, Rvecs::Array{<:AbstractVector{<:Number}}, k₀::Number)
@@ -130,7 +131,7 @@ Return the E-field and H-field vector (in cartesian coordinates) of the field re
 function ehfield(fieldrepresentation, Rvec::AbstractVector{<:Number}, k₀::Number)
     return ehfield(fieldrepresentation, [Rvec], k₀)[1]
 end
-function ehfield(fields::Array{<:AbstractElectromagneticFieldRepresentation}, R::AbstractVector{<:Number}, k₀::Real)
+function ehfield(fields::Array{<:AntennaFieldRepresentation}, R::AbstractVector{<:Number}, k₀::Real)
     return sum.(ehfield(field, R, k₀) for field in fields)
 end
 # function ehfield(fieldrepresentation, Rvecs::Array{<:AbstractVector{<:Number}}, k₀::Number)
@@ -280,6 +281,7 @@ function rot_mat_zyx(yaw::Number, pitch::Number, roll::Number)
 
 end
 
+
 ## SphericalVectorModeFields
 include(joinpath("SphericalVectorModeFields", "normalizedlegendre.jl"))
 include(joinpath("SphericalVectorModeFields", "modefunctions.jl"))
@@ -317,6 +319,11 @@ include(joinpath("Conversions", "SurfaceCurrentSpherical.jl"))
 ## MLFMMTree
 include(joinpath("MLFMMTree", "MLFMMTrees.jl"))
 
+#####
+include(joinpath("AntennaRepresentations", "antennarepresentations.jl"))
+include(joinpath("FieldSamplings", "fieldsamplings.jl"))
+
+
 ##MLFMMMatrix
 include(joinpath("MLFMMMatrix", "MLFMMMatrix.jl"))
 include(joinpath("MLFMMMatrix", "beastglue.jl"))
@@ -332,6 +339,8 @@ export DipoleInteractionMatrix, MLFMMInteractionMatrix
 # using StaticArrays: StaticArrays, SVector
 # using LinearAlgebra: LinearAlgebra
 # using Exceptions: Exceptions
+
+
 
 # include(joinpath("MLFMMTree", "AbstractMLFMMTree.jl"))
 # include(joinpath("MLFMMTree", "MLFMMTree.jl"))

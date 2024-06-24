@@ -3,7 +3,7 @@ using BEAST, CompScienceMeshes
 using StaticArrays
 using ClusterTrees
 using LinearAlgebra
-using PlotlyJS
+# using PlotlyJS
 using CompScienceMeshes
 
 #### function definitions
