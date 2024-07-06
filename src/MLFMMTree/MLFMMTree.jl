@@ -3,7 +3,10 @@ struct MLFMMTree{N,D,T} <: MLFMMTrees.AbstractMLFMMTree
 end
 
 function MLFMMTree(
-    center::SVector{D,T}, points::Vector{SVector{D,T}}, halfsize::T, minhalfsize::T
+    center::SVector{D,T},
+    points::Vector{SVector{D,T}},
+    halfsize::T,
+    minhalfsize::T,
 ) where {D,T}
     return MLFMMTree(MLFMMTrees.PBMLFMMTree(center, points, halfsize, minhalfsize))
 end
@@ -48,11 +51,11 @@ function level(tree::MLFMMTree, nodeid::Int)
     return MLFMMTrees.level(MLFMMTrees.tree(tree), nodeid)
 end
 
-function center(tree::MLFMMTree, nodeid=ClusterTrees.root(tree)::Int)
+function center(tree::MLFMMTree, nodeid = ClusterTrees.root(tree)::Int)
     return MLFMMTrees.center(MLFMMTrees.tree(tree), nodeid)
 end
 
-function halfsize(tree::MLFMMTree, nodeid=ClusterTrees.root(tree)::Int)
+function halfsize(tree::MLFMMTree, nodeid = ClusterTrees.root(tree)::Int)
     return MLFMMTrees.halfsize(MLFMMTrees.tree(tree), nodeid)
 end
 

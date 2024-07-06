@@ -7,17 +7,18 @@ function rotate(α::AbstractSphericalExpansion, χ::Real, θ::Real, ϕ::Real)
     α_rotated.coefficients = similar(α.coefficients, Jmax)
     fill!(α_rotated.coefficients, 0.0)
 
-    for ℓ in 1:Lmax
+    for ℓ = 1:Lmax
         d = wignerd(ℓ, -θ)
-        for m in (-ℓ):ℓ
+        for m = (-ℓ):ℓ
             expϕ = cis(-m * ϕ)
-            for s in 1:2
+            for s = 1:2
                 jj = sℓm_to_j(s, ℓ, m)
-                for μ in (-ℓ):ℓ
+                for μ = (-ℓ):ℓ
                     j = sℓm_to_j(s, ℓ, μ)
                     if j <= length(α.coefficients)
 
-                        α_rotated.coefficients[jj] += expϕ * d[μ + ℓ + 1, m + ℓ + 1] * cis(-μ * χ) * α.coefficients[j]
+                        α_rotated.coefficients[jj] +=
+                            expϕ * d[μ+ℓ+1, m+ℓ+1] * cis(-μ * χ) * α.coefficients[j]
                     end
                 end
             end
@@ -32,7 +33,7 @@ end
 
 function αtoβ(α::Array{<:Complex,1})
     β = similar(α, length(α))
-    for k in 1:length(α)
+    for k = 1:length(α)
         s, ℓ, m = j_to_sℓm(k)
         β[k] = (-1)^(m) * (α[sℓm_to_j(s, ℓ, -m)])
     end
@@ -41,7 +42,7 @@ end
 
 function βtoα(β::Array{<:Complex,1})
     α = similar(β, length(β))
-    for k in 1:length(β)
+    for k = 1:length(β)
         s, ℓ, m = j_to_sℓm(k)
         α[k] = (-1)^(m) * (β[sℓm_to_j(s, ℓ, -m)])
     end

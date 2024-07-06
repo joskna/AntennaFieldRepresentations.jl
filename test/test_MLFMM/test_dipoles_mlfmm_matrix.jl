@@ -187,15 +187,15 @@ AAᴴ=A*adjoint(A)
 @time begin
 B=Base.materialize(dipolematrix)
 C= Matrix{ComplexF64}(undef, size(A))
-for i in 1:size(A,2)
-    C[:,i] = A[:,i]
+for i in axes(A,2)
+    C[:,i] = -A[:,i]
 end
 end
 
 @time begin
 D= Matrix{ComplexF64}(undef, size(adjoint(A)))
-for i in 1:size(A,1)
-    D[:,i] = adjoint(A)[:,i]
+for i in axes(A,1)
+    D[:,i] = -adjoint(A)[:,i]
 end
 end
 

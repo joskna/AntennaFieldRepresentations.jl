@@ -146,7 +146,7 @@ end
 
 
 @testset "Conversion PlanewaveSpectrum <-> IncidentSpherical" begin
-R=[-10*λ,0.0,0.0]
+R=[-10.0*λ,0.0,0.0]
 autdipsshifted=deepcopy(autdips)
 for dipole in autdipsshifted
     dipole.pos+=R

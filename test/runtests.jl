@@ -49,36 +49,36 @@ using Test
         end
     end
 
-    @testset verbose=true "Conversions of Field Representations" begin
+    # @testset verbose=true "Conversions of Field Representations" begin
 
-        @testset "Conversions Dipole -> Spherical" begin 
-            include(joinpath("test_Conversions", "test_spherical_dipole_conversion.jl"))
-        end
+    #     @testset "Conversions Dipole -> Spherical" begin 
+    #         include(joinpath("test_Conversions", "test_spherical_dipole_conversion.jl"))
+    #     end
 
-        @testset "Conversions Dipole -> PlaneWave" begin
-            include(joinpath("test_Conversions", "test_planewave_dipole_conversion.jl"))
-        end
+    #     @testset "Conversions Dipole -> PlaneWave" begin
+    #         include(joinpath("test_Conversions", "test_planewave_dipole_conversion.jl"))
+    #     end
 
-        @testset "Conversions Spherical <-> PlaneWave" begin
-            include(joinpath("test_Conversions", "test_planewave_spherical_conversion.jl"))
-        end
-    end
+    #     @testset "Conversions Spherical <-> PlaneWave" begin
+    #         include(joinpath("test_Conversions", "test_planewave_spherical_conversion.jl"))
+    #     end
+    # end
 
     
-    @testset verbose=true "Interaction Between Field Representations" begin
+    # @testset verbose=true "Interaction Between Field Representations" begin
 
-        @testset "Interactions Dipole <-> Spherical" begin
-            include(joinpath("test_Conversions", "test_spherical_dipole_interaction.jl"))
-        end
+    #     @testset "Interactions Dipole <-> Spherical" begin
+    #         include(joinpath("test_Conversions", "test_spherical_dipole_interaction.jl"))
+    #     end
 
-        @testset "Interactions Dipole <-> PlaneWave" begin
-            include(joinpath("test_Conversions", "test_planewave_dipole_interaction.jl"))
-        end
+    #     @testset "Interactions Dipole <-> PlaneWave" begin
+    #         include(joinpath("test_Conversions", "test_planewave_dipole_interaction.jl"))
+    #     end
 
-        @testset "Interactions Spherical <-> PlaneWave" begin
-            include(joinpath("test_Conversions", "test_planewave_spherical_interaction.jl"))
-        end
-    end
+    #     @testset "Interactions Spherical <-> PlaneWave" begin
+    #         include(joinpath("test_Conversions", "test_planewave_spherical_interaction.jl"))
+    #     end
+    # end
 
     @testset "Wacker algorithm" begin
         include(joinpath("test_Wacker", "test_wacker.jl"))

@@ -57,7 +57,11 @@ end
 #     mag::C
 # end
 function FitzgeraldDipole(pos, dir, mag)
-    return FitzgeraldDipole(SVector{3}(pos), SVector{3}(convert.(ComplexF64, dir)), convert(ComplexF64, mag))
+    return FitzgeraldDipole(
+        SVector{3}(pos),
+        SVector{3}(convert.(ComplexF64, dir)),
+        convert(ComplexF64, mag),
+    )
 end
 function elementtype(dipole::FitzgeraldDipole{T,C}) where {T,C}
     return C
@@ -80,10 +84,16 @@ function complex(diparray::Array{HertzDipole{T},1}) where {T<:Number}
     return newarray
 end
 
-function converttype(T::Type{FitzgeraldDipole{N}}, dipole::HertzDipole{<:Number}) where {N<:Number}
+function converttype(
+    T::Type{FitzgeraldDipole{N}},
+    dipole::HertzDipole{<:Number},
+) where {N<:Number}
     return FitzgeraldDipole(convert.(N, dipole.pos), dipole.dir, dipole.mag)
 end
-function converttype(T::HertzDipole{N}, dipole::FitzgeraldDipole{<:Number}) where {N<:Number}
+function converttype(
+    T::HertzDipole{N},
+    dipole::FitzgeraldDipole{<:Number},
+) where {N<:Number}
     return HertzDipole(convert.(N, dipole.pos), dipole.dir, dipole.mag)
 end
 
@@ -118,7 +128,7 @@ function Greensdivdiv(R, dipoledir, k₀::Float64)
     kd² = kd^2
     ℓeᵣeᵣ = R * (udot(R, dipoledir)) / (d^2)
 
-    return (g₀(d, k₀) * ((3.0 / kd² + 3.0im / kd - 1) * ℓeᵣeᵣ + (-1.0 / kd² - 1.0im / kd + 1) * dipoledir)[:])
+    return (g₀(d, k₀) * ((3.0/kd²+3.0im/kd-1)*ℓeᵣeᵣ+(-1.0/kd²-1.0im/kd+1)*dipoledir)[:])
 end
 
 
@@ -137,7 +147,9 @@ end
 
 
 function transmission(
-    sourcedipole::HertzDipole{T,C1}, probedipole::HertzDipole{F,C2}, k₀::Float64
+    sourcedipole::HertzDipole{T,C1},
+    probedipole::HertzDipole{F,C2},
+    k₀::Float64,
 ) where {T<:Number,F<:Number,C1<:Complex,C2<:Complex}
     C = promote_type(C1, C2)
     # HertzDipole receives Efield
@@ -147,7 +159,9 @@ function transmission(
     return convert(C, -0.5 * 1im * k₀ * Z₀ * b * sourcedipole.mag * probedipole.mag)
 end
 function transmission(
-    sourcedipole::FitzgeraldDipole{T,C1}, probedipole::FitzgeraldDipole{F,C2}, k₀::Float64
+    sourcedipole::FitzgeraldDipole{T,C1},
+    probedipole::FitzgeraldDipole{F,C2},
+    k₀::Float64,
 ) where {T<:Number,F<:Number,C1<:Complex,C2<:Complex}
     C = promote_type(C1, C2)
     # FitzgeraldDipole receives negative Hfield
@@ -157,7 +171,9 @@ function transmission(
     return convert(C, 0.5 * 1im * k₀ / Z₀ * b * sourcedipole.mag * probedipole.mag) #missing - sign because Fitzgerald dipole receives negative Hfield
 end
 function transmission(
-    sourcedipole::FitzgeraldDipole{T,C1}, probedipole::HertzDipole{F,C2}, k₀::Float64
+    sourcedipole::FitzgeraldDipole{T,C1},
+    probedipole::HertzDipole{F,C2},
+    k₀::Float64,
 ) where {T<:Number,F<:Number,C1<:Complex,C2<:Complex}
     C = promote_type(C1, C2)
     # HertzDipole receives Efield
@@ -167,7 +183,9 @@ function transmission(
     return convert(C, -0.5 * b * sourcedipole.mag * probedipole.mag)
 end
 function transmission(
-    sourcedipole::HertzDipole{T,C1}, probedipole::FitzgeraldDipole{F,C2}, k₀::Float64
+    sourcedipole::HertzDipole{T,C1},
+    probedipole::FitzgeraldDipole{F,C2},
+    k₀::Float64,
 ) where {T<:Number,F<:Number,C1<:Complex,C2<:Complex}
 
     # FitzgeraldDipole receives negative Hfield
@@ -195,7 +213,11 @@ end
 
 
 function dipolefarfield(
-    sourcedipole::HertzDipole{T,C}, eᵣ::SArray{Tuple{3},N,1,3}, eθ::SArray{Tuple{3},N,1,3}, eϕ::SArray{Tuple{3},N,1,3}, k₀::Float64
+    sourcedipole::HertzDipole{T,C},
+    eᵣ::SArray{Tuple{3},N,1,3},
+    eθ::SArray{Tuple{3},N,1,3},
+    eϕ::SArray{Tuple{3},N,1,3},
+    k₀::Float64,
 ) where {T<:Number,N<:Number,C<:Complex}
 
     E_FF = C(0.0, -k₀) * Z₀ / (4π) * sourcedipole.mag * cis(k₀ * udot(eᵣ, sourcedipole.pos))
@@ -229,7 +251,12 @@ function farfield(sourcedipole::AbstractDipole, θ::Number, ϕ::Number, k₀::Fl
     return dipolefarfield(sourcedipole, eᵣ, eθ, eϕ, k₀)
 end
 
-function farfield(sourcedipoles::Array{D,1}, θs::Array{<:Number,1}, ϕs::Array{<:Number,1}, k₀::Float64) where{D<:Union{HertzDipole{T,C}, FitzgeraldDipole{T,C}} where{T,C}}
+function farfield(
+    sourcedipoles::Array{D,1},
+    θs::Array{<:Number,1},
+    ϕs::Array{<:Number,1},
+    k₀::Float64,
+) where {D<:Union{HertzDipole{T,C},FitzgeraldDipole{T,C}} where {T,C}}
     C = elementtype(sourcedipoles)
     # Eθ = zeros(C, length(θs), length(ϕs))
     # Eϕ = zeros(C, length(θs), length(ϕs))
@@ -241,23 +268,23 @@ function farfield(sourcedipoles::Array{D,1}, θs::Array{<:Number,1}, ϕs::Array{
     st = sin.(θs)
     ct = cos.(θs)
     for kϕ in eachindex(ϕs)
-        eϕ = SVector(-sp[kϕ], cp[kϕ], 0.0) 
-        
-            for kθ in eachindex(θs)
-            
+        eϕ = SVector(-sp[kϕ], cp[kϕ], 0.0)
+
+        for kθ in eachindex(θs)
+
 
             eᵣ = SVector(st[kθ] * cp[kϕ], st[kθ] * sp[kϕ], ct[kθ])
             eθ = SVector(ct[kθ] * cp[kϕ], ct[kθ] * sp[kϕ], -st[kθ])
-            reset= true
+            reset = true
             for kd in eachindex(sourcedipoles)
                 Etheta, Ephi = dipolefarfield(sourcedipoles[kd], eᵣ, eθ, eϕ, k₀)
-                if reset 
+                if reset
                     Eθ[kθ, kϕ] = Etheta
                     Eϕ[kθ, kϕ] = Ephi
                 else
                     Eθ[kθ, kϕ] += Etheta
                     Eϕ[kθ, kϕ] += Ephi
-                    reset =false
+                    reset = false
                 end
             end
         end
@@ -271,7 +298,13 @@ function efield(dipole::AbstractDipole, R::AbstractVector{<:Number}, k₀::Numbe
     xdipole = HertzDipole(R, [1; 0; 0], convert(C, (1.0)))
     ydipole = HertzDipole(R, [0; 1; 0], convert(C, (1.0)))
     zdipole = HertzDipole(R, [0; 0; 1], convert(C, (1.0)))
-    return SVector{3}(2 * [transmission(dipole, xdipole, k₀); transmission(dipole, ydipole, k₀); transmission(dipole, zdipole, k₀)])
+    return SVector{3}(
+        2 * [
+            transmission(dipole, xdipole, k₀)
+            transmission(dipole, ydipole, k₀)
+            transmission(dipole, zdipole, k₀)
+        ],
+    )
 end
 function efield(dipoles::Array{<:AbstractDipole}, R::AbstractVector{<:Number}, k₀::Real)
     C = elementtype(dipoles)
@@ -296,7 +329,13 @@ function hfield(dipole::AbstractDipole, R::AbstractVector{<:Number}, k₀::Numbe
     xdipole = FitzgeraldDipole(R, [1; 0; 0], convert(C, (1.0)))
     ydipole = FitzgeraldDipole(R, [0; 1; 0], convert(C, (1.0)))
     zdipole = FitzgeraldDipole(R, [0; 0; 1], convert(C, (1.0)))
-    return SVector{3}(-2 * [transmission(dipole, xdipole, k₀); transmission(dipole, ydipole, k₀); transmission(dipole, zdipole, k₀)])
+    return SVector{3}(
+        -2 * [
+            transmission(dipole, xdipole, k₀)
+            transmission(dipole, ydipole, k₀)
+            transmission(dipole, zdipole, k₀)
+        ],
+    )
 end
 function hfield(dipoles::Array{<:AbstractDipole}, R::AbstractVector{<:Number}, k₀::Real)
     C = elementtype(dipoles)
@@ -332,7 +371,7 @@ function rotate(dipole::AbstractDipole, χ::Number, θ::Number, ϕ::Number)
     newdipole.dir = R * dipole.dir
     return newdipole
 end
-function rotate(dipole::AbstractDipole; χ=0.0, θ=0.0, ϕ=0.0)
+function rotate(dipole::AbstractDipole; χ = 0.0, θ = 0.0, ϕ = 0.0)
     return rotate(dipole, χ, θ, ϕ)
 end
 

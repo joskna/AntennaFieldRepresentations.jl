@@ -32,13 +32,16 @@ function PBMLFMMTree(center::SVector{D,T}, halfsize::T) where {D,T}
 end
 
 function PBMLFMMTree(
-    center::SVector{D,T}, points::AbstractArray{SVector{D,T},1}, halfsize::T, minhalfsize::T
+    center::SVector{D,T},
+    points::AbstractArray{SVector{D,T},1},
+    halfsize::T,
+    minhalfsize::T,
 ) where {D,T}
 
-#ensure that halfsize is 2ᴺ ⋅ minhalfsize
-    halfsize_powerof2=log2(halfsize/minhalfsize)
-    halfsize_powerof2=maximum([0, Integer(ceil(halfsize_powerof2))])
-    halfsize=2^halfsize_powerof2*minhalfsize
+    #ensure that halfsize is 2ᴺ ⋅ minhalfsize
+    halfsize_powerof2 = log2(halfsize / minhalfsize)
+    halfsize_powerof2 = maximum([0, Integer(ceil(halfsize_powerof2))])
+    halfsize = 2^halfsize_powerof2 * minhalfsize
     tree = PBMLFMMTree(center, halfsize)
     addpoints!(tree, points, center, halfsize, minhalfsize)
     calculatenodesatlevel!(tree)
@@ -53,7 +56,7 @@ end
 function calculatenodesatlevel!(tree::PBMLFMMTree)
     for node ∈ ClusterTrees.DepthFirstIterator(tree, MLFMMTrees.root(tree))
         if MLFMMTrees.level(tree, node) > length(nodesatlevel(tree))
-            for i ∈ 1:(MLFMMTrees.level(tree, node) - length(nodesatlevel(tree)) - 1)
+            for i ∈ 1:(MLFMMTrees.level(tree, node)-length(nodesatlevel(tree))-1)
                 push!(tree.nodesatlevel, Int[])
             end
             push!(tree.nodesatlevel, [node])
@@ -97,11 +100,10 @@ function ClusterTrees.route!(tree::PBMLFMMTree, state, destination)
 
     nodeid, center, size, sfc_state, level = state
     size <= smallest_box_size && return state
-    target_sector, target_center, target_size = ClusterTrees.Octrees.sector_center_size(
-        point, center, size
-    )
-    target_pos = ClusterTrees.Octrees.hilbert_positions[sfc_state][target_sector + 1] + 1
-    target_sfc_state = ClusterTrees.Octrees.hilbert_states[sfc_state][target_sector + 1] + 1
+    target_sector, target_center, target_size =
+        ClusterTrees.Octrees.sector_center_size(point, center, size)
+    target_pos = ClusterTrees.Octrees.hilbert_positions[sfc_state][target_sector+1] + 1
+    target_sfc_state = ClusterTrees.Octrees.hilbert_states[sfc_state][target_sector+1] + 1
     target_level = level + 1
 
     chds = ClusterTrees.children(tree, nodeid)
@@ -109,7 +111,7 @@ function ClusterTrees.route!(tree::PBMLFMMTree, state, destination)
     while !ClusterTrees.done(chds, pos)
         child, newpos = ClusterTrees.next(chds, pos)
         child_sector = ClusterTrees.data(tree, child).sector
-        child_pos = ClusterTrees.Octrees.hilbert_positions[sfc_state][child_sector + 1] + 1
+        child_pos = ClusterTrees.Octrees.hilbert_positions[sfc_state][child_sector+1] + 1
         child_level = ClusterTrees.data(tree, child).level
         target_pos < child_pos && break
         if child_sector == target_sector
@@ -175,15 +177,21 @@ function level(tree::PBMLFMMTree, nodeid::Int)
 end
 
 function isnear(
-    center_a::SVector{D,T}, center_b::SVector{D,T}, halfsize::T, bufferboxes::Int
+    center_a::SVector{D,T},
+    center_b::SVector{D,T},
+    halfsize::T,
+    bufferboxes::Int,
 ) where {D,T}
-    Rvec=(center_a - center_b) ./ halfsize
-    distancesquared = LinearAlgebra.dot(Rvec,Rvec)
-    return distancesquared <= (bufferboxes + 1) * 12 *(1+10*eps(T))
+    Rvec = (center_a - center_b) ./ halfsize
+    distancesquared = LinearAlgebra.dot(Rvec, Rvec)
+    return distancesquared <= (bufferboxes + 1) * 12 * (1 + 10 * eps(T))
 end
 
 function isfar(
-    center_a::SVector{D,T}, center_b::SVector{D,T}, halfsize::T, bufferboxes::Int
+    center_a::SVector{D,T},
+    center_b::SVector{D,T},
+    halfsize::T,
+    bufferboxes::Int,
 ) where {D,T}
     return !isnear(center_a, center_b, halfsize, bufferboxes)
 end
@@ -231,15 +239,27 @@ function transferMLFMM(tree::PBMLFMMTree, node::Int, testnode::Int, bufferboxes:
 end
 
 #TODO: better name for this function
-function transferMLFMM(sourcetree::PBMLFMMTree,  receivetree::PBMLFMMTree, sourcenode::Int, receivenode::Int, bufferboxes::Int)
-        
-    if isnear(center(sourcetree, sourcenode), center(receivetree, receivenode), halfsize(sourcetree, sourcenode), bufferboxes)
+function transferMLFMM(
+    sourcetree::PBMLFMMTree,
+    receivetree::PBMLFMMTree,
+    sourcenode::Int,
+    receivenode::Int,
+    bufferboxes::Int,
+)
+
+    if isnear(
+        center(sourcetree, sourcenode),
+        center(receivetree, receivenode),
+        halfsize(sourcetree, sourcenode),
+        bufferboxes,
+    )
         if isleaf(receivetree, receivenode)
             ErrorException("Probes too close to source tree! Cannot plan transfers.")
         else
             return false
         end
-    elseif MLFMMTrees.level(sourcetree, sourcenode) > 1 && MLFMMTrees.level(receivetree, receivenode) > 1
+    elseif MLFMMTrees.level(sourcetree, sourcenode) > 1 &&
+           MLFMMTrees.level(receivetree, receivenode) > 1
         sourcenodeparent = ClusterTrees.parent(sourcetree, sourcenode)
         receivenodeparent = ClusterTrees.parent(receivetree, receivenode)
 
@@ -249,14 +269,17 @@ function transferMLFMM(sourcetree::PBMLFMMTree,  receivetree::PBMLFMMTree, sourc
             halfsize(sourcetree, sourcenodeparent),
             bufferboxes,
         ) && return false
-    end 
+    end
     return true
 end
 
 function nearNodes(tree::PBMLFMMTree, node::Int, bufferboxes::Int)
     return Iterators.filter(
         x -> (isnear(
-            center(tree, node), center(tree, x), halfsize(tree, node), bufferboxes
+            center(tree, node),
+            center(tree, x),
+            halfsize(tree, node),
+            bufferboxes,
         )),
         MLFMMTrees.samelevelnodes(tree, node),
     )
@@ -266,7 +289,7 @@ function farNodes(tree::PBMLFMMTree, node::Int, bufferboxes::Int)
     return Iterators.filter(
         x ->
             (isfar(center(tree, node), center(tree, x), halfsize(tree, node), bufferboxes)),
-            MLFMMTrees.samelevelnodes(tree, node),
+        MLFMMTrees.samelevelnodes(tree, node),
     )
 end
 
@@ -304,7 +327,7 @@ function points(tree::PBMLFMMTree, node::Int)
     return values
 end
 
-function leafs(tree::PBMLFMMTree, node::Int=ClusterTrees.root(tree))
+function leafs(tree::PBMLFMMTree, node::Int = ClusterTrees.root(tree))
     return collect(Iterators.flatten(ClusterTrees.leaves(tree, node)))
 end
 
@@ -336,7 +359,7 @@ Base.IteratorSize(::ReverseDepthFirstIterator) = Base.SizeUnknown()
 function Base.iterate(itr::ReverseDepthFirstIterator)
     # chitr = ClusterTrees.children(itr.tree, itr.node)
     # stack::Vector{Int} = collect(chitr)
-    
+
     stack::Vector{Int} = collect(ClusterTrees.children(itr.tree, itr.node))
 
     return itr.node, stack

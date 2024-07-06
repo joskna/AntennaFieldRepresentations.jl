@@ -31,11 +31,3 @@
 
 θvec=collect(0:36:180)/180*π
 ϕvec=collect(0:36:359)/180*π
-
-#calculate far field  of Hertzian dipole at origin
-exc=-√π*√6/(sqrt(Z₀)*k0)
-Eθ, Eϕ= farfield([HertzDipole([0.0, 0.0, 0.0], [0.0, 0.0, 1.0], complex(exc)),
-                  FitzgeraldDipole([0.0, 0.0, 0.0], [0.0, 1.0, 0.0], complex(exc))],
-                 θvec,
-                 ϕvec,
-                 k0)

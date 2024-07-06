@@ -17,7 +17,14 @@ using FFTW
 # using Memoization
 
 export transmission, rotate, translate, shiftrepresentation
-export efield, hfield, ehfield, farfield, converttype, convertrepresentation, elementtype, reciprocaltype
+export efield,
+    hfield,
+    ehfield,
+    farfield,
+    converttype,
+    convertrepresentation,
+    elementtype,
+    reciprocaltype
 export udot, sqrtdot, cdist, rot_mat_zyz
 export c₀, ε₀, μ₀, Z₀
 export AntennaFieldRepresentation
@@ -63,7 +70,7 @@ function elementtype end
 
 Rotate a field representation around the Euler angles `χ`, `θ`, `ϕ`.
 """
-function rotate(fieldrepresentation; χ=0.0, θ=0.0, ϕ=0.0)
+function rotate(fieldrepresentation; χ = 0.0, θ = 0.0, ϕ = 0.0)
     return rotate(fieldrepresentation, χ, θ, ϕ)
 end
 
@@ -98,7 +105,11 @@ Return the E-field vector (in cartesian coordinates) of the field representation
 function efield(fieldrepresentation, Rvec::AbstractVector{<:Number}, k₀::Number)
     return efield(fieldrepresentation, [Rvec], k₀)[1]
 end
-function efield(fields::Array{<:AntennaFieldRepresentation}, R::AbstractVector{<:Number}, k₀::Real)
+function efield(
+    fields::Array{<:AntennaFieldRepresentation},
+    R::AbstractVector{<:Number},
+    k₀::Real,
+)
     return sum(efield(field, R, k₀) for field in fields)
 end
 function efield(fieldrepresentation, Rvecs::Array{<:AbstractVector{<:Number}}, k₀::Number)
@@ -115,7 +126,11 @@ Return the H-field vector (in cartesian coordinates) of the field representation
 function hfield(fieldrepresentation, Rvec::AbstractVector{<:Number}, k₀::Number)
     return hfield(fieldrepresentation, [Rvec], k₀)[1]
 end
-function hfield(fields::Array{<:AntennaFieldRepresentation}, R::AbstractVector{<:Number}, k₀::Real)
+function hfield(
+    fields::Array{<:AntennaFieldRepresentation},
+    R::AbstractVector{<:Number},
+    k₀::Real,
+)
     return sum(hfield(field, R, k₀) for field in fields)
 end
 function hfield(fieldrepresentation, Rvecs::Array{<:AbstractVector{<:Number}}, k₀::Number)
@@ -131,7 +146,11 @@ Return the E-field and H-field vector (in cartesian coordinates) of the field re
 function ehfield(fieldrepresentation, Rvec::AbstractVector{<:Number}, k₀::Number)
     return ehfield(fieldrepresentation, [Rvec], k₀)[1]
 end
-function ehfield(fields::Array{<:AntennaFieldRepresentation}, R::AbstractVector{<:Number}, k₀::Real)
+function ehfield(
+    fields::Array{<:AntennaFieldRepresentation},
+    R::AbstractVector{<:Number},
+    k₀::Real,
+)
     return sum.(ehfield(field, R, k₀) for field in fields)
 end
 # function ehfield(fieldrepresentation, Rvecs::Array{<:AbstractVector{<:Number}}, k₀::Number)
@@ -147,17 +166,27 @@ Return Eθ,Eϕ-far-field tuple for  of radiating field representation into direc
 #     Eθ, Eϕ = farfield(fieldrepresentation, [θ], [ϕ], k₀)
 #     return Eθ[1, 1], Eϕ[1, 1]
 # end
-function farfield(fieldrepresentation, θvec::Vector{<:Number}, ϕvec::Vector{<:Number}, k₀::Number)
+function farfield(
+    fieldrepresentation,
+    θvec::Vector{<:Number},
+    ϕvec::Vector{<:Number},
+    k₀::Number,
+)
     Etuples = [farfield(fieldrepresentation, θ, ϕ, k₀) for θ in θvec, ϕ in ϕvec]
     return [e[1] for e in Etuples], [e[2] for e in Etuples]
 end
 function farfield(fieldrepresentation, Jθ::Integer, Jϕ::Integer, k₀::Number)
-    ϕvec = collect(range(0; stop=2π, length=Jϕ + 1))[1:(end - 1)]
-    θvec = collect(range(0; stop=2π, length=Jθ + 1))[1:Integer(floor((Jθ + 1) / 2))]
+    ϕvec = collect(range(0; stop = 2π, length = Jϕ + 1))[1:(end-1)]
+    θvec = collect(range(0; stop = 2π, length = Jθ + 1))[1:Integer(floor((Jθ + 1) / 2))]
     return farfield(fieldrepresentation, θvec, ϕvec, k₀)
 end
-function farfield(fieldrepresentation, θϕtuples::Vector{Tuple{<:Number,<:Number}}, k₀::Number)
-    Etuples = [farfield(fieldrepresentation, θϕtuple[1], θϕtuple[2], k₀) for θϕtuple in θϕtuples]
+function farfield(
+    fieldrepresentation,
+    θϕtuples::Vector{Tuple{<:Number,<:Number}},
+    k₀::Number,
+)
+    Etuples =
+        [farfield(fieldrepresentation, θϕtuple[1], θϕtuple[2], k₀) for θϕtuple in θϕtuples]
     return [e[1] for e in Etuples], [e[2] for e in Etuples]
 end
 
@@ -199,9 +228,9 @@ function udot(u::Array{<:Real,1}, v::Array{<:Complex,1})
 end
 function udot(u, v)
     # return sum(u .* v)
-    sumval=zero(promote_type(eltype(u), eltype(v)))
+    sumval = zero(promote_type(eltype(u), eltype(v)))
     for k in eachindex(u)
-        sumval += u[k] .* v[k] 
+        sumval += u[k] .* v[k]
     end
     return sumval
 end
@@ -253,8 +282,8 @@ function rot_mat_zyz(χ::Number, θ::Number, ϕ::Number)
 
 
     return [
-        c1 * c2 * c3-s1 * s3 -s1 * c2 * c3-c1 * s3 s2*c3
-        c1 * c2 * s3+s1 * c3 -s1 * c2 * s3+c1 * c3 s2*s3
+        c1*c2*c3-s1*s3 -s1*c2*c3-c1*s3 s2*c3
+        c1*c2*s3+s1*c3 -s1*c2*s3+c1*c3 s2*s3
         -c1*s2 s1*s2 c2
     ]
 end
@@ -271,10 +300,14 @@ function rot_mat_zyx(yaw::Number, pitch::Number, roll::Number)
     R = zeros(Float64, 3, 3)
     R[1, :] = [cos_pitch * cos_yaw, cos_pitch * sin_yaw, -sin_pitch]
     R[2, :] = [
-        sin_roll * sin_pitch * cos_yaw - cos_roll * sin_yaw, sin_roll * sin_pitch * sin_yaw + cos_roll * cos_yaw, sin_roll * cos_pitch
+        sin_roll * sin_pitch * cos_yaw - cos_roll * sin_yaw,
+        sin_roll * sin_pitch * sin_yaw + cos_roll * cos_yaw,
+        sin_roll * cos_pitch,
     ]
     R[3, :] = [
-        cos_roll * sin_pitch * cos_yaw + sin_roll * sin_yaw, cos_roll * sin_pitch * sin_yaw - sin_roll * cos_yaw, cos_roll * cos_pitch
+        cos_roll * sin_pitch * cos_yaw + sin_roll * sin_yaw,
+        cos_roll * sin_pitch * sin_yaw - sin_roll * cos_yaw,
+        cos_roll * cos_pitch,
     ]
 
     return R
@@ -287,7 +320,8 @@ include(joinpath("SphericalVectorModeFields", "normalizedlegendre.jl"))
 include(joinpath("SphericalVectorModeFields", "modefunctions.jl"))
 include(joinpath("SphericalVectorModeFields", "radialfunctions.jl"))
 include(joinpath("SphericalVectorModeFields", "modeoperations.jl"))
-export RadiatingSphericalExpansion, AbsorbedSphericalExpansion, IncidentSphericalExpansion, AbstractSphericalExpansion
+export RadiatingSphericalExpansion,
+    AbsorbedSphericalExpansion, IncidentSphericalExpansion, AbstractSphericalExpansion
 export sℓm_to_j, j_to_sℓm, αtoβ, βtoα
 
 ## DipoleInteractions
@@ -303,7 +337,8 @@ export samplingrule, resample, revertdirection
 
 ## SurfaceCurrentDensities
 include(joinpath("SurfaceCurrentDensities", "currentrepresentations.jl"))
-export ElectricSurfaceCurrentDensity, MagneticSurfaceCurrentDensity, ElmagSurfaceCurrentDensity, AbstractSurfaceCurrentDensity
+export ElectricSurfaceCurrentDensity,
+    MagneticSurfaceCurrentDensity, ElmagSurfaceCurrentDensity, AbstractSurfaceCurrentDensity
 
 ## FastSphericalVectorModeTransformations
 include(joinpath("FastSphericalVectorModeTransformations", "wacker.jl"))

@@ -21,8 +21,8 @@ mutable struct FarfieldPattern{C<:Complex} <: PlaneWaveRepresentation
 end
 import Base.show
 function Base.show(io::IO, pattern::FarfieldPattern{C}) where {C}
-    L=pattern.L
-    print(io, "FarfieldPattern{$C}; L= $L") 
+    L = pattern.L
+    print(io, "FarfieldPattern{$C}; L= $L")
 end
 
 
@@ -46,8 +46,8 @@ mutable struct PlaneWaveSpectrum{C<:Complex} <: PlaneWaveRepresentation
 end
 import Base.show
 function Base.show(io::IO, pattern::PlaneWaveSpectrum{C}) where {C}
-    L=pattern.L
-    print(io, "PlaneWaveSpectrum{$C}; L= $L")  
+    L = pattern.L
+    print(io, "PlaneWaveSpectrum{$C}; L= $L")
 end
 
 """
@@ -84,10 +84,16 @@ mutable struct PlaneWave{C<:Number}
 end
 
 
-function converttype(T::Type{PlaneWaveSpectrum{C}}, ff::PlaneWaveRepresentation) where {C<:Complex}
+function converttype(
+    T::Type{PlaneWaveSpectrum{C}},
+    ff::PlaneWaveRepresentation,
+) where {C<:Complex}
     return PlaneWaveSpectrum(ff.L, convert.(C, ff.Eθ), convert.(C, ff.Eϕ))
 end
-function converttype(T::Type{FarfieldPattern{C}}, pws::PlaneWaveRepresentation) where {C<:Complex}
+function converttype(
+    T::Type{FarfieldPattern{C}},
+    pws::PlaneWaveRepresentation,
+) where {C<:Complex}
     return FarfieldPattern(pws.L, convert.(C, pws.Eθ), convert.(C, pws.Eϕ))
 end
 
@@ -129,19 +135,19 @@ end
 
 Return `PlaneWaveRepresentation` with reverted propagation directions. **F**(**k**) -> **F**(-**k**)
 """
-function revertdirection(pattern::P) where{P<:PlaneWaveRepresentation}
+function revertdirection(pattern::P) where {P<:PlaneWaveRepresentation}
     patternout = deepcopy(pattern)
-    for k in 1:(pattern.L + 1)  # loop over half of ϕ
+    for k = 1:(pattern.L+1)  # loop over half of ϕ
 
         # first half of ϕ values
-        for kk in 1:(pattern.L + 1) # loop over θ
-            patternout.Eθ[kk, k] = pattern.Eθ[end - kk + 1, k + pattern.L + 1]
-            patternout.Eϕ[kk, k] = -pattern.Eϕ[end - kk + 1, k + pattern.L + 1]
+        for kk = 1:(pattern.L+1) # loop over θ
+            patternout.Eθ[kk, k] = pattern.Eθ[end-kk+1, k+pattern.L+1]
+            patternout.Eϕ[kk, k] = -pattern.Eϕ[end-kk+1, k+pattern.L+1]
         end
         # second half of ϕ values
-        for kk in 1:(patternout.L + 1) # loop over θ
-            patternout.Eθ[kk, k + pattern.L + 1] = pattern.Eθ[end - kk + 1, k]
-            patternout.Eϕ[kk, k + pattern.L + 1] = -pattern.Eϕ[end - kk + 1, k]
+        for kk = 1:(patternout.L+1) # loop over θ
+            patternout.Eθ[kk, k+pattern.L+1] = pattern.Eθ[end-kk+1, k]
+            patternout.Eϕ[kk, k+pattern.L+1] = -pattern.Eϕ[end-kk+1, k]
         end
     end
     return patternout
@@ -157,7 +163,7 @@ function samplingrule(L::Integer)
     x::Vector{Float64}, w::Vector{Float64} = gausslegendre(L + 1)
     θ = acos.(-x)
     nphi = 2 * L + 2
-    ϕ = 2 * pi / (nphi) * collect(0:(nphi - 1))
+    ϕ = 2 * pi / (nphi) * collect(0:(nphi-1))
 
     return w, θ, ϕ
 end
@@ -187,7 +193,12 @@ function transmission(pws::PlaneWaveSpectrum, ff::FarfieldPattern, ::Number)
     return transmission(pws, ff)
 end
 
-function _ewaldintegral(ff::FarfieldPattern, pws::PlaneWaveSpectrum, w::Vector{R}, L::Integer) where{R<:Real}
+function _ewaldintegral(
+    ff::FarfieldPattern,
+    pws::PlaneWaveSpectrum,
+    w::Vector{R},
+    L::Integer,
+) where {R<:Real}
     integrand = (pws.Eθ .* ff.Eθ) + (pws.Eϕ .* ff.Eϕ)
     return sum(transpose(w) * integrand) * π / (2 * L + 2) / Z₀
 end
@@ -216,13 +227,13 @@ In-place calculation of phaseshiftmatrix which needs to be element-wise multipli
 Assumes that size(storagematrix) mathces the matrices in PlaneWaveRepresentation.
 """
 function _phaseshiftmatrix!(storagematrix::AbstractMatrix, R::AbstractVector, k₀::Number)
-    a,b= size(storagematrix)
-    @assert b==2*a
-    L=a-1
+    a, b = size(storagematrix)
+    @assert b == 2 * a
+    L = a - 1
     _, θvec, ϕvec = samplingrule(L)
     @assert length(θvec) == a
     @assert length(ϕvec) == b
-    Rvec=SVector{3}(R)
+    Rvec = SVector{3}(R)
     sp = sin.(ϕvec)
     cp = cos.(ϕvec)
     st = sin.(θvec)
@@ -239,7 +250,14 @@ function _phaseshiftmatrix!(storagematrix::AbstractMatrix, R::AbstractVector, k�
 end
 
 
-function rotate(pattern::PlaneWaveRepresentation, χ::Number, θ::Number, ϕ::Number, orderθ::Integer, orderϕ::Integer)
+function rotate(
+    pattern::PlaneWaveRepresentation,
+    χ::Number,
+    θ::Number,
+    ϕ::Number,
+    orderθ::Integer,
+    orderϕ::Integer,
+)
     R = rot_mat_zyz(-ϕ, -θ, -χ) # rotate sampling points in reverse direction to rotate sampled pattern
     newpattern = deepcopy(pattern)
     _, θvec, ϕvec = samplingrule(pattern.L)
@@ -271,7 +289,12 @@ function rotate(pattern::PlaneWaveRepresentation, χ::Number, θ::Number, ϕ::Nu
             eθ_i = [cospr * costr, sinpr * costr, -sintr]
             eϕ_i = [-sinpr, cospr, 0]
 
-            Eθ, Eϕ = interpolate_single_planewave(θ_rot, ϕ_rot, pattern, LocalInterpolation{pattern.L, pattern.L, orderθ,orderϕ, Float64}())
+            Eθ, Eϕ = interpolate_single_planewave(
+                θ_rot,
+                ϕ_rot,
+                pattern,
+                LocalInterpolation{pattern.L,pattern.L,orderθ,orderϕ,Float64}(),
+            )
 
             newpattern.Eθ[kθ, kϕ] = (eθ_rot ⋅ eϕ_i) * Eϕ + (eθ_rot ⋅ eθ_i) * Eθ
             newpattern.Eϕ[kθ, kϕ] = (eϕ_rot ⋅ eϕ_i) * Eϕ + (eϕ_rot ⋅ eθ_i) * Eθ
@@ -282,7 +305,14 @@ end
 function rotate(pattern::PlaneWaveRepresentation, χ::Number, θ::Number, ϕ::Number)
     return rotate(pattern, χ, θ, ϕ, 12, 12)
 end
-function rotate(pattern::PlaneWaveRepresentation; χ=0.0, θ=0.0, ϕ=0.0, orderθ=12, orderϕ=12)
+function rotate(
+    pattern::PlaneWaveRepresentation;
+    χ = 0.0,
+    θ = 0.0,
+    ϕ = 0.0,
+    orderθ = 12,
+    orderϕ = 12,
+)
     return rotate(pattern, χ, θ, ϕ, orderθ, orderϕ)
 end
 
@@ -298,7 +328,11 @@ function ehfield(p::PlaneWave, R::Array{<:Number})
 end
 
 
-function ehfield(pws::PlaneWaveSpectrum{C}, R::A, k₀::Number) where {A<:AbstractVector{<:Number},C<:Complex}
+function ehfield(
+    pws::PlaneWaveSpectrum{C},
+    R::A,
+    k₀::Number,
+) where {A<:AbstractVector{<:Number},C<:Complex}
     T = real(C)
     wθ, θvec, ϕvec = samplingrule(pws.L)
     wϕ = C(0.0, -k₀ / ((4 * pws.L + 4)))
@@ -327,7 +361,11 @@ function ehfield(pws::PlaneWaveSpectrum{C}, R::A, k₀::Number) where {A<:Abstra
 end
 
 
-function efield(pws::PlaneWaveSpectrum{C}, R::A, k₀::Number) where {A<:AbstractVector{<:Number},C<:Complex}
+function efield(
+    pws::PlaneWaveSpectrum{C},
+    R::A,
+    k₀::Number,
+) where {A<:AbstractVector{<:Number},C<:Complex}
     T = real(C)
     wθ, θvec, ϕvec = samplingrule(pws.L)
     wϕ = C(0.0, -k₀ / ((4 * pws.L + 4)))
@@ -354,7 +392,11 @@ function efield(pws::PlaneWaveSpectrum{C}, R::A, k₀::Number) where {A<:Abstrac
 end
 
 
-function hfield(pws::PlaneWaveSpectrum{C}, R::A, k₀::Number) where {A<:AbstractVector{<:Number},C<:Complex}
+function hfield(
+    pws::PlaneWaveSpectrum{C},
+    R::A,
+    k₀::Number,
+) where {A<:AbstractVector{<:Number},C<:Complex}
     T = real(C)
     wθ, θvec, ϕvec = samplingrule(pws.L)
     wϕ = C(0.0, -k₀ / ((4 * pws.L + 4)))
@@ -407,8 +449,8 @@ function collectPl(Lmax::I, x::T) where {I<:Integer,T<:Number}
     end
 
     # use two-term recurrence relation for Pℓ in direction of increasing ℓ
-    for ℓ in 2:Lmax
-        Pℓ[ℓ + 1] = ((2 * ℓ - 1) * x * Pℓ[ℓ] - (ℓ - 1) * Pℓ[ℓ - 1]) / ℓ
+    for ℓ = 2:Lmax
+        Pℓ[ℓ+1] = ((2 * ℓ - 1) * x * Pℓ[ℓ] - (ℓ - 1) * Pℓ[ℓ-1]) / ℓ
     end
 
     return Pℓ
@@ -418,7 +460,11 @@ end
 
 Return Legendre polynomials up to Lmax with preallocated storage
 """
-function _collectPl!(Pℓstorage::AbstractVector{T}, Lmax::I, x::T) where {I<:Integer,T<:Number}
+function _collectPl!(
+    Pℓstorage::AbstractVector{T},
+    Lmax::I,
+    x::T,
+) where {I<:Integer,T<:Number}
 
     # Pℓ = zeros(T, Lmax + 1)
     Pℓstorage[1] = one(T)
@@ -427,9 +473,13 @@ function _collectPl!(Pℓstorage::AbstractVector{T}, Lmax::I, x::T) where {I<:In
     end
 
     # use two-term recurrence relation for Pℓ in direction of increasing ℓ
-    for ℓ in 2:Lmax
-        floatℓ=T(ℓ)
-        Pℓstorage[ℓ + 1] = ((T(2) .* floatℓ .- T(1)) .* x .* Pℓstorage[ℓ] - (floatℓ .- T(1)) .* Pℓstorage[ℓ - 1]) ./ floatℓ
+    for ℓ = 2:Lmax
+        floatℓ = T(ℓ)
+        Pℓstorage[ℓ+1] =
+            (
+                (T(2) .* floatℓ .- T(1)) .* x .* Pℓstorage[ℓ] -
+                (floatℓ .- T(1)) .* Pℓstorage[ℓ-1]
+            ) ./ floatℓ
     end
 
     return Pℓstorage
@@ -442,8 +492,8 @@ function collectsphericalHankel2(Lmax::Integer, kA::N) where {N<:Number}
 
     if Lmax > 0
         zℓ[2] = (1im - kA) * expfac / (kA^2)
-        for ℓ in 2:Lmax
-            zℓ[ℓ + 1] = (2 * ℓ - 1) / kA * zℓ[ℓ] - zℓ[ℓ - 1]
+        for ℓ = 2:Lmax
+            zℓ[ℓ+1] = (2 * ℓ - 1) / kA * zℓ[ℓ] - zℓ[ℓ-1]
         end
     end
 
@@ -451,8 +501,12 @@ function collectsphericalHankel2(Lmax::Integer, kA::N) where {N<:Number}
 end
 
 #TODO: Better name: _add_or_overwrite!
-function _add!(storage::PlaneWaveRepresentation, summand::PlaneWaveRepresentation; reset::Bool=false)
-    if reset 
+function _add!(
+    storage::PlaneWaveRepresentation,
+    summand::PlaneWaveRepresentation;
+    reset::Bool = false,
+)
+    if reset
         storage.Eθ .= summand.Eθ
         storage.Eϕ .= summand.Eϕ
     else
@@ -461,8 +515,8 @@ function _add!(storage::PlaneWaveRepresentation, summand::PlaneWaveRepresentatio
     end
     return storage
 end
-function _add!(storage::AbstractMatrix, summand::AbstractMatrix; reset::Bool=false)
-    if reset 
+function _add!(storage::AbstractMatrix, summand::AbstractMatrix; reset::Bool = false)
+    if reset
         storage .= summand
     else
         storage .+= summand
@@ -471,16 +525,26 @@ function _add!(storage::AbstractMatrix, summand::AbstractMatrix; reset::Bool=fal
 end
 
 #TODO: Better name: _muladd_or_muloverwrite!
-function _muladd!(storage::AbstractMatrix, summand::AbstractMatrix, factor::AbstractMatrix; reset::Bool=false)
-    if reset 
+function _muladd!(
+    storage::AbstractMatrix,
+    summand::AbstractMatrix,
+    factor::AbstractMatrix;
+    reset::Bool = false,
+)
+    if reset
         storage .= factor .* summand
     else
         storage .= storage .+ (factor .* summand)
     end
     return storage
 end
-function _muladd!(storage::PlaneWaveRepresentation, summand::PlaneWaveRepresentation, factor::Number; reset::Bool=false)
-    if reset 
+function _muladd!(
+    storage::PlaneWaveRepresentation,
+    summand::PlaneWaveRepresentation,
+    factor::Number;
+    reset::Bool = false,
+)
+    if reset
         storage.Eθ .= factor .* summand.Eθ
         storage.Eϕ .= factor .* summand.Eϕ
     else
@@ -490,8 +554,12 @@ function _muladd!(storage::PlaneWaveRepresentation, summand::PlaneWaveRepresenta
     return storage
 end
 
-function _mul!(storage::PlaneWaveRepresentation, factor::PlaneWaveRepresentation; reset::Bool=false)
-    if reset 
+function _mul!(
+    storage::PlaneWaveRepresentation,
+    factor::PlaneWaveRepresentation;
+    reset::Bool = false,
+)
+    if reset
         storage.Eθ .= factor.Eθ
         storage.Eϕ .= factor.Eϕ
     else
@@ -501,8 +569,8 @@ function _mul!(storage::PlaneWaveRepresentation, factor::PlaneWaveRepresentation
     return storage
 end
 
-function _mul!(storage::PlaneWaveRepresentation, factor::Number; reset::Bool=false)
-    if reset 
+function _mul!(storage::PlaneWaveRepresentation, factor::Number; reset::Bool = false)
+    if reset
         fill!(storage.Eθ, factor)
         fill!(storage.Eθ, factor)
     else
@@ -511,7 +579,7 @@ function _mul!(storage::PlaneWaveRepresentation, factor::Number; reset::Bool=fal
     end
     return storage
 end
-function _mul!(factor::Number, storage::PlaneWaveRepresentation; reset::Bool=false)  
-    _mul!(storage, factor, reset=reset)  
+function _mul!(factor::Number, storage::PlaneWaveRepresentation; reset::Bool = false)
+    _mul!(storage, factor, reset = reset)
     return storage
 end

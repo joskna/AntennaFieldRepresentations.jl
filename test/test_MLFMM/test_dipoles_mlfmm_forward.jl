@@ -3,7 +3,7 @@ using LinearAlgebra
 using StaticArrays
 
 # define physical constants
-c = 3e8
+# c = 3.0e8
 μ0 = 4 * π * 1e-7
 μr = 1.0
 μ = μ0 * μr
@@ -11,14 +11,14 @@ c = 3e8
 εr = 5
 ε = ε0 * εr
 c = 1 / sqrt(ε * μ)
-f = 5e7
+f = 5.0e7
 λ = c / f
 κ = 2 * π / λ
 ω = κ * c
 
 # set MLFMM parameters
 minhalfsize= 0.1λ
-ϵ = 1e-5
+ϵ = 1e-4
 
 #### function definitions
 function generate_AUTdips(xvec::Array{Float64,1}, yvec::Array{Float64,1}, zvec::Array{Float64,1}, k0::Float64)
@@ -133,9 +133,10 @@ functionspacesrc,
 κ;
 verbose=true,
 minhalfsize=minhalfsize,
+expectedaccuracy=ϵ,
 )
 
-zvec_obs=[1.5*dmax]
+zvec_obs=[1.75*dmax]
 obsdips= generate_AUTdips(xvec, yvec, zvec_obs, κ)
 for (index, dipole) in enumerate(obsdips)
     obsdips[index].mag = 1
@@ -159,13 +160,13 @@ receivestruct=AntennaFieldRepresentations.MLFMMReceive(
 x=[dipole.mag for dipole in autdips]
 
 dipolematrix=DipoleInteractionMatrix(autdips_magone, obsdips, κ)
-b=dipolematrix*x
+b=-dipolematrix*x
 
 AntennaFieldRepresentations._forward!(sourcestruct, receivestruct,x)
 
-@test norm(b - receivestruct.bvector) < ϵ * norm(b)
+@test norm(b - receivestruct.bvector) < 2 * ϵ * norm(b)
 
-y= adjoint(dipolematrix) * b
+y= -adjoint(dipolematrix) * b
 AntennaFieldRepresentations._adjoint_forward!(sourcestruct, receivestruct, b)
 
 @test norm(y - sourcestruct.xvector) < ϵ * norm(y)

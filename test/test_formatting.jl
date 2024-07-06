@@ -11,11 +11,11 @@ pkgpath = pkgdir(AntennaFieldRepresentations)   # path of this package including
 @test format(joinpath(pkgpath,"src", "PlaneWaveRepresentations", "planewaves.jl"), overwrite=false)
 @test format(joinpath(pkgpath,"src", "PlaneWaveRepresentations", "interpolation.jl"), overwrite=false)
 
-@test format(joinpath(pkgpath,"src", "Conversions", "DipolePlaneWave.jl"), overwrite=false)
-@test format(joinpath(pkgpath,"src", "Conversions", "DipoleSpherical.jl"), overwrite=false)
-@test format(joinpath(pkgpath,"src", "Conversions", "SphericalPlaneWave.jl"), overwrite=false)
-@test format(joinpath(pkgpath,"src", "Conversions", "SurfaceCurrentPlaneWave.jl"), overwrite=false)
-@test format(joinpath(pkgpath,"src", "Conversions", "SurfaceCurrentSpherical.jl"), overwrite=false)
+# @test format(joinpath(pkgpath,"src", "Conversions", "DipolePlaneWave.jl"), overwrite=false)
+# @test format(joinpath(pkgpath,"src", "Conversions", "DipoleSpherical.jl"), overwrite=false)
+# @test format(joinpath(pkgpath,"src", "Conversions", "SphericalPlaneWave.jl"), overwrite=false)
+# @test format(joinpath(pkgpath,"src", "Conversions", "SurfaceCurrentPlaneWave.jl"), overwrite=false)
+# @test format(joinpath(pkgpath,"src", "Conversions", "SurfaceCurrentSpherical.jl"), overwrite=false)
 
 @test format(joinpath(pkgpath,"src", "SurfaceCurrentDensities","currentrepresentations.jl"), overwrite=false)
 

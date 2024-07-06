@@ -48,7 +48,7 @@ function points(tree::AbstractMLFMMTree, node::Int)
     return error("Not implemented")
 end
 
-function level(tree::AbstractMLFMMTree, nodeid=ClusterTrees.root(tree)::Int)
+function level(tree::AbstractMLFMMTree, nodeid = ClusterTrees.root(tree)::Int)
     return error("Not implemented")
 end
 
@@ -60,11 +60,11 @@ function numberofnodes(tree::AbstractMLFMMTree)
     return error("Not implemented")
 end
 
-function center(tree::AbstractMLFMMTree, nodeid=ClusterTrees.root(tree)::Int)
+function center(tree::AbstractMLFMMTree, nodeid = ClusterTrees.root(tree)::Int)
     return error("Not implemented")
 end
 
-function halfsize(tree::AbstractMLFMMTree, nodeid=ClusterTrees.root(tree)::Int)
+function halfsize(tree::AbstractMLFMMTree, nodeid = ClusterTrees.root(tree)::Int)
     return error("Not implemented")
 end
 
