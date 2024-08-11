@@ -1,9 +1,9 @@
 # Electromagnetic Fields of Elementary Dipoles
+The radiated fields of an antenna can be approximated by the fields of elementary dipoles, i.e., the fields of very short electrical dipoles (so-called Hertzian dipoles) and very short magnetic dipoles (so-called Fitzgerald dipoles).
 
+Since the equivalent current densities for these very short elementary dipoles are particularly simple, it is possible to find analytical expressions for their respective fields using Green's functions.
 
 ## Radiated Fields
-
-### General Current Distribution
 For a general source, consisting of an electric volume current distribution ``\bm{J}(\bm{r})`` and a magnetic current distribution ``\bm{M}(\bm{r})``, the radiated electric and magnetic fields can be described by 
 
 ```math
@@ -96,7 +96,7 @@ and
 =
 \left(-\mathrm{j}k-\dfrac{1}{||\bm{r}-\bm{r}'||}\right) \bm{e}_r \times \mathbf{I}\, .
 ```
-### Hertzian Dipole
+### Radiated Fields of a Hertzian Dipole
 A Hertzian dipole is a model for an elementary electric dipole. Formally, it can be regardes as a special electric current distribution of the form
 ```math
 \bm{J}_{\text{Hertz}}(\bm{r})
@@ -138,7 +138,7 @@ and
 \left(-\mathrm{j}k-\dfrac{1}{||\bm{r}-\bm{r}'||}\right) \bm{e}_r \times \bm{\ell}\, .
 ```
 
-### Fitzgerald Dipole
+### Radiated Fields of a Fitzgerald Dipole
 A Fitzgerald dipole is a model for an elementary magnetic dipole. Formally, it can be regardes as a special magnetic current distribution of the form
 ```math
 \bm{M}_{\text{Fitzgerald}}(\bm{r})
@@ -180,8 +180,8 @@ g_0(\bm{r},\bm{r}')
 \right]\, .
 ``` 
 
-## Far Fields of Dipoles
-Often, we are interested in the radiated electric field of a dipole or a collection of dipoles at observation locations ``\bm{r}`` which are far away from the coordinate origin compared to the location ``\bm{r}'`` of the dipoles, i.e., ``r=||\bm{r}||\gg ||\bm{r}'||=r'``. In these cases, the term ``R=||\bm{r}-\bm{r}'||`` can be approximated by
+## Radiated Far Fields of Elementary Dipoles
+Often, we are interested in the radiated electric field of an elementary dipole or a collection of elementary dipoles at observation locations ``\bm{r}`` which are far away from the coordinate origin compared to the location ``\bm{r}'`` of the dipoles, i.e., ``r=||\bm{r}||\gg ||\bm{r}'||=r'``. In these cases, the term ``R=||\bm{r}-\bm{r}'||`` can be approximated by
 ```math
 \lim \limits_{r\rightarrow \infty} ||\bm{r}-\bm{r}'|| = r -\bm{e}_r \cdot \bm{r}'\, , 
 ```
@@ -243,10 +243,8 @@ I_{\mathrm{m}}\, \dfrac{\mathrm{j} k_0}{4\pi}\,
 ```
 where ``I_{\mathrm{m}}`` is the excitation of the dipole, ``\bm{\ell}`` is the oriented dipole length and ``\bm{r}'`` is the dipole location. Due to the cross product with the radial unit vector, the far field has a zero component in radial direction.
 
-The far fields of a Hertzian or a Fitzgerald dipole can be evaluated by calling the function
-`farfield(sourcedipole::AbstractDipole,θ::Number,ϕ::Number,k₀::Flaot64) -> Tuple(Complex64,2)`
-
 ## Received signal
+Let ``\hat{\bm{J}}(\bm{r})`` and ``\hat{\bm{M}}(\bm{r})`` be the normalized equivalent electric and magnetic volume currents for the fields radiated by an antenna such that ``\bm{J}(\bm{r}) = a\,\hat{\bm{J}}(\bm{r})`` and ``\bm{M}(\bm{r}) = a\,\hat{\bm{J}}(\bm{r})`` are the actual equivalent volume current densities when the antenna's transmit port is excited by a signal with wave amplitude ``a \in \mathbb{C} \, \sqrt{\mathrm{W}}``.
 It can be shown that an antenna of which the radiated fields can be expressed via the (normalized) equivalent electric and magnetic current distributions ``\hat{\bm{J}}(\bm{r})`` and ``\hat{\bm{M}}(\bm{r})`` will receive the signal 
 ```math
 b=
@@ -263,74 +261,3 @@ when it is illuminated with an external electromagntic field ``\bm{E}(\bm{r})``,
 Consequently, a Hertzian dipole which has a (normalized) electric equivalent current distribution of ``\hat{\bm{J}}_{\text{Hertz}}(\bm{r}) = I\bm{\ell}\, \delta({\bm{r}-\bm{r}'})`` receives the signal ``b_{\text{Hertz}}=0.5\,I\, \bm{\ell} \cdot \bm{E}(\bm{r}')`` which is proportional to the parallel component of the incident electric field at the discrete location ``\bm{r}'``.
 
 A Fitzgerald which has a (normalized) magnetic equivalent current distribution of ``\hat{\bm{M}}_{\text{Fitzgerald}}(\bm{r}) = I_{\mathrm{m}}\bm{\ell}\, \delta({\bm{r}-\bm{r}'})`` receives the signal ``b_{\text{Fitzgerald}}=-0.5\,I_{\mathrm{m}}\, \bm{\ell} \cdot \bm{H}(\bm{r}')`` which is proportional to the parallel component of the incident negative magnetic field at the discrete location ``\bm{r}'``.
-
-### Interaction between two Hertzian Dipoles
-Let ``I_1``, ``\bm{\ell}_1``, and ``\bm{r}_1`` denote the excitation, oriented (equivalent) length, and location of the transmitting Hertzian dipole and let ``I_2``, ``\bm{\ell}_2``, and ``\bm{r}_2`` be the excitation, oriented (equivalent) length, and location of the receiving Hertzian dipole. The received signal which represents the interaction between these two dipoles is given by
-```math
-b=
-\dfrac{-\mathrm{j}}{2} k_0\, Z_\mathrm{F}\, I_1\, I_2\,
-\left[
-\left(
-\dfrac{3}{k^2\,||\bm{r}_2-\bm{r}_1||^2}
-+
-\dfrac{3\mathrm{j}}{k\,||\bm{r}_2-\bm{r}_1||} 
--1   
-\right)
-g_0(\bm{r}_2,\bm{r}_1)
-\,
-\left(\bm{\ell}_2 \cdot \bm{e}_r\right)\, \left(\bm{e}_r \cdot \bm{\ell}_1\right)
--
-\left(
-\dfrac{\mathrm{j}}{k\,||\bm{r}_2-\bm{r}_1||}
-+\dfrac{1}{k^2\,||\bm{r}_2-\bm{r}_1||^2}
--1
-\right)
-g_0(\bm{r}_2,\bm{r}_1)
-\,
-\left(\bm{\ell_2} \cdot \bm{\ell_1}
-\right)
-\right]\, ,
-```
-where ``\bm{e}_r`` denotes the unit vector pointing in the direction from one dipole location to the other.
-
-
-### Interaction between two Fitzgerald Dipoles
-Let ``I_{\mathrm{m},1}``, ``\bm{\ell}_1``, and ``\bm{r}_1`` denote the excitation, oriented (equivalent) length, and location of the transmitting Fitzgerald dipole and let ``I_{\mathrm{m},2}``, ``\bm{\ell}_2``, and ``\bm{r}_2`` be the excitation, oriented (equivalent) length, and location of the receiving Fitzgerald dipole. The received signal which represents the interaction between these two dipoles is given by
-```math
-b=
-\dfrac{-\mathrm{j}}{2} \dfrac{k_0}{Z_\mathrm{F}}\, I_{\mathrm{m},1}\, I_{\mathrm{m},2}\,
-\left[
-\left(
-\dfrac{3}{k^2\,||\bm{r}_2-\bm{r}_1||^2}
-+
-\dfrac{3\mathrm{j}}{k\,||\bm{r}_2-\bm{r}_1||} 
--1   
-\right)
-g_0(\bm{r}_2,\bm{r}_1)
-\,
-\left(\bm{\ell}_2 \cdot \bm{e}_r\right)\, \left(\bm{e}_r \cdot \bm{\ell}_1\right)
--
-\left(
-\dfrac{\mathrm{j}}{k\,||\bm{r}_2-\bm{r}_1||}
-+\dfrac{1}{k^2\,||\bm{r}_2-\bm{r}_1||^2}
--1
-\right)
-g_0(\bm{r}_2,\bm{r}_1)
-\,
-\left(\bm{\ell_2} \cdot \bm{\ell_1}
-\right)
-\right]\, ,
-```
-where ``\bm{e}_r`` denotes the unit vector pointing in the direction from one dipole location to the other.
-
-### Interaction between Hertzian and Fitzgerald Dipole
-Let ``I_{1}``, ``\bm{\ell}_1``, and ``\bm{r}_1`` denote the excitation, oriented (equivalent) length, and location of the transmitting Hertzian dipole and let ``I_{\mathrm{m},2}``, ``\bm{\ell}_2``, and ``\bm{r}_2`` be the excitation, oriented (equivalent) length, and location of the receiving Fitzgerald dipole. The received signal which represents the interaction between these two dipoles is given by
-```math
-b= \dfrac{1}{2}
-I_1\, I_{\mathrm{m},2}
-\left(-\mathrm{j}k-\dfrac{1}{||\bm{r}-\bm{r}'||}\right) \bm{\ell_2} \cdot \left( \bm{e}_r \times \bm{\ell_1}\right)
-```
-where ``\bm{e}_r`` denotes the unit vector pointing in the direction from one dipole location to the other.
-
-
-The role of the transmitting and the receiving dipole may be exchanged without changing the result of the calculation (i.e., the electric field of a Fitzgerald dipole matches the electric field of a Fitzgerald dipole).

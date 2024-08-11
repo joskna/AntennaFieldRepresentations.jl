@@ -1,4 +1,4 @@
-# Fast Evaluation of ``S_{12}``-Parameters in Spherical Measurement Setups 
+# Fast Algorithms in Spherical Measurement Setups 
 
 Very efficient post-processing algorithms exist for measurements of the ``S_{12}``-parameter between a radiating probe antenna and a rotating receiving antenna under test (AUT). The AUT is rotated around the coordinate origin by the angles ``\vartheta`` and ``\varphi``. The probe antenna remains at a fixed position in the positive ``z``-diretion but may be rotated around the ``z``-axis by the angle ``\chi`` to  realize different polarizations of the incident field at the AUT. The measurement setup is depicted in the figure below.
 

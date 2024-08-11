@@ -21,10 +21,7 @@ pkg> add https://github.com/joskna/AntennaFieldRepresentations.jl
 
 ## Featured Antenna Representations
 The following types of antenna representations are provided by `AntennaFieldRepresentations`:
-- Collection of elctric and/or magnetic dipoles
-- Vector Spherical Mode Expansion
-- Far-field Pattern
-- Equivalent Surface Currents (Rao-Wilton-Glisson basis)
+
 
 ## Featured Field Samplings
 The following types of field samplings can be used with any antenna representation:
@@ -42,19 +39,3 @@ The main purpose of `AntennaFieldRepresentations` is to calculate the interactio
 - evaluate the transposed, Hermitian, and inverses of most featured linear operators
 - calculate the expansion coefficients of an antenna representation given a field sampling and the received signals (i.e, solve a source reconstruction problem)
 - accelerate the evaluation of the interaction operator beween suitable antenna representations and field samplings by means of the multilevel fast multipole method
-
-
-### Planned Features
-- ⏳[^1] **Scalar spherical mode expansions**
-- ⏳[^1] **Distributec spherical mode expansions**
-- ⏳[^1] **Inhomogeneous plane wave expansions**
-- ⏳[^1] **Cylindrical vector modes**
-- ⏳[^1] **Spheroidal wave functions**
-- ⏳[^1] **All equivalent surface current types provided by** `Beast.jl`
-- ⏳[^1] **Efficient implementations of Love currents and Caldéron projectors**
-- ⏳[^1] Lossless dielectrics (``\varepsilon_\mathrm{r},\mu_{\mathrm{r}} \in \mathbb{R}``)
-- ⏳[^1] Lossy dielectrics (``\varepsilon_\mathrm{r},\mu_{\mathrm{r}} \in \mathbb{C}``)
-
-
-## [Footnotes](@id refs)
-[^1]: ⏳ Planned but not yet implemented
