@@ -7,13 +7,15 @@ makedocs(;
     remotes= nothing,
     pages=[
         "Home" => "index.md",
-        "Antenna Field Representations"  => "fieldrepresentations.md", 
-        "Operations" => Any[
-            "Field Evaluations" => "operations/fields.md",
-            "Coordinate Transformations" => "operations/coordinate_trafos.md",
-            "Conversions" => "operations/conversions.md",
-            "Transmissions" => "operations/interactions.md"
+        "Antenna Field Representations" => Any[
+            "General Field Representation Interface" => "fieldrepresentations.md",
+            "Dipole Representations" => "dipoles/dipole_representations.md",
+            "Spherical Representations" => "spherical/spherical_representations.md",
+            "Plane Wave Representations" => "planewaves/planewave_representations.md",
+            "Equivalent Surface Currents" => "surfacecurrents/surface_representations.md",
         ],
+        "Field Samplings"  => "fieldsamplings.md", 
+        "OperationMaps" => "operationmaps.md",
         "Examples" => "examples.md",
         "Electromagnetic Theory"=> Any[
             "Dipoles" => "dipoles/dipole_theory.md",
