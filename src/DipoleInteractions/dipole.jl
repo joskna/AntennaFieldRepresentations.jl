@@ -22,7 +22,7 @@ end
 #     dir::SArray{Tuple{3},C,1,3}
 #     mag::C
 # end
-function HertzDipole(pos, dir, mag)
+function HertzDipole(pos::Vector, dir::Vector, mag::Number)
     return HertzDipole(SVector{3}(pos), SVector{3}(complex.(dir)), complex(mag))
 end
 
@@ -56,7 +56,7 @@ end
 #     dir::SArray{Tuple{3},C,1,3}
 #     mag::C
 # end
-function FitzgeraldDipole(pos, dir, mag)
+function FitzgeraldDipole(pos::Vector, dir::Vector, mag::Number)
     return FitzgeraldDipole(
         SVector{3}(pos),
         SVector{3}(convert.(ComplexF64, dir)),
@@ -295,9 +295,9 @@ end
 
 function efield(dipole::AbstractDipole, R::AbstractVector{<:Number}, k₀::Number)
     C = elementtype(dipole)
-    xdipole = HertzDipole(R, [1; 0; 0], convert(C, (1.0)))
-    ydipole = HertzDipole(R, [0; 1; 0], convert(C, (1.0)))
-    zdipole = HertzDipole(R, [0; 0; 1], convert(C, (1.0)))
+    xdipole = HertzDipole(R, C.([1; 0; 0]), convert(C, (1.0)))
+    ydipole = HertzDipole(R, C.([0; 1; 0]), convert(C, (1.0)))
+    zdipole = HertzDipole(R, C.([0; 0; 1]), convert(C, (1.0)))
     return SVector{3}(
         2 * [
             transmission(dipole, xdipole, k₀)
@@ -308,9 +308,9 @@ function efield(dipole::AbstractDipole, R::AbstractVector{<:Number}, k₀::Numbe
 end
 function efield(dipoles::Array{<:AbstractDipole}, R::AbstractVector{<:Number}, k₀::Real)
     C = elementtype(dipoles)
-    xdipole = HertzDipole(R, [1; 0; 0], convert(C, (1.0)))
-    ydipole = HertzDipole(R, [0; 1; 0], convert(C, (1.0)))
-    zdipole = HertzDipole(R, [0; 0; 1], convert(C, (1.0)))
+    xdipole = HertzDipole(R, C.([1; 0; 0]), convert(C, (1.0)))
+    ydipole = HertzDipole(R, C.([0; 1; 0]), convert(C, (1.0)))
+    zdipole = HertzDipole(R, C.([0; 0; 1]), convert(C, (1.0)))
     Ex = zero(C)
     Ey = zero(C)
     Ez = zero(C)
@@ -326,9 +326,9 @@ end
 
 function hfield(dipole::AbstractDipole, R::AbstractVector{<:Number}, k₀::Number)
     C = elementtype(dipole)
-    xdipole = FitzgeraldDipole(R, [1; 0; 0], convert(C, (1.0)))
-    ydipole = FitzgeraldDipole(R, [0; 1; 0], convert(C, (1.0)))
-    zdipole = FitzgeraldDipole(R, [0; 0; 1], convert(C, (1.0)))
+    xdipole = FitzgeraldDipole(R, C.([1; 0; 0]), convert(C, (1.0)))
+    ydipole = FitzgeraldDipole(R, C.([0; 1; 0]), convert(C, (1.0)))
+    zdipole = FitzgeraldDipole(R, C.([0; 0; 1]), convert(C, (1.0)))
     return SVector{3}(
         -2 * [
             transmission(dipole, xdipole, k₀)
@@ -339,9 +339,9 @@ function hfield(dipole::AbstractDipole, R::AbstractVector{<:Number}, k₀::Numbe
 end
 function hfield(dipoles::Array{<:AbstractDipole}, R::AbstractVector{<:Number}, k₀::Real)
     C = elementtype(dipoles)
-    xdipole = FitzgeraldDipole(R, [1; 0; 0], convert(C, (1.0)))
-    ydipole = FitzgeraldDipole(R, [0; 1; 0], convert(C, (1.0)))
-    zdipole = FitzgeraldDipole(R, [0; 0; 1], convert(C, (1.0)))
+    xdipole = FitzgeraldDipole(R, C.([1; 0; 0]), convert(C, (1.0)))
+    ydipole = FitzgeraldDipole(R, C.([0; 1; 0]), convert(C, (1.0)))
+    zdipole = FitzgeraldDipole(R, C.([0; 0; 1]), convert(C, (1.0)))
     Hx = zero(C)
     Hy = zero(C)
     Hz = zero(C)

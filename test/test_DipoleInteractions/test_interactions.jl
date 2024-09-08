@@ -10,7 +10,7 @@ using LinearAlgebra
             λ = c₀ / f
             k0 = 2 * pi / λ
 
-            #check for symmetryf
+            #check for symmetry
             R1 = [5.0, 0.0, 0.0]
             R2 = [0.0, 5.0, 0.0]
             b = transmission(HertzDipole([0.0, 0.0, 0.0], [0.0, 0.0, 1.0], 1.0 + 0.0im), HertzDipole(R1, [0.0, 0.0, 1.0], 1.0 + 0.0im), k0)
