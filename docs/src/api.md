@@ -1,4 +1,8 @@
 # API Reference
+!!! warning
+    This chapter refers to an old state of the package and needs rewriting!! 
+---
+
 ## Public Types
 ```@autodocs
 Modules = [AntennaFieldRepresentations]

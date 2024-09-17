@@ -1,4 +1,9 @@
 # Conversions Between Field Representations
+
+!!! warning
+    This chapter refers to an old state of the package and needs rewriting!! 
+---
+
 Field representations can be converted into one another using the `convertrepresentation` function. 
 The fields which are evaluated at any given location from the field representation before and after the conversion should be approximately the same if the location is in a region which is valid for both representations.
 This section is intended to clarify which oenversions are possible and to identify the common regions of validity for the converted field representations. 
@@ -41,13 +46,4 @@ In theory, the radiating spherical wave expansion is valid outside a sphere cent
 
     (Equivalent) current based field representations, such as a collection of Hertz or Fitzgerald dipoles, are not unique: Different current distributions can lead to the exact same radiated fields. Since there is no unique current distribution for a given field,there is no simple conversion from a field representation to a dipole based representation.
 ---
-## Collection of Dipoles ``\rightarrow`` Far-Field Pattern
-
-## Collection of Dipoles ``\rightarrow`` Incident Spherical Wave Expansion 
-
-## Radiating Spherical Wave Expansion ``\rightarrow`` Far-Field Pattern
-## Far-Field Pattern ``\rightarrow`` Radiating Spherical Wave Expansion
-
-## Incident Spherical Wave Expansion ``\rightarrow`` Plane Wave Spectrum
-## Plane Wave Spectrum ``\rightarrow`` Incident Spherical Wave Expansion
 

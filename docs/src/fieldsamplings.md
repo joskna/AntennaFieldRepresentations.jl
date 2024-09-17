@@ -1,1 +1,0 @@
-# Sampling Setups for Antenna Fields

@@ -10,12 +10,25 @@ makedocs(;
         "Antenna Field Representations" => Any[
             "General Field Representation Interface" => "fieldrepresentations.md",
             "Dipole Representations" => "dipoles/dipole_representations.md",
-            "Spherical Representations" => "spherical/spherical_representations.md",
+            "Spherical Mode Representations" => "spherical/spherical_representations.md",
             "Plane Wave Representations" => "planewaves/planewave_representations.md",
             "Equivalent Surface Currents" => "surfacecurrents/surface_representations.md",
         ],
-        "Field Samplings"  => "fieldsamplings.md", 
-        "OperationMaps" => "operationmaps.md",
+
+        "Field Samplings"  => Any[
+            "General Field Sampling Interface" => "sampling/fieldsamplings.md",
+            "Irregularly Distributed Field Samplings" => "sampling/irregularsampling.md",
+            "Spherical Field Samplings" => "sampling/sphericalsampling.md",
+            "Far Field Samplings" => "sampling/farfieldsampling.md"
+        ],
+        
+        "Operations" => Any[
+            "OperationMaps" => "operations/operationmaps.md",
+            "Coordinate Transformations" => "operations/coordinate_trafos.md",
+            "Conversion into Other Field Representations" => "operations/conversions.md",
+            "Transmission" => "operations/transmission.md"
+        ],
+        
         "Examples" => "examples.md",
         "Electromagnetic Theory"=> Any[
             "Dipoles" => "dipoles/dipole_theory.md",

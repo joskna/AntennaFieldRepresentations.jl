@@ -1,5 +1,9 @@
 # Examples
 
+!!! warning
+    This chapter refers to an old state of the package and needs rewriting!! 
+---
+
 ## Convert Radiated Fields of Fitzgerald Dipoles Into Other Representations
 First, let us investigate the spherical mode expansion of fields which are radiated by a collection of Fitzgerald dipoles. 
 

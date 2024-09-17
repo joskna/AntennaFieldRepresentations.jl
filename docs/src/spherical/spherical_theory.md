@@ -28,7 +28,7 @@ k_0 \, \sqrt{Z_{\mathrm{F}}}
 where ``Z_{\mathrm{F}}\sqrt{\mu_0/ \varepsilon_{0}}\approx 376.730\,313\,669\, \mathrm{\Omega}`` is the impedance of free space and ``\bm{F}_{s\ell m}^{(c)}(r,\vartheta, \varphi)`` are the spherical vector wave mode functions, which are solutions to the homogeneous curl-curl equation (except in the origin of the coordinate system, where some types of vector mode functions become singular). Due to only two of the radial dependencies being linearly independent, it is sufficient to let the sum over ``c`` to be an arbitrary pair of two iindices from the set ``c \in \{1,2,3,4\}``. Usually one will choose the pair ``c=1`` and ``c=4``, where only the ``c=4``-type modes are needed to describe purely radiated fields and only the ``c=1``-type modes are needed to describe purely incident fields.
 
 In the numerical implementation, the coefficients ``\alpha_{s \ell m}`` are stored in a vector, where the triple index
-``s \ell m`` is mapped to a single consecutively running index ``j`` by the function `sℓm_to_j(s,ℓ,m)`. The inverse map from a single index to the triple index ``s \ell m`` is implemented in the function `j_to_sℓm(j)`.
+``s \ell m`` is mapped to a single consecutively running index ``j`` by the function [`sℓm_to_j(s,ℓ,m)`](@ref). The inverse map from a single index to the triple index ``s \ell m`` is implemented in the function [`j_to_sℓm(j)`](@ref).
 
 The vector of coefficients completely defines the fields of a corresponding radiating or incident spherical wave expansion. 
 
@@ -434,7 +434,7 @@ The geometric situation for the calculation of the ``S_{21}``-parameter is depic
 ```
 
 ---
-## [References](@id refs)
+## References
 [^1]:  [F. W. J. Olver and National Institute of Standards and Technology (U.S.), eds., "*NIST Handbook of Mathematical Functions*", Cambridge ; New York: Cambridge University Press : NIST, 2010](https://dlmf.nist.gov/).
 [^2]:  J. E. Hansen, ed., *Spherical Near-Field Antenna Measurements*, The Institution of Engineering and Technology, Michael Faraday House, Six Hills Way, Stevenage SG1 2AY, UK: IET, 1988.
 [^3]:  J. A. Stratton, "*Electromagnetic Theory*", McGraw-Hill, 1st ed. International series in pure and applied physics, OCLC: 536704, New York, 1941.

@@ -243,7 +243,7 @@ I_{\mathrm{m}}\, \dfrac{\mathrm{j} k_0}{4\pi}\,
 ```
 where ``I_{\mathrm{m}}`` is the excitation of the dipole, ``\bm{\ell}`` is the oriented dipole length and ``\bm{r}'`` is the dipole location. Due to the cross product with the radial unit vector, the far field has a zero component in radial direction.
 
-## Received signal
+## [Received Signal](@id receivedsignaldipoles)
 Let ``\hat{\bm{J}}(\bm{r})`` and ``\hat{\bm{M}}(\bm{r})`` be the normalized equivalent electric and magnetic volume currents for the fields radiated by an antenna such that ``\bm{J}(\bm{r}) = a\,\hat{\bm{J}}(\bm{r})`` and ``\bm{M}(\bm{r}) = a\,\hat{\bm{J}}(\bm{r})`` are the actual equivalent volume current densities when the antenna's transmit port is excited by a signal with wave amplitude ``a \in \mathbb{C} \, \sqrt{\mathrm{W}}``.
 It can be shown that an antenna of which the radiated fields can be expressed via the (normalized) equivalent electric and magnetic current distributions ``\hat{\bm{J}}(\bm{r})`` and ``\hat{\bm{M}}(\bm{r})`` will receive the signal 
 ```math
