@@ -3,7 +3,7 @@ The radiated fields of an antenna can be approximated by the fields of elementar
 
 Since the equivalent current densities for these very short elementary dipoles are particularly simple, it is possible to find analytical expressions for their respective fields using Green's functions.
 
-## Radiated Fields
+## [Radiated Fields](@id dipole_radiated)
 For a general source, consisting of an electric volume current distribution ``\bm{J}(\bm{r})`` and a magnetic current distribution ``\bm{M}(\bm{r})``, the radiated electric and magnetic fields can be described by 
 
 ```math

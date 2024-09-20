@@ -6,6 +6,12 @@ By providing the possibility to switch between various antenna field representat
 The purpose of this package is primarily academic and educational. 
 The package is under heavy development at the moment and represents by no means a finished state. Use with care!
 
+!!! note
+    The package `AntennaFieldRepresentations.jl` deals with representations of the electromagnetic fields of an antenna at a single frequency.
+    
+    A time convention of ``\mathrm{e}^{\,\mathrm{j}\omega t}`` is implicitly assumed for the relevant variables and SI units are implied everywhere.
+---
+
 ## Installation
 
 The package is not registered in the Julia General Registry, yet, but a future version of this package might.
@@ -21,9 +27,6 @@ The following types of antenna representations are provided by `AntennaFieldRepr
 - Plane-WaveExpansions
 - Equivalent Surface-Currents
 
-!!! note
-    A time convention of ``\mathrm{e}^{\,\mathrm{j}\omega t}`` and SI units are implied everywhere.
----
 
 ## Featured Field Samplings
 The following types of field samplings can be used with any antenna representation:

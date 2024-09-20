@@ -3,6 +3,6 @@ The `transmit` method can be used to evaluate the probe outputs of a [`FieldSamp
 
 ## [TransmissionMaps](@id transmissionmap)
 
-!!! note
+!!! todo
     Coming soon ...
 ---

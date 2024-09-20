@@ -1,16 +1,16 @@
 # Field Representations in Transformed Coordinate Systems
 
-!!! note
+!!! todo
     Coming soon ...
 ---
 ## Rotated Coordinate System
 
-!!! note
+!!! todo
     Coming soon ...
 ---
 
 ## Translated Coordinate System
 
-!!! note
+!!! todo
     Coming soon ...
 ---
