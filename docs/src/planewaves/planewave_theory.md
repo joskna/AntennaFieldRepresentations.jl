@@ -50,7 +50,7 @@ The plane-wave spectrum ``\bm{P}(\vartheta, \varphi)`` is always perpendicular t
     This should not lead to any ambiguities because the relation between ``\hat{\bm{k}}`` and the tuple ``\vartheta, \varphi`` is one-to one, as each encodings uniquely define the same point on the unit sphere.
 ---
 
-## Far-Field Pattern Representation of Radiated Fields
+## [Far-Field Pattern Representation of Radiated Fields](@id planewave_radiated)
 The radiated field of any current distribution is completely characterized by the radiated far-field pattern 
 ```math
 \bm{F}(\vartheta, \varphi) = \lim \limits_{r\rightarrow \infty} \dfrac{r}{\mathrm{e}^{-\mathrm{j}k_0 r}}\, \bm{E}(r, \vartheta, \varphi)\,,
