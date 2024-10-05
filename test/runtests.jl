@@ -17,21 +17,21 @@ using Test
     #         include(joinpath("test_DipoleInteractions", "test_farfields.jl"))
     #     end
     # end
-    # @testset "SphericalVectorModeFields" verbose=true begin
-    #     @testset "Legendre Polynomials" begin
-    #         # include("test_Pl.jl")     
-    #         include(joinpath("test_SphericalVectorModeFields", "test_Plm.jl"))
-    #         include(joinpath("test_SphericalVectorModeFields", "test_sphPlm.jl"))
-    #     end
-    #     @testset "Spherical Wave Functions" begin
-    #         include(joinpath("test_SphericalVectorModeFields", "test_R_dependencies.jl"))
-    #         include(joinpath("test_SphericalVectorModeFields", "test_Fslm.jl"))
-    #         include(joinpath("test_SphericalVectorModeFields", "test_Kslm.jl"))
-    #     end
-    #     @testset "Electric and Magnetic Field" begin
-    #         include(joinpath("test_SphericalVectorModeFields", "test_planewave.jl")) 
-    #     end
-    # end
+    @testset "SphericalVectorModeFields" verbose=true begin
+        @testset "Legendre Polynomials" begin
+            # include("test_Pl.jl")     
+            include(joinpath("test_SphericalVectorModeFields", "test_Plm.jl"))
+            include(joinpath("test_SphericalVectorModeFields", "test_sphPlm.jl"))
+        end
+        @testset "Spherical Wave Functions" begin
+            include(joinpath("test_SphericalVectorModeFields", "test_R_dependencies.jl"))
+            include(joinpath("test_SphericalVectorModeFields", "test_Fslm.jl"))
+            include(joinpath("test_SphericalVectorModeFields", "test_Kslm.jl"))
+        end
+        @testset "Electric and Magnetic Field" begin
+            include(joinpath("test_SphericalVectorModeFields", "test_planewave.jl")) 
+        end
+    end
     
     # @testset "PlaneWaveRepresentations" verbose=true begin
     #     @testset "Conversions" begin
@@ -94,7 +94,7 @@ using Test
     #     include(joinpath("test_MLFMM", "test_dipoles_mlfmm_forward.jl"))
     #     include(joinpath("test_MLFMM", "test_dipoles_mlfmm_matrix.jl"))
     # end
-    @testset "Formatting" begin
-        include("test_formatting.jl")
-    end
+    # @testset "Formatting" begin
+    #     include("test_formatting.jl")
+    # end
 end

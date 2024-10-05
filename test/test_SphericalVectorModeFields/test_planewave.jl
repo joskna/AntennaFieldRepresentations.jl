@@ -1,6 +1,7 @@
 #compare Hansen p.341
 # Z₀=376.730313669
-c0 = c₀
+Z₀=AntennaFieldRepresentations.Z₀
+c0 = AntennaFieldRepresentations.c₀
 f = 1.0e9
 
 λ = c0 / f
@@ -20,7 +21,8 @@ coeffs[sℓm_to_j(2,ℓ,-1)]=-Q
 coeffs[sℓm_to_j(1,ℓ,1) ]=Q
 coeffs[sℓm_to_j(2,ℓ,1) ]=Q
 end
-α=IncidentSphericalExpansion(coeffs)
+α=SphericalWaveExpansion(Incident(), coeffs, k0)
+
 
 for x in xvec, y in yvec, z in zvec
     Einc=[
@@ -36,22 +38,22 @@ for x in xvec, y in yvec, z in zvec
     ]
 
 
-    E= efield(α, [x;y;z], k0)
-    H= hfield(α, [x;y;z], k0)
+    E= efield(α, [x;y;z])
+    H= hfield(α, [x;y;z])
     # println(Einc./E)
     # println(Hinc./H)
     @test E≈Einc 
     @test H≈Hinc 
 end
 
-αrad=converttype(RadiatingSphericalExpansion{ComplexF64},α)
-αabs=converttype(AbsorbedSphericalExpansion{ComplexF64},α)
-αinc=converttype(IncidentSphericalExpansion{ComplexF64},α)
+# αrad=converttype(RadiatingSphericalExpansion{ComplexF64},α)
+# αabs=converttype(AbsorbedSphericalExpansion{ComplexF64},α)
+# αinc=converttype(IncidentSphericalExpansion{ComplexF64},α)
 
-@test αrad.coefficients ==  α.coefficients
-@test αabs.coefficients ==  α.coefficients
-@test αinc.coefficients ==  α.coefficients
+# @test αrad.coefficients ==  α.coefficients
+# @test αabs.coefficients ==  α.coefficients
+# @test αinc.coefficients ==  α.coefficients
 
-@test typeof(αrad)==RadiatingSphericalExpansion{ComplexF64}
-@test typeof(αabs)==AbsorbedSphericalExpansion{ComplexF64}
-@test typeof(αinc)==IncidentSphericalExpansion{ComplexF64}
+# @test typeof(αrad)==RadiatingSphericalExpansion{ComplexF64}
+# @test typeof(αabs)==AbsorbedSphericalExpansion{ComplexF64}
+# @test typeof(αinc)==IncidentSphericalExpansion{ComplexF64}

@@ -17,7 +17,7 @@ import AntennaFieldRepresentations.F_sℓm_spherical_array
 for ϑ in ϑlist, φ in φlist, r in rlist
     global goal
             kr=k0*r
-            Fr, Fϑ, Fφ=F_sℓm_spherical_array(Jmax,RadiatingSphericalExpansion{ComplexF64},r,ϑ,φ, k0)
+            Fr, Fϑ, Fφ=F_sℓm_spherical_array(Jmax,Radiated(),r,ϑ,φ, k0)
 
             j=sℓm_to_j(1,1,-1)
             goal=√3/(4*√π)*exp(-1im*φ) * exp(-1im*kr)/kr*(1-1im/kr)
@@ -60,7 +60,7 @@ for ϑ in ϑlist, φ in φlist, r in rlist
             @test abs(Fφ[j]- (1im*goal))/abs(goal)<1e-10
 
 
-            Fr, Fϑ, Fφ=F_sℓm_spherical_array(Jmax,IncidentSphericalExpansion{ComplexF64},r,ϑ,φ, k0)
+            Fr, Fϑ, Fφ=F_sℓm_spherical_array(Jmax,Incident(),r,ϑ,φ, k0)
 
             ckr=cos(kr)
             skr=sin(kr)
@@ -209,7 +209,7 @@ rlist=[2.7]
 for ϑ in ϑlist, φ in φlist, r in rlist
     global goal
             kr=k0*r
-            Fr, Fϑ, Fφ=F_sℓm_spherical_array(Jmax,RadiatingSphericalExpansion{ComplexF64},r,ϑ,φ, k0)
+            Fr, Fϑ, Fφ=F_sℓm_spherical_array(Jmax,Radiated(),r,ϑ,φ, k0)
 
             j=sℓm_to_j(1,1,-1)
             goal=√3/(4*√π)*exp(-1im*φ) * exp(-1im*kr)/kr*(1-1im/kr)
@@ -252,7 +252,7 @@ for ϑ in ϑlist, φ in φlist, r in rlist
             @test abs(Fφ[j]- (1im*goal))/abs(goal)<1e-10
 
 
-            Fr, Fϑ, Fφ=F_sℓm_spherical_array(Jmax,IncidentSphericalExpansion{ComplexF64},r,ϑ,φ, k0)
+            Fr, Fϑ, Fφ=F_sℓm_spherical_array(Jmax,Incident(),r,ϑ,φ, k0)
 
             ckr=cos(kr)
             skr=sin(kr)
@@ -307,7 +307,7 @@ rlist=[2.7]
 for ϑ in ϑlist, φ in φlist, r in rlist
     global goal
             kr=k0*r
-            Fr, Fϑ, Fφ=F_sℓm_spherical_array(Jmax,RadiatingSphericalExpansion{ComplexF64},r,ϑ,φ, k0)
+            Fr, Fϑ, Fφ=F_sℓm_spherical_array(Jmax,Radiated(),r,ϑ,φ, k0)
             for ikkkk=1:Jmax
                 @test abs(Fr[ikkkk])<Inf
                 @test abs(Fϑ[ikkkk])<Inf

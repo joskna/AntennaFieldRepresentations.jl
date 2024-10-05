@@ -7,7 +7,7 @@ import AntennaFieldRepresentations.oneoverkA_deriv_zc_ℓ
 Lmax=7
 
 kAlist=[0.01, 3.57, 1000.1]
-clist=[IncidentSphericalExpansion{ComplexF64}, AbsorbedSphericalExpansion{ComplexF64},RadiatingSphericalExpansion{ComplexF64}]
+clist=[Incident(), Absorbed(),Radiated()]
 for kA in kAlist
     for k=0:Lmax
         if k< 2*kA+1

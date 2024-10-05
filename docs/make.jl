@@ -5,6 +5,7 @@ makedocs(;
     authors="Josef Knapp <josef.knapp@tum.de>, Danijel Jukic, and Simon B. Adrian",
     sitename="AntennaFieldRepresentations.jl",
     remotes= nothing,
+    checkdocs=:exports,
     pages=[
         "Home" => "index.md",
         "Antenna Field Representations" => Any[

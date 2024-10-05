@@ -73,19 +73,19 @@ The form of the above equation gives rise to an efficient algorithm to evaluate 
 If we want to calculate the transmission between a dipole probe and the AUT, we need to know the spherical wave expansion of the probe field at the AUT location. 
 The incident field at the coordinate origin of a Hertzian dipole, oriented in ``x``- direction with a given dipole moment ``I\ell`` at a given location ``\bm{r}= r\, \bm{e}_z`` on the ``z``-axis, is characterized by the spherical wave coefficients 
 ```math
-\alpha_{1,\ell,1}^{(1)}=\dfrac{-\mathrm{j}}{4} \,(-1)^{m+1}k\, \sqrt{Z_{\mathrm{F}}}\, I\ell
+\alpha_{1,\ell,1}^{(1)}=\dfrac{-\mathrm{j}}{4} \,k\, \sqrt{Z_{\mathrm{F}}}\, I\ell
 \, \sqrt{\dfrac{2\ell+1}{\pi}}\, h_\ell^{(2)}(kr)
 ```
 ```math
-\alpha_{1,\ell,-1}^{(1)}=\dfrac{-\mathrm{j}}{4} \,(-1)^{m+1}k\, \sqrt{Z_{\mathrm{F}}}\, I\ell
+\alpha_{1,\ell,-1}^{(1)}=\dfrac{-\mathrm{j}}{4} \,k\, \sqrt{Z_{\mathrm{F}}}\, I\ell
 \, \sqrt{\dfrac{2\ell+1}{\pi}}\, h_\ell^{(2)}(kr)
 ```
 ```math
-\alpha_{2,\ell,1}^{(1)}=\dfrac{1}{4} \,(-1)^{m+1}k\, \sqrt{Z_{\mathrm{F}}}\, I\ell
+\alpha_{2,\ell,1}^{(1)}=\dfrac{1}{4} \,k\, \sqrt{Z_{\mathrm{F}}}\, I\ell
 \, \sqrt{\dfrac{2\ell+1}{\pi}}\, \dfrac{1}{kr} \, \dfrac{\mathrm{d}}{\mathrm{d} kr} \left\{kr\,h_\ell^{(2)}(kr)\right\}
 ```
 ```math
-\alpha_{2,\ell,-1}^{(1)}=\dfrac{-1}{4} \,(-1)^{m+1}k\, \sqrt{Z_{\mathrm{F}}}\, I\ell
+\alpha_{2,\ell,-1}^{(1)}=\dfrac{-1}{4} \,k\, \sqrt{Z_{\mathrm{F}}}\, I\ell
 \, \sqrt{\dfrac{2\ell+1}{\pi}}\, \dfrac{1}{kr} \, \dfrac{\mathrm{d}}{\mathrm{d} kr} \left\{kr\,h_\ell^{(2)}(kr)\right\}\,,
 ```
 

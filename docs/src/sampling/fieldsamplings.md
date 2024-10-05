@@ -25,7 +25,7 @@ Any subtype of `FieldSampling` implements the following methods[^2]:
 | `Base.getindex!`          | No       |                      | See interface of [`Base.AbstractVector`](https://docs.julialang.org/en/v1/manual/interfaces/#man-interface-array)|
 | `Base.setindex`           | No       |                      | See interface of [`Base.AbstractVector`](https://docs.julialang.org/en/v1/manual/interfaces/#man-interface-array)|
 | `Base.similar`            | No       |                      | See interface of [`Base.AbstractVector`](https://docs.julialang.org/en/v1/manual/interfaces/#man-interface-array)|
-| `asvector`                | No       |                      | Return the measurement samples as a vector                            |
+| [`asvector`](@ref)        | No       |                      | Return the measurement samples as a vector                            |
 
 
 [^1]: Hertzian dipoles (short electric dipoles) and Fitzgerald dipoles (short magnetic dipoles) can formally be used as probe antennas to directly sample electric and magnetic fields of an `AntennaFieldRepresentation`: Their output signals are directly proportional to the electric and magnetic field component which is parallel to their dipole orientation, respectively.
