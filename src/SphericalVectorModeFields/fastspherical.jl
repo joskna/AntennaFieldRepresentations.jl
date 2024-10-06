@@ -350,6 +350,7 @@ function _upsampleθ!(V, v_, L)
     V[1:(L+1), :, :] = v_[1:(L+1), :, :]
     V[(end-L+1):end, :, :] = v_[(L+2):end, :, :]
     V[(L+2):(end-L), :, :] .= 0
+
     return V
 end
 function _downsampleθ!(V, v_, Lθ, Jθ)
@@ -359,20 +360,19 @@ function _downsampleθ!(V, v_, Lθ, Jθ)
     else
         V[(Lθ+2):end, :, :] = v_[(end-Lθ):end, :, :]
     end
-    return V
+    return V   
 end
-function _zeropaddingθ(
+function _zeropaddingθ!(
+    V::AbstractArray{C},
     v_::AbstractArray{C,3},
     L::Integer,
     Jθ::Integer,
     Lθ::Integer
 ) where {C<:Complex}
-    Nχ = 2
     if (2 * L + 1) == Jθ
-        return v_
+        V.=v_
+        return V
     end
-
-    V = Array{C}(undef, Jθ, 2 * L + 1, Nχ)
     if 2 * L + 1 < Jθ        
         return _upsampleθ!(V, v_, L)
 
@@ -380,6 +380,20 @@ function _zeropaddingθ(
         return _downsampleθ!(V, v_, Lθ, Jθ)
     end
     
+end
+function _zeropaddingθ(
+    v_::AbstractArray{C,3},
+    L::Integer,
+    Jθ::Integer,
+    Lθ::Integer;
+    firstorder = true
+) where {C<:Complex}
+    Nχ = 2
+    if !firstorder
+        Nχ = 2 * L + 1
+    end
+    V = Array{C}(undef, Jθ, 2 * L + 1, Nχ)
+    return zeropaddingθ!(V, v_, L, Jθ, Lθ) 
 end
 function _zeropaddingθ_ad(
     V_::AbstractArray{C,3},
@@ -430,18 +444,18 @@ function _downsampleϕ!(V,v,Jϕ)
     end
     return V
 end
-function _zeropaddingϕ(
+function _zeropaddingϕ!(
+    V::AbstractArray{C,3},
     v::AbstractArray{C,3},
     L::Integer,
     Jϕ::Integer,
     Nθ::Integer
 ) where {C<:Complex}
-    Nχ = 2
     if (2 * L + 1) == Jϕ
-        return v
+        V.= v
+        return V
     end
 
-    V = Array{C}(undef, Nθ, Jϕ, Nχ)
     if 2 * L + 1 < Jϕ        
         return _upsampleϕ!(V,v,L, Jϕ)
     elseif 2 * L + 1 > Jϕ
@@ -484,24 +498,27 @@ function _zeropaddingϕ_ad(
 end
 
 
-function _χmodes_to_S12(w::AbstractArray{C,3}) where {C<:Complex}
+function _χmodes_to_S12(w::AbstractArray{C,3}; firstorder=true) where {C<:Complex}
     S12 = Array{C}(undef, size(w))
-    return _χmodes_to_S12!(S12, w) 
+    return _χmodes_to_S12!(S12, w, firstorder=firstorder) 
 end
-function _χmodes_to_S12!(S12, w::AbstractArray{C,3}) where {C<:Complex}
-    view(S12,:, :, 1) .= view(w,:, :, 1) .+ view(w,:, :, 2)
-    view(S12,:, :, 2) .= view(w,:, :, 2) .- view(w,:, :, 1)
-    view(S12,:, :, 2) .*=  C(0, 1)
-    return S12
+function _χmodes_to_S12!(S12, w::AbstractArray{C,3}; firstorder=true) where {C<:Complex}
+    if firstorder
+        view(S12,:, :, 1) .= view(w,:, :, 1) .+ view(w,:, :, 2)
+        view(S12,:, :, 2) .= view(w,:, :, 2) .- view(w,:, :, 1)
+        view(S12,:, :, 2) .*=  C(0, 1)
+        return S12
+    else
+        Nθ, Jϕ, Jχ=size(w)
+        oversamplingfactor= Jχ ÷ 4 +1
+        L= (Jχ -1) ÷ 2
+        v= _zeropaddingχ(w,L,oversamplingfactor*4, Jϕ, Nθ)
+        S12 .= fft(v,3)[:, : ,[1, oversamplingfactor+1]]
+    end
 end
 function _χmodes_to_S12_ad(S12::AbstractArray{C,3}) where {C<:Complex}
     w = Array{C}(undef, size(S12))
     return _χmodes_to_S12_ad!(w, S12)
-end
-function _χmodes_to_S12_ad!(w, S12::AbstractArray{C,3}) where {C<:Complex}
-    w[:, :, 1] = S12[:, :, 1] + C(0,1) * S12[:, :, 2]
-    w[:, :, 2] = S12[:, :, 1] - C(0,1) * S12[:, :, 2]
-    return S12
 end
 
 function _inputdimensions(α_inc, β_aut, Jθ)
@@ -528,6 +545,206 @@ function _inputdimensions(α_inc, β_aut, Jθ)
     return L, Nθ, Lθ
 end
 
+
+function _storage_fastsphrical(α_inc::AbstractVector{C},
+    β_aut::AbstractVector{C},
+    Jθ,
+    Jϕ;
+    firstorder=true) where{C}
+    L, Nθ, Lθ = _inputdimensions(α_inc, β_aut, Jθ)
+    # A1= L * (L + 2) * (2 * L + 1)
+    # A2 = Jθ*(2L+1) *2
+    # A3 = Nθ * Jϕ *2
+    # maxA= maximum([A1, A2, A3])
+
+    # B1= (2 * L + 1)*(2 * L + 1)* 2
+    # B2= (L * (L + 2)) * (2 * L + 1) *2
+    # B3 = Nθ * Jϕ *2
+    # maxB= maximum([B1, B2, B3])
+
+    # Atmp= zeros(C, maxA)
+    # Btmp= zeros(C, maxB)
+
+    Jθoversampled= Jθ
+    oversamplingfactorθ=1
+    if 2 * L + 1 > Jθ
+        oversamplingfactorθ = (2 * L + 1 ÷ Jθ) + 1
+        Jθoversampled = oversamplingfactorθ * Jθ
+    end
+
+    Jϕoversampled = Jϕ
+    overssamplingfactorϕ=1
+    if 2 * L + 1 > Jϕ
+        overssamplingfactorϕ = (2 * L + 1 ÷ Jϕ) + 1
+        Jϕoversampled = overssamplingfactorϕ * Jϕ
+    end
+
+    indθ= L * (L + 2)
+    indϕ= 2 * L + 1
+    # u= reshape(view(Atmp, 1: (indθ * indϕ)), indθ, indϕ)
+    u= zeros(C, indθ, indϕ)
+
+    Nχ = firstorder ? 2 : 2 * L + 1
+
+    indθ= 2 * L + 1
+    indϕ= 2 * L + 1
+    # v__ = reshape(view(Btmp, 1: (2 * indθ * indϕ) ), indθ, indϕ, 2)
+    v__ = zeros(C, indθ, indϕ, Nχ)
+
+    indθ= Jθoversampled
+    indϕ= 2 * L + 1
+    # v_ = reshape(view(Atmp, 1: (2 * indθ * indϕ)), indθ, indϕ, 2)
+    v_ = zeros(C, indθ, indϕ, Nχ)
+
+    indθ= Nθ
+    indϕ= Jϕoversampled
+    # v = reshape(view(Btmp, 1: (2 * indθ * indϕ) ), indθ, indϕ, 2)
+    v = zeros(C, indθ, indϕ, Nχ)
+    # S21 = reshape(view(Atmp, 1: (2 * indθ * indϕ)), indθ, indϕ, 2)
+    S21 = zeros(C, indθ, Jϕ, 2)
+
+    Δ= Vector{Matrix{Float64}}(undef, L)
+    for ℓ in 1:L
+        Δ[ℓ] = Matrix{Float64}(undef, 2ℓ+1, 2ℓ+1)
+        ifftshift!(Δ[ℓ] , _Δℓ_mμ(ℓ))
+    end
+    
+    fftplanθ! = plan_fft!(v_, 1)
+    fftplanϕ! = plan_fft!(v, 2)
+
+
+    return  L, Nθ, Lθ, u, v__, v_, v, S21, Δ, fftplanθ!, fftplanϕ!, Jθoversampled, Jϕoversampled
+
+end
+
+function _expandirregularθ!(L, u, v_, cosmθ, sinmθ, indices, Δ)
+    for ℓ = 1:L
+
+        Δℓ = Δ[ℓ]
+
+        for m = (-ℓ):ℓ
+            mind = mod(m, 2 * L + 1) + 1 #m+L+1
+            Δmind = indices[ℓ][mod(m, 2 * ℓ + 1)+1] #m+ℓ+1
+            k = ℓ * (ℓ + 1) + m
+            for μ = -1:2:1
+                Δμind = -1
+                μind = mod(3 + μ, 3) # μind=1 => μ=1;   μind=2 => μ=-1
+                if μ == 1
+                    Δμind = indices[ℓ][2]
+                elseif μ == -1
+                    Δμind = indices[ℓ][2*ℓ+1]
+                end
+                mθind = indices[ℓ][1]
+                ΔΔ = Δℓ[mθind, Δμind] * Δℓ[mθind, Δmind]
+                imfac = (_complexunitpower(μ - m) * u[k, μind])
+                
+                # imfac = ((1.0im)^(μ - m) * u[k, μind])
+
+                vview = view(v_, :, mind, μind)
+                vview .+= imfac .* ΔΔ
+
+                trig = isodd(μ + m) ? sinmθ : cosmθ
+                for mθ = 1:ℓ
+                    mθind = indices[ℓ][mod(mθ, 2 * ℓ + 1)+1]
+                    ΔΔ = Δℓ[mθind, Δμind] * Δℓ[mθind, Δmind]
+
+                    vview .+= imfac .* ΔΔ .* trig[mθ]
+                end
+
+
+            end
+        end
+    end
+    return v_
+end
+function _storage_fastsphrical_irregularθ(αin::AbstractVector{C},
+    θvec,
+    Jϕ) where{C}
+    nthet = length(θvec)
+    s = 0
+    if isodd(length(αin))
+        s = 1
+    else
+        s = 2
+    end
+    # L is the maximum mode order
+    L = Int(floor(sqrt((length(αin) - s) / 2 + 1)))
+
+    Jϕoversampled = Jϕ
+    overssamplingfactorϕ=1
+    if 2 * L + 1 > Jϕ
+        overssamplingfactorϕ = (2 * L + 1 ÷ Jϕ) + 1
+        Jϕoversampled = overssamplingfactorϕ * Jϕ
+    end
+
+    
+    indθ= L * (L + 2)
+    indϕ= 2 * L + 1
+    # u= reshape(view(Atmp, 1: (indθ * indϕ)), indθ, indϕ)
+    u= zeros(C, indθ, indϕ)
+
+    v_ = zeros(C, nthet, indϕ, 2)
+    indθ= nthet
+    indϕ= Jϕoversampled
+    # v = reshape(view(Btmp, 1: (2 * indθ * indϕ) ), indθ, indϕ, 2)
+    v = zeros(C, indθ, indϕ, 2)
+    S21 = zeros(C, indθ, Jϕ, 2)
+    
+
+    cosmθ = [2 * cos.(mθ * θvec) for mθ = 1:L]
+    sinmθ = [complex(0, 2) * sin.(mθ * θvec) for mθ = 1:L]
+    indices = [ifftshift(1:(2ℓ+1)) for ℓ in 1:L]
+    Δ= Vector{Matrix{Float64}}(undef, L)
+    for ℓ in 1:L
+        Δ[ℓ] = Matrix{Float64}(undef, 2ℓ+1, 2ℓ+1)
+        Δ[ℓ] = _Δℓ_mμ(ℓ)
+    end
+    fftplanϕ! = plan_fft!(v, 2)
+
+    
+
+    return L, u, v_, v, S21, cosmθ, sinmθ, indices, Δ, fftplanϕ!, Jϕoversampled
+end
+function _zeropaddingχ!(
+    W::AbstractArray{C,3},
+    w::AbstractArray{C,3},
+    L::Integer,
+    Jχ::Integer
+) where {C<:Complex}
+if 2 * L + 1 == Jχ
+    W.= W
+    return W
+end
+if 2 * L + 1 > Jχ        
+    if isodd(Jχ)
+        Lχ = Int((Jχ - 1) / 2)
+        W[:, :, 1:(Lχ+1)] = w[:, :, 1:(Lχ+1)]
+        W[:, :, (Lχ+2):end] = w[:, :, (end-Lχ+1):end]
+        return W
+    else
+        Lχ = Int((Jχ) / 2 - 1)
+        W[:, :, 1:(Lχ+1)] = w[:, :, 1:(Lχ+1)]
+        W[:, :, (Lχ+2):end] = w[:, :, (end-Lχ):end]
+        return W
+    end
+elseif 2 * L + 1 < Jχ
+    W[:, :, 1:(L+1)] = w[:, :, 1:(L+1)]
+    W[:, :, (Jχ-L+1):end] = w[:, :, (L+2):end]
+    return W
+end
+return W
+end
+function _zeropaddingχ(
+    w::AbstractArray{C,3},
+    L::Integer,
+    Jχ::Integer,
+    Jϕ::Integer,
+    Nθ::Integer,
+) where {C<:Complex} 
+    W = zeros(C, Nθ, Jϕ, Jχ)
+    return _zeropaddingχ!( W, w, L, Jχ)
+end
+
 ####################################################################################################
 #                         ^
 #                         |
@@ -539,63 +756,14 @@ end
 #                         v 
 ####################################################################################################
 
-function _storage_fastsphrical(α_inc::AbstractVector{C},
-    β_aut::AbstractVector{C},
-    Jθ,
-    Jϕ) where{C}
-    L, Nθ, Lθ = _inputdimensions(α_inc, β_aut, Jθ)
-    A1= L * (L + 2) * (2 * L + 1)
-    A2 = Jθ*(2L+1) *2
-    A3 = Nθ * Jϕ *2
-    maxA= maximum([A1, A2, A3])
-
-    B1= (2 * L + 1)*(2 * L + 1)* 2
-    B2= (L * (L + 2)) * (2 * L + 1) *2
-    B3 = Nθ * Jϕ *2
-    maxB= maximum([B1, B2, B3])
-
-    # Atmp= zeros(C, maxA)
-    # Btmp= zeros(C, maxB)
-
-    indθ= L * (L + 2)
-    indϕ= 2 * L + 1
-    # u= reshape(view(Atmp, 1: (indθ * indϕ)), indθ, indϕ)
-    u= zeros(C, indθ, indϕ)
-
-    indθ= 2 * L + 1
-    indϕ= 2 * L + 1
-    # v__ = reshape(view(Btmp, 1: (2 * indθ * indϕ) ), indθ, indϕ, 2)
-    v__ = zeros(C, indθ, indϕ, 2)
-
-    indθ= Jθ
-    indϕ= 2 * L + 1
-    # v_ = reshape(view(Atmp, 1: (2 * indθ * indϕ)), indθ, indϕ, 2)
-    v_ = zeros(C, indθ, indϕ, 2)
-
-    indθ= Nθ
-    indϕ= Jϕ
-    # v = reshape(view(Btmp, 1: (2 * indθ * indϕ) ), indθ, indϕ, 2)
-    v = zeros(C, indθ, indϕ, 2)
-    # S21 = reshape(view(Atmp, 1: (2 * indθ * indϕ)), indθ, indϕ, 2)
-    S21 = zeros(C, indθ, indϕ, 2)
-
-    Δ= Vector{Matrix{Float64}}(undef, L)
-    for ℓ in 1:L
-        Δ[ℓ] = Matrix{Float64}(undef, 2ℓ+1, 2ℓ+1)
-        ifftshift!(Δ[ℓ] , _Δℓ_mμ(ℓ))
-    end
-    
-    fftplanθ! = plan_fft!(v_, 1)
-    fftplanϕ! = plan_fft!(v, 2)
-    return  L, Nθ, Lθ, u, v__, v_, v, S21, Δ, fftplanθ!,fftplanϕ!
-
-end
 
 function fastsphericalforward!(
     α_inc::AbstractVector{C},
     β_aut::AbstractVector{C},
     Jθ::Integer,
     Jϕ::Integer,
+    Jθoversampled,
+    Jϕoversampled,
     L,
     Nθ,
     Lθ,
@@ -607,19 +775,25 @@ function fastsphericalforward!(
     Δ, 
     fftplanθ!,
     fftplanϕ!;
-    firstorder=true
-) where {C<:Complex}
-
+    firstorder=true ) where {C<:Complex}
+    # First-order or arbitrary order probe, regular sampling in θ
     u .= _sum_product_αβ!(u, α_inc, β_aut, L; firstorder = firstorder)
     v__ .=_expandθmodes!(v__, u, L, Δ; firstorder = firstorder)
-    v_ .=_zeropaddingθ(v__, L, Jθ, Lθ)
-    # v_ .= fft!(v_, 1)
+
+
+    # for correct downsample, we must first upsample to integer multiple of Jθ
+    oversamplingfactorθ= Jθoversampled ÷ Jθ
+    v_ .=_zeropaddingθ!(v_, v__, L, Jθoversampled, Lθ)
     mul!(v_, fftplanθ!, v_)
-    v .= _zeropaddingϕ(view(v_, 1:Nθ, :, :), L, Jϕ, Nθ)
-    # v .= fft!(v, 2)
+
+    # for correct downsample, we must first upsample to integer multiple of Jϕ
+    overssamplingfactorϕ=Jϕoversampled ÷ Jϕ
+    v .= _zeropaddingϕ!(v, view(v_, 1:oversamplingfactorθ: oversamplingfactorθ * Nθ, :, :), L, Jϕoversampled, Nθ)
+    
+    
     mul!(v, fftplanϕ!, v)
 
-    return _χmodes_to_S12!(S21, v)
+    return _χmodes_to_S12!(S21, view(v, :, 1: overssamplingfactorϕ : Jϕoversampled, :), firstorder= firstorder) 
 end
 
 function fastsphericalforward(
@@ -627,14 +801,56 @@ function fastsphericalforward(
     β_aut::AbstractVector{C},
     Jθ::Integer,
     Jϕ::Integer;
-    firstorder=true
-) where {C<:Complex}
+    firstorder=true ) where {C<:Complex}
+    # First-order or arbitrary order probe, regular sampling in θ
 
-    L, Nθ, Lθ, u, v__, v_, v, S21, Δ, fftplanθ!, fftplanϕ! = _storage_fastsphrical(α_inc, β_aut, Jθ, Jϕ)
+    L, Nθ, Lθ, u, v__, v_, v, S21, Δ, fftplanθ!, fftplanϕ!, Jθoversampled, Jϕoversampled = _storage_fastsphrical(α_inc, β_aut, Jθ, Jϕ, firstorder=firstorder)
 
-    return fastsphericalforward!(α_inc, β_aut, Jθ, Jϕ, L, Nθ, Lθ, u, v__, v_, v, S21, Δ, fftplanθ!, fftplanϕ!, firstorder=firstorder)
+    return fastsphericalforward!(α_inc, β_aut, Jθ, Jϕ, Jθoversampled, Jϕoversampled, L, Nθ, Lθ, u, v__, v_, v, S21, Δ, fftplanθ!, fftplanϕ!, firstorder=firstorder)
 end
 
+
+
+function fastsphericalforward!(
+    αin::AbstractVector{C},
+    β_aut::AbstractVector{C},
+    Nθ,
+    Jϕ::Integer,
+    Jϕoversampled,
+    L,
+    u, 
+    v_, 
+    v, 
+    S21, 
+    cosmθ, 
+    sinmθ, 
+    indices, 
+    Δ, 
+    fftplanϕ!) where{C}
+    # First-order probe, irregular sampling in θ
+
+    u .= _sum_product_αβ!(u, αin, β_aut, L; firstorder = true)
+    v_.= _expandirregularθ!(L, u, v_, cosmθ, sinmθ, indices, Δ)
+    v .= _zeropaddingϕ!(v, v_, L, Jϕoversampled, Nθ)
+    mul!(v, fftplanϕ!, v)
+
+    # for correct downsample, we must first upsample to integer multiple of Jϕ
+    oversamplingfactorϕ=Jϕoversampled ÷ Jϕ
+    
+    return _χmodes_to_S12!(S21, view(v, :, 1: oversamplingfactorϕ : Jϕoversampled, :))
+end
+function fastsphericalforward(
+    αin::AbstractVector{C},
+    β_aut::AbstractVector{C},
+    θvec::AbstractVector{F},
+    Jϕ::Integer
+) where {C<:Complex, F<:Number}
+    # First-order probe, irregular sampling in θ
+
+    L, u, v_, v, S21, cosmθ, sinmθ, indices, Δ, fftplanϕ!, Jϕoversampled = _storage_fastsphrical_irregularθ(αin, θvec, Jϕ)
+    Nθ= length(θvec)
+    return fastsphericalforward!( αin, β_aut, Nθ, Jϕ, Jϕoversampled, L, u, v_, v, S21, cosmθ, sinmθ, indices, Δ, fftplanϕ!)
+end
 
 
 ####################################################################################################

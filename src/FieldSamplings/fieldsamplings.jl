@@ -232,7 +232,7 @@ struct SphericalFieldSampling{Y<:SphereSamplingStrategy, A<:AbstractSphericalCoe
 end
 function SphericalFieldSampling(samplingstrategy::Y, incidentcoefficiens::A) where{C, Y <: SphereSamplingStrategy, A <:AbstractSphericalCoefficients{C}}
     samplecountθ, samplecountϕ=_countsamples(samplingstrategy)
-    S21values= zeros(samplecountθ , samplecountϕ, 2)
+    S21values= zeros(C, samplecountθ , samplecountϕ, 2)
     return SphericalFieldSampling{Y, A, C}(incidentcoefficiens, samplingstrategy, S21values)
 end
 function asvector(x::Array{C}) where{C}

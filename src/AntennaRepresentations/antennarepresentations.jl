@@ -78,10 +78,10 @@ Sampling strategy on the sphere with regular sampling along ϕ and Gauß-Legendr
 """
 struct GaussLegendreθRegularϕSampling <: SphereSamplingStrategy
    Nθ::Integer
-   Nϕ::Integer
+   Jϕ::Integer
 end
 function _countsamples(samplingstrategy :: GaussLegendreθRegularϕSampling)
-   return samplingstrategy.Nθ * samplingstrategy.Nϕ
+   return samplingstrategy.Nθ , samplingstrategy.Jϕ
 end
 
 """
@@ -101,9 +101,9 @@ function weightsandsamples(samplingstrategy :: RegularθRegularϕSampling)
     return θweights, ϕweights, θs, ϕs
 end
 function weightsandsamples(samplingstrategy :: GaussLegendreθRegularϕSampling)
-    xs::Vector{Float64}, θweights::Vector{Float64} = FastGaussQuadrature.gausslegendre(samplingstrategy.Nθ)
+    xs::Vector{Float64}, θweights::Vector{Float64} = gausslegendre(samplingstrategy.Nθ)
     θs = acos.(-xs)
-    nphi = samplingstrategy.Nϕ
+    nphi = samplingstrategy.Jϕ
     dϕ= 2 * pi / (nphi)
     ϕs = dϕ * collect(0:(nphi-1))
     ϕweights= fill!(Vector{Float64}(undef, nphi), dϕ)
