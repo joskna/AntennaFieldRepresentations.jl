@@ -25,7 +25,6 @@ struct SphericalTransmitMap{
     v__::Array{C}
     fftplanθ!::FFTW.cFFTWPlan
     fftplanϕ!::FFTW.cFFTWPlan
-    indicesirregθ::Vector{Vector{Int}}
     cosmθ::Vector{Vector{Float64}}
     sinmθ::Vector{Vector{ComplexF64}}
     Jθoversampled::Integer
@@ -53,7 +52,6 @@ function SphericalTransmitMap(
             fs.samplingstrategy.Jϕ,
             firstorder = firstorder,
         )
-    indicesirregθ = Vector{Vector{Float64}}(undef, 0)
     cosmθ = Vector{Vector{Float64}}(undef, 0)
     sinmθ = Vector{Vector{Float64}}(undef, 0)
     return SphericalTransmitMap{
@@ -73,7 +71,6 @@ function SphericalTransmitMap(
         v__,
         fftplanθ!,
         fftplanϕ!,
-        indicesirregθ,
         cosmθ,
         sinmθ,
         Jθoversampled,
@@ -92,7 +89,7 @@ function SphericalTransmitMap(
 
     θweights, ϕweights, θs, ϕs = weightsandsamples(fs.samplingstrategy)
 
-    L, u, v_, v, S21, cosmθ, sinmθ, indicesirregθ, Δ, fftplanϕ, Jϕoversampled =
+    L, u, v_, v, S21, cosmθ, sinmθ, Δ, fftplanϕ, Jϕoversampled =
         _storage_fastspherical_irregularθ(asvector(swe), θs, fs.samplingstrategy.Jϕ)
 
 
@@ -117,7 +114,6 @@ function SphericalTransmitMap(
         v_,
         fftplanϕ,
         fftplanϕ,
-        indicesirregθ,
         cosmθ,
         sinmθ,
         0,
@@ -197,7 +193,6 @@ function (
         stm.fs.S21values,
         stm.cosmθ,
         stm.sinmθ,
-        stm.indicesirregθ,
         stm.Δ,
         stm.fftplanϕ!,
     )

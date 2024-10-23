@@ -765,24 +765,24 @@ function _storage_fastspherical(
 
 end
 
-function _expandirregularθ!(L, u, v_, cosmθ, sinmθ, indices, Δ)
+function _expandirregularθ!(L, u, v_, cosmθ, sinmθ, Δ)
     for ℓ = 1:L
 
         Δℓ = Δ[ℓ]
 
         for m = (-ℓ):ℓ
             mind = mod(m, 2 * L + 1) + 1 #m+L+1
-            Δmind = indices[ℓ][mod(m, 2 * ℓ + 1)+1] #m+ℓ+1
+            Δmind = mod(m, 2 * ℓ + 1) + 1 #m+ℓ+1
             k = ℓ * (ℓ + 1) + m
             for μ = -1:2:1
                 Δμind = -1
                 μind = mod(3 + μ, 3) # μind=1 => μ=1;   μind=2 => μ=-1
                 if μ == 1
-                    Δμind = indices[ℓ][2]
+                    Δμind = 2
                 elseif μ == -1
-                    Δμind = indices[ℓ][2*ℓ+1]
+                    Δμind = 2 * ℓ + 1
                 end
-                mθind = indices[ℓ][1]
+                mθind = 1
                 ΔΔ = Δℓ[mθind, Δμind] * Δℓ[mθind, Δmind]
                 imfac = (_complexunitpower(μ - m) * u[k, μind])
 
@@ -793,7 +793,7 @@ function _expandirregularθ!(L, u, v_, cosmθ, sinmθ, indices, Δ)
 
                 trig = isodd(μ + m) ? sinmθ : cosmθ
                 for mθ = 1:ℓ
-                    mθind = indices[ℓ][mod(mθ, 2 * ℓ + 1)+1]
+                    mθind = mod(mθ, 2 * ℓ + 1) + 1
                     ΔΔ = Δℓ[mθind, Δμind] * Δℓ[mθind, Δmind]
 
                     vview .+= imfac .* ΔΔ .* trig[mθ]
@@ -839,17 +839,17 @@ function _storage_fastspherical_irregularθ(αin::AbstractVector{C}, θvec, Jϕ)
 
     cosmθ = [2 * cos.(mθ * θvec) for mθ = 1:L]
     sinmθ = [complex(0, 2) * sin.(mθ * θvec) for mθ = 1:L]
-    indices = [ifftshift(1:(2ℓ+1)) for ℓ = 1:L]
+    # indices = [ifftshift(1:(2ℓ+1)) for ℓ = 1:L]
     Δ = Vector{Matrix{Float64}}(undef, L)
     for ℓ = 1:L
         Δ[ℓ] = Matrix{Float64}(undef, 2ℓ + 1, 2ℓ + 1)
-        Δ[ℓ] = _Δℓ_mμ(ℓ)
+        ifftshift!(Δ[ℓ], _Δℓ_mμ(ℓ))
     end
     fftplanϕ! = plan_fft!(v, 2)
 
 
 
-    return L, u, v_, v, S21, cosmθ, sinmθ, indices, Δ, fftplanϕ!, Jϕoversampled
+    return L, u, v_, v, S21, cosmθ, sinmθ, Δ, fftplanϕ!, Jϕoversampled
 end
 function _zeropaddingχ!(
     W::AbstractArray{C,3},
@@ -1001,14 +1001,13 @@ function fastsphericalforward!(
     S21,
     cosmθ,
     sinmθ,
-    indices,
     Δ,
     fftplanϕ!,
 ) where {C}
     # First-order probe, irregular sampling in θ
 
     u .= _sum_product_αβ!(u, αin, β_aut, L; firstorder = true)
-    v_ .= _expandirregularθ!(L, u, v_, cosmθ, sinmθ, indices, Δ)
+    v_ .= _expandirregularθ!(L, u, v_, cosmθ, sinmθ, Δ)
     v .= _zeropaddingϕ!(v, v_, L, Jϕoversampled)
     mul!(v, fftplanϕ!, v)
 
@@ -1025,7 +1024,7 @@ function fastsphericalforward(
 ) where {C<:Complex,F<:Number}
     # First-order probe, irregular sampling in θ
 
-    L, u, v_, v, S21, cosmθ, sinmθ, indices, Δ, fftplanϕ!, Jϕoversampled =
+    L, u, v_, v, S21, cosmθ, sinmθ, Δ, fftplanϕ!, Jϕoversampled =
         _storage_fastspherical_irregularθ(αin, θvec, Jϕ)
     Nθ = length(θvec)
     return fastsphericalforward!(
@@ -1041,7 +1040,6 @@ function fastsphericalforward(
         S21,
         cosmθ,
         sinmθ,
-        indices,
         Δ,
         fftplanϕ!,
     )
