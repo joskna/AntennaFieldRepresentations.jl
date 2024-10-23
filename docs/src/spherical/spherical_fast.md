@@ -138,7 +138,7 @@ S_{12}(\vartheta, \varphi, \chi)=
 
 Here, ``\mathrm{d}_{m,\mu}^{\ell}(\vartheta)`` is the so-called Wigner-d-matrix, ``\alpha_{s\ell \mu}^{(1),\mathrm{pro}}`` are the spherical mode coefficients of the incident probe antenna field (normalized to a unit excitation of the probe), and ``\beta_{s\ell m}^{\mathrm{aut}}`` are the spherical receive coefficients of the AUT which we aim to reconstruct from the measured data. Note, that a first-order probe is assumed here (i.e., all incident modes with ``\mu\neq \pm 1`` are zero), reducing the number of summation terms in the ``\mu``-summation to two.  
 
-Starting at ``S_{12}``, we can successively calculate ``S_{12}\rightarrow w_\mu(\vartheta,\varphi) \rightarrow v_{\mu,m}(\vartheta)``
+Starting at ``S_{12} (\vartheta, \varphi, \chi)``, we can successively calculate ``S_{12}(\vartheta, \varphi, \chi) \rightarrow w_\mu(\vartheta,\varphi) \rightarrow v_{\mu,m}(\vartheta) \rightarrow u_{\mu,m,\ell}``
 using the orthogonality relations
 ```math
 \int \limits_{0}^{2\pi}
@@ -176,6 +176,24 @@ from where the ``\beta_{s\ell m}^{\mathrm{aut}}`` can be found by solving a ``2\
 	{\beta}_{2, \ell, m }^{\mathrm{aut}}
 \end{bmatrix}\, .
 ```
+
+The individual transformation steps are as follows. Since we only have to consider ``\mu``-values for ``\mu = \pm 1``, we can calculate the ``\rightarrow w_\mu(\vartheta,\varphi)`` from the ``S_{12} (\vartheta, \varphi, \chi)``-values measured at ``\chi \in \{0, \pi/2\}``
+by
+```math
+w_{+1}(\vartheta,\varphi)= 
+\dfrac{1}{2}
+\left[
+S_{12} (\vartheta, \varphi, \chi=0) + \mathrm{j}\, S_{12} (\vartheta, \varphi, \chi=\pi/2)
+\right]
+```
+and
+```math
+w_{-1}(\vartheta,\varphi)= 
+\dfrac{1}{2}
+\left[
+S_{12} (\vartheta, \varphi, \chi=0) - \mathrm{j}\, S_{12} (\vartheta, \varphi, \chi=\pi/2)
+\right]
+``` 
 
 ---
 ## [References](@id refs)

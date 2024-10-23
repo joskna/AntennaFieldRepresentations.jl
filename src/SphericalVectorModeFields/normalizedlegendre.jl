@@ -14,7 +14,7 @@ function sphPlm_deriv_array(Lmax::I, m::I, x::T) where {I<:Integer} where {T<:Nu
     # cosx=cos(x)
 
     # use one-term recurrence relation for Pℓℓ in direction of increasing ℓ 
-    Pℓℓ = √(1/T(π))/2
+    Pℓℓ = √(1 / T(π)) / 2
     # Pℓℓ= √T(1//2)
     # Pℓℓ=√(1/T(π))
     for ℓ = 1:m

@@ -1,12 +1,12 @@
 using AntennaFieldRepresentations
 using Test
 
-@testset verbose=true "AntennaFieldRepresentations.jl" begin
+@testset verbose = true "AntennaFieldRepresentations.jl" begin
 
-    @testset "Regressions" verbose=true begin
+    @testset "Regressions" verbose = true begin
         @testset "Freeze Tests" begin
             include(joinpath("test_Regressions", "freeze_tests.jl"))
-        end    
+        end
     end
 
     # @testset "DipoleInteractions" verbose=true begin
@@ -17,7 +17,7 @@ using Test
     #         include(joinpath("test_DipoleInteractions", "test_farfields.jl"))
     #     end
     # end
-    @testset "SphericalVectorModeFields" verbose=true begin
+    @testset "SphericalVectorModeFields" verbose = true begin
         @testset "Legendre Polynomials" begin
             # include("test_Pl.jl")     
             include(joinpath("test_SphericalVectorModeFields", "test_Plm.jl"))
@@ -29,27 +29,32 @@ using Test
             include(joinpath("test_SphericalVectorModeFields", "test_Kslm.jl"))
         end
         @testset "Electric and Magnetic Field" begin
-            include(joinpath("test_SphericalVectorModeFields", "test_planewave.jl")) 
+            include(joinpath("test_SphericalVectorModeFields", "test_planewave.jl"))
         end
     end
-    
+    @testset "FastSpherical" verbose = true begin
+        @testset "fastsphericalforward" begin
+            include(joinpath("test_FastSpherical", "test_fastsphericalforward.jl"))
+        end
+    end
+
     # @testset "PlaneWaveRepresentations" verbose=true begin
     #     @testset "Conversions" begin
     #         include(joinpath("test_PlaneWaveRepresentations", "test_convert.jl"))
     #     end
-    
+
     #     @testset "Legendre functions" begin
     #         include(joinpath("test_PlaneWaveRepresentations", "test_Pl.jl"))
     #     end
-    
+
     #     @testset "Interpolation" begin
     #         include(joinpath("test_PlaneWaveRepresentations", "test_interpolation.jl"))
     #     end
-    
+
     #     @testset "Operations" begin
     #         include(joinpath("test_PlaneWaveRepresentations", "test_operations.jl"))
     #     end
-    
+
     #     @testset "Transmission" begin
     #         include(joinpath("test_PlaneWaveRepresentations", "test_transmission.jl"))
     #     end
@@ -70,7 +75,7 @@ using Test
     #     end
     # end
 
-    
+
     # @testset verbose=true "Interaction Between Field Representations" begin
 
     #     @testset "Interactions Dipole <-> Spherical" begin

@@ -5,7 +5,7 @@ Return all spherical vector wave functions upt to Jmaxx at r, ϑ, φ in spherica
 """
 function F_sℓm_spherical_array(
     Jmaxx::Integer,
-    P:: PropagationType,
+    P::PropagationType,
     r::T,
     ϑ::Number,
     φ::T,
@@ -158,7 +158,7 @@ function F_sℓm_thetapi(
     r::T,
     φ::T,
     k0::T,
-) where{T<: Real}
+) where {T<:Real}
     Fr, Fϑ, Fφ = F_sℓm_thetazero(s, ℓ, m, P, r, φ, k0)
     Fr *= (-1)^ℓ
     Fϑ *= (-1)^(ℓ + s)
@@ -180,10 +180,8 @@ function F_sℓm_spherical_rzero(
     ϑ::Number,
     φ::T,
     k0::T,
-) where{T<: Real}
-    return convert(Complex{T}, Inf),
-    convert(Complex{T}, Inf),
-    convert(Complex{T}, Inf)
+) where {T<:Real}
+    return convert(Complex{T}, Inf), convert(Complex{T}, Inf), convert(Complex{T}, Inf)
 end
 function F_sℓm_spherical_rzero(
     s::Integer,
@@ -193,7 +191,7 @@ function F_sℓm_spherical_rzero(
     ϑ::Number,
     φ::T,
     k0::T,
-) where{T<: Real}
+) where {T<:Real}
 
     Fr = zero(Complex{T})
     Fϑ = zero(Complex{T})
@@ -228,7 +226,7 @@ function F_sℓm_spherical(
     ϑ::Number,
     φ::T,
     k0::T,
-) where{T<: Real}
+) where {T<:Real}
     j = sℓm_to_j(s, ℓ, m)
     Fr, Fϑ, F_sℓm_spherical_array(j, P, r, ϑ, φ, k0)
     return [Fr[j]; Fϑ[j]; Fφ[j]]

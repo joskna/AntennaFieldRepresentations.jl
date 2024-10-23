@@ -55,13 +55,13 @@ A regular sampling strategy on the sphere has samples equiangularly distributed 
 - `Jϕ :: Integer`
 """
 struct RegularθRegularϕSampling <: SphereSamplingStrategy
-   Jθ :: Integer
-   Jϕ :: Integer
+    Jθ::Integer
+    Jϕ::Integer
 end
-function _countsamples(samplingstrategy :: RegularθRegularϕSampling)
-   Jθ = samplingstrategy.Jθ
-   Jϕ = samplingstrategy.Jϕ
-   return Jθ ÷ 2 + 1, Jϕ
+function _countsamples(samplingstrategy::RegularθRegularϕSampling)
+    Jθ = samplingstrategy.Jθ
+    Jϕ = samplingstrategy.Jϕ
+    return Jθ ÷ 2 + 1, Jϕ
 end
 
 
@@ -77,11 +77,11 @@ Sampling strategy on the sphere with regular sampling along ϕ and Gauß-Legendr
 - `expansionorderL::Integer`
 """
 struct GaussLegendreθRegularϕSampling <: SphereSamplingStrategy
-   Nθ::Integer
-   Jϕ::Integer
+    Nθ::Integer
+    Jϕ::Integer
 end
-function _countsamples(samplingstrategy :: GaussLegendreθRegularϕSampling)
-   return samplingstrategy.Nθ , samplingstrategy.Jϕ
+function _countsamples(samplingstrategy::GaussLegendreθRegularϕSampling)
+    return samplingstrategy.Nθ, samplingstrategy.Jϕ
 end
 
 """
@@ -89,24 +89,24 @@ end
 
 Return integration weights `θweights, ϕweights` and sampling points `θs, ϕs` for the `samplingstrategy`.
 """
-function weightsandsamples(samplingstrategy :: RegularθRegularϕSampling)
+function weightsandsamples(samplingstrategy::RegularθRegularϕSampling)
     nθ, nϕ = _countsamples(samplingstrategy)
     dϕ = 2 * pi / (samplingstrategy.Jϕ)
     dθ = 2 * pi / (samplingstrategy.Jθ)
     ϕs = dϕ * collect(0:(nϕ-1))
     θs = dθ * collect(0:(nθ-1))
-    ϕweights= fill!(Vector{Float64}(undef, nϕ), dϕ)
-    θweights= sin.(θs)
+    ϕweights = fill!(Vector{Float64}(undef, nϕ), dϕ)
+    θweights = sin.(θs)
 
     return θweights, ϕweights, θs, ϕs
 end
-function weightsandsamples(samplingstrategy :: GaussLegendreθRegularϕSampling)
+function weightsandsamples(samplingstrategy::GaussLegendreθRegularϕSampling)
     xs::Vector{Float64}, θweights::Vector{Float64} = gausslegendre(samplingstrategy.Nθ)
     θs = acos.(-xs)
     nphi = samplingstrategy.Jϕ
-    dϕ= 2 * pi / (nphi)
+    dϕ = 2 * pi / (nphi)
     ϕs = dϕ * collect(0:(nphi-1))
-    ϕweights= fill!(Vector{Float64}(undef, nphi), dϕ)
+    ϕweights = fill!(Vector{Float64}(undef, nphi), dϕ)
 
     return θweights, ϕweights, θs, ϕs
 end
@@ -132,8 +132,7 @@ Equivalent representation of the electromagnetic fields of an antenna (in a cert
 
 Behaves like an `AbstractVector{C}` with extra context.
 """
-abstract type  AntennaFieldRepresentation{P, C} <: AbstractVector{C}  
-end
+abstract type AntennaFieldRepresentation{P,C} <: AbstractVector{C} end
 
 #
 #
@@ -187,8 +186,8 @@ function rotate! end
 
 Transfer radiating field representation into incident field representation in translated coordinate system with new origin at R. 
 """
-function transfer(aut_field::AntennaFieldRepresentation{Radiated, C}, R) where{C}
-return transfer(similar(aut_field), aut_field, R)
+function transfer(aut_field::AntennaFieldRepresentation{Radiated,C}, R) where {C}
+    return transfer(similar(aut_field), aut_field, R)
 end
 
 """
@@ -229,8 +228,11 @@ Return the E-field vector (in cartesian coordinates) of the field representation
 
 See also: [`efield!`](@ref), [`ehfield`](@ref)
 """
-function efield(aut_field::AntennaFieldRepresentation{P, C}, R) where{C<:Number, P <: PropagationType}
-    storage = Vector{C}(undef,3)
+function efield(
+    aut_field::AntennaFieldRepresentation{P,C},
+    R,
+) where {C<:Number,P<:PropagationType}
+    storage = Vector{C}(undef, 3)
     return efield!(storage, aut_field, R)
 end
 
@@ -252,8 +254,11 @@ Return the H-field vector (in cartesian coordinates) of the field representation
 
 See also: [`hfield!`](@ref), [`ehfield`](@ref)
 """
-function hfield(aut_field::AntennaFieldRepresentation{P, C}, R) where{C<:Number, P <: PropagationType}
-    storage = Vector{C}(undef,3)
+function hfield(
+    aut_field::AntennaFieldRepresentation{P,C},
+    R,
+) where {C<:Number,P<:PropagationType}
+    storage = Vector{C}(undef, 3)
     return hfield!(storage, aut_field, R)
 end
 
@@ -278,9 +283,12 @@ calling `ehfield` may be slightly more performant than calling `efield` and `hfi
 
 See also: [`efield`](@ref), [`hfield`](@ref), [`ehfield!`](@ref)
 """
-function ehfield(aut_field::AntennaFieldRepresentation{P, C}, R) where{C<:Number, P <: PropagationType}
-    storage_efield = Vector{C}(undef,3)
-    storage_hfield = Vector{C}(undef,3)
+function ehfield(
+    aut_field::AntennaFieldRepresentation{P,C},
+    R,
+) where {C<:Number,P<:PropagationType}
+    storage_efield = Vector{C}(undef, 3)
+    storage_hfield = Vector{C}(undef, 3)
     return ehfield!(storage_efield, storage_hfield, aut_field, R)
 end
 
@@ -295,8 +303,9 @@ calling `ehfield!` may be slightly more performant than calling `efield!` and `h
 
 See also: [`efield!`](@ref), [`hfield!`](@ref), [`ehfield`](@ref)
 """
-function ehfield!(storage_efield, storage_hfield, aut_field, R; reset=true) 
-    return efield!(storage_efield, aut_field, R; reset=reset), hfield!(storage_hfield, aut_field, R; reset=reset)
+function ehfield!(storage_efield, storage_hfield, aut_field, R; reset = true)
+    return efield!(storage_efield, aut_field, R; reset = reset),
+    hfield!(storage_hfield, aut_field, R; reset = reset)
 end
 
 """
@@ -307,11 +316,18 @@ Return Eθ,Eϕ-far-field tuple for radiating field representation into direction
 
 See also: [`efield`](@ref), [`hfield`](@ref)
 """
-function farfield(aut_field::AntennaFieldRepresentation{Radiated, C}, θϕ::Tuple{<:Number, <:Real} ) where {C}
-    θ, ϕ= θϕ
+function farfield(
+    aut_field::AntennaFieldRepresentation{Radiated,C},
+    θϕ::Tuple{<:Number,<:Real},
+) where {C}
+    θ, ϕ = θϕ
     return farfield(aut_field, θ, ϕ)
 end
-function farfield(aut_field::AntennaFieldRepresentation{Radiated, C}, θ::Number, ϕ::Real) where {C}
+function farfield(
+    aut_field::AntennaFieldRepresentation{Radiated,C},
+    θ::Number,
+    ϕ::Real,
+) where {C}
     throw(MethodError())
 end
 

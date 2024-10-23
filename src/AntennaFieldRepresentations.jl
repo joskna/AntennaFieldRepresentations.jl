@@ -145,11 +145,13 @@ include(joinpath("OperationMaps", "operationmaps.jl"))
 export PropagationType, Radiated, Absorbed, Incident
 export AntennaFieldRepresentation
 export ElmagType, Electric, Magnetic
-export asvector, efield, efield!, hfield, hfield!, ehfield, ehfield!, farfield 
+export asvector, efield, efield!, hfield, hfield!, ehfield, ehfield!, farfield
 export getwavenumber, setwavenumber!, rotate, rotate!, spatialshift, spatialshift!
 export DipoleArray, HertzArray, FitzgeraldArray
-export SphericalWaveExpansion, AbstractSphericalCoefficients, SphericalCoefficients, FirstOrderSphericalCoefficients
-export SphereSamplingStrategy, PlaneWaveExpansion, RegularθRegularϕSampling, GaussLegendreθRegularϕSampling
+export SphericalWaveExpansion,
+    AbstractSphericalCoefficients, SphericalCoefficients, FirstOrderSphericalCoefficients
+export SphereSamplingStrategy,
+    PlaneWaveExpansion, RegularθRegularϕSampling, GaussLegendreθRegularϕSampling
 export SurfaceCurrentDensity
 export FieldSampling, IrregularFieldSampling, ProbeAntenna, EfieldSampling, HfieldSampling
 export j_to_sℓm, sℓm_to_j
