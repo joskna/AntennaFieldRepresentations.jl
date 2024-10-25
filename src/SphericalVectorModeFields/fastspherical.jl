@@ -685,7 +685,7 @@ function _χmodes_to_S12!(S12, w::AbstractArray{C,3}; firstorder = true) where {
         Nθ, Jϕ, Jχ = size(w)
         oversamplingfactor = Jχ ÷ 4 + 1
         L = (Jχ - 1) ÷ 2
-        v = zeros(C, Nθ, Jϕ, Jχ)
+        v = zeros(C, Nθ, Jϕ, oversamplingfactor * 4)
         v = _zeropaddingχ!(v, w, L, oversamplingfactor * 4)
         S12 .= fft(v, 3)[:, :, [1, oversamplingfactor + 1]]
     end
