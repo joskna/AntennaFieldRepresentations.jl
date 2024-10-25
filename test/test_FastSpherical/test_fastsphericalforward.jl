@@ -95,8 +95,8 @@ for Jextraθ = -2:3, Jextraϕ = -2:3
     fs = SphericalFieldSampling(regularsamplingstrategy, αincext)
     fsarborder = SphericalFieldSampling(regularsamplingstrategy, αinc_arborder)
 
-    b = reshape(transmit(swe, fs), size(fs.S21values))
-    barborder = reshape(transmit(swe, fsarborder), size(fs.S21values))
+    b = transmit(swe, fs)
+    barborder = transmit(swe, fsarborder)
 
 
     # @btime b = reshape(transmit(swe, fs), 41,81,2);
@@ -116,8 +116,8 @@ for Jextraθ = -2:3, Jextraϕ = -2:3
         # ffdip[k,kk, 1] = Eθ
         # ffdip[k,kk, 2] = Eϕ
     end
-    @test norm(ffswe - b) / norm(b) < 3e-14
-    @test norm(ffswe - barborder) / norm(ffswe) < 1e-14
+    @test norm(ffswe - reshape(b, size(ffswe))) / norm(b) < 3e-14
+    @test norm(ffswe - reshape(barborder, size(ffswe))) / norm(ffswe) < 1e-14
     # @test norm(ffdip - ffswe) / norm(ffdip) < 3e-14
 
     stm = AntennaFieldRepresentations.SphericalTransmitMap(swe, fs)
@@ -128,7 +128,7 @@ for Jextraθ = -2:3, Jextraϕ = -2:3
 
     if Jextraθ >= 0 && Jextraϕ >= 0
         stm_inv = AntennaFieldRepresentations.inverse(stm)
-        αret = stm_inv(fs.S21values)
+        αret = stm_inv(vec(fs.S21values))
 
         @test norm(αret - sphcoeffs) / norm(sphcoeffs) < 3e-14
     end
@@ -137,9 +137,9 @@ for Jextraθ = -2:3, Jextraϕ = -2:3
 
     gausssamplingstrategy =
         GaussLegendreθRegularϕSampling(Lmax + 1 + Jextraθ, 2Lmax + 2 + Jextraϕ)
-    fsgauss = SphericalFieldSampling(gausssamplingstrategy, αinc)
+    fsgauss = SphericalFieldSampling(gausssamplingstrategy, αincext)
     # fsarbordergauss = SphericalFieldSampling(gausssamplingstrategy, αinc_arborder) 
-    bgauss = reshape(transmit(swe, fsgauss), size(fsgauss.S21values))
+    bgauss = transmit(swe, fsgauss)
     # bgaussarborder = reshape(transmit(swe, fsarbordergauss), size(fsarbordergauss.S21values))
     θweights, ϕweights, θs, ϕs =
         AntennaFieldRepresentations.weightsandsamples(gausssamplingstrategy)
@@ -156,7 +156,7 @@ for Jextraθ = -2:3, Jextraϕ = -2:3
         # ffdip[k, kk, 2] = Eϕ
     end
     # @test norm(ffdip - bgauss) / norm(ffdip) < 3e-14
-    @test norm(ffswe - bgauss) / norm(ffswe) < 1e-14
+    @test norm(ffswe - reshape(bgauss, size(ffswe))) / norm(ffswe) < 1e-14
     # @test norm(ffswe - bgaussarborder) / norm(ffswe) < 1e-14
 
     stmgauss = AntennaFieldRepresentations.SphericalTransmitMap(swe, fsgauss)
@@ -164,4 +164,18 @@ for Jextraθ = -2:3, Jextraϕ = -2:3
     swe .= sphcoeffs
 
     @test norm(bgauss - b2) < 1e-16
+
+    if Jextraθ >= 0 && Jextraϕ >= 0
+        a = AntennaFieldRepresentations.fastsphericalinverse(
+            ffswe,
+            fsgauss.incidentcoefficients,
+            θs,
+            θweights,
+        )
+        @test norm(a[1:length(sphcoeffs)] - sphcoeffs) / norm(sphcoeffs) < 4e-14
+
+        stm_inv = AntennaFieldRepresentations.inverse(stmgauss)
+        αret = stm_inv(vec(ffswe))
+        @test norm(αret - sphcoeffs) / norm(sphcoeffs) < 4e-14
+    end
 end

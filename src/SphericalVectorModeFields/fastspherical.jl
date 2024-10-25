@@ -133,6 +133,7 @@ function _θintegral!(
     Δ,
     ifft_planθ,
 ) where {C<:Number}
+    #regularly distributed θ
     fill!(u, zero(C))
     Jθ = size(v, 1)
 
@@ -206,8 +207,49 @@ function _θintegral!(
     return u
 end
 
+function _θintegral!(u::AbstractArray{C}, v, dvec, weightvec, sinmθ, cosmθ, Δ, L) where {C}
+    #irregularly distributed θ
+    fill!(u, zero(C))
+    for ℓ = 1:L
+        Δℓ = Δ[ℓ]
 
-using LinearAlgebra: det
+        for m = (-ℓ):ℓ
+            m_ind = mod(m, 2 * L + 1) + 1
+            Δm_ind = mod(m, 2 * ℓ + 1) + 1
+            k = ℓ * (ℓ + 1) + m
+            for μ = -1:2:1
+                Δμ_ind = -1
+                μ_ind = mod(3 + μ, 3)
+                if μ == 1
+                    Δμ_ind = 2
+                elseif μ == -1
+                    Δμ_ind = 2 * ℓ + 1
+                end
+                mθind = 1
+                ΔΔ = Δℓ[mθind, Δμ_ind] * Δℓ[mθind, Δm_ind]
+                dvec .= ΔΔ
+                trig = isodd(μ + m) ? sinmθ : cosmθ
+                for mθ = 1:ℓ
+                    mθind = mod(mθ, 2 * ℓ + 1) + 1
+                    ΔΔ = Δℓ[mθind, Δμ_ind] * Δℓ[mθind, Δm_ind]
+                    dvec .+= ΔΔ .* trig[mθ]
+                end
+                # dvec .*= (1.0im)^(μ-m)
+
+                # u[k, μ_ind] += (2ℓ + 1) / 2 .* sum(dvec .* weightvec .* v[:, m_ind, μ_ind])
+                dvec .*= _complexunitpower(μ - m) .* weightvec
+                u[k, μ_ind] += (2ℓ + 1) ./ 2 .* (transpose(dvec) * view(v, :, m_ind, μ_ind))
+            end
+
+        end
+
+
+    end
+    return u
+end
+
+
+# using LinearAlgebra: det
 # function u_to_β(u, αin,L)
 function _receivecoeffs_2by2matrix(
     u::AbstractArray{C,2},
@@ -632,10 +674,7 @@ function _zeropaddingϕ_ad(
 end
 
 
-function _χmodes_to_S12(w::AbstractArray{C,3}; firstorder = true) where {C<:Complex}
-    S12 = Array{C}(undef, size(w))
-    return _χmodes_to_S12!(S12, w, firstorder = firstorder)
-end
+
 function _χmodes_to_S12!(S12, w::AbstractArray{C,3}; firstorder = true) where {C<:Complex}
     if firstorder
         view(S12, :, :, 1) .= view(w, :, :, 1) .+ view(w, :, :, 2)
@@ -646,13 +685,32 @@ function _χmodes_to_S12!(S12, w::AbstractArray{C,3}; firstorder = true) where {
         Nθ, Jϕ, Jχ = size(w)
         oversamplingfactor = Jχ ÷ 4 + 1
         L = (Jχ - 1) ÷ 2
-        v = _zeropaddingχ(w, L, oversamplingfactor * 4, Jϕ, Nθ)
+        v = zeros(C, Nθ, Jϕ, Jχ)
+        v = _zeropaddingχ!(v, w, L, oversamplingfactor * 4)
         S12 .= fft(v, 3)[:, :, [1, oversamplingfactor + 1]]
     end
 end
-function _χmodes_to_S12_ad(S12::AbstractArray{C,3}) where {C<:Complex}
-    w = Array{C}(undef, size(S12))
-    return _χmodes_to_S12_ad!(w, S12)
+function _χmodes_to_S12_ad!(
+    S12,
+    w::AbstractArray{C,3};
+    firstorder = true,
+) where {C<:Complex}
+    if firstorder
+        view(w, :, :, 1) .= C(0, 1) .* view(S12, :, :, 2)
+        view(w, :, :, 1) .+= view(S12, :, :, 1)
+        view(w, :, :, 2) .= C(0, -1) .* view(S12, :, :, 2)
+        view(w, :, :, 2) .+= view(S12, :, :, 1)
+        return w
+    else
+        Nθ, Jϕ, Jχ = size(w)
+        oversamplingfactor = Jχ ÷ 4 + 1
+        L = (Jχ - 1) ÷ 2
+        v = zeros(C, Nθ, Jϕ, Jχ)
+        v[:, :, [1, oversamplingfactor + 1]] .= S12
+        v = bfft(v, 3)
+        w = _zeropaddingχ!(v, w, L, oversamplingfactor * 4)
+        return w
+    end
 end
 
 function _inputdimensions(α_inc, β_aut, Jθ)
@@ -805,7 +863,12 @@ function _expandirregularθ!(L, u, v_, cosmθ, sinmθ, Δ)
     end
     return v_
 end
-function _storage_fastspherical_irregularθ(αin::AbstractVector{C}, θvec, Jϕ) where {C}
+function _storage_fastspherical_irregularθ(
+    αin::AbstractVector{C},
+    β_aut::AbstractVector{C},
+    θvec,
+    Jϕ,
+) where {C}
     nthet = length(θvec)
     s = 0
     if isodd(length(αin))
@@ -814,7 +877,7 @@ function _storage_fastspherical_irregularθ(αin::AbstractVector{C}, θvec, Jϕ)
         s = 2
     end
     # L is the maximum mode order
-    L = Int(floor(sqrt((length(αin) - s) / 2 + 1)))
+    L, Nθ, Lθ = _inputdimensions(αin, β_aut, 2 * length(θvec))
 
     Jϕoversampled = Jϕ
     oversamplingfactorϕ = 1
@@ -858,24 +921,26 @@ function _zeropaddingχ!(
     Jχ::Integer,
 ) where {C<:Complex}
     if 2 * L + 1 == Jχ
-        W .= W
+        W .= w
         return W
     end
     if 2 * L + 1 > Jχ
         if isodd(Jχ)
             Lχ = Int((Jχ - 1) / 2)
-            W[:, :, 1:(Lχ+1)] = w[:, :, 1:(Lχ+1)]
-            W[:, :, (Lχ+2):end] = w[:, :, (end-Lχ+1):end]
+            view(W, :, :, 1:(Lχ+1)) .= view(w, :, :, 1:(Lχ+1))
+            view(W, :, :, ((Lχ+2):size(W, 3))) .=
+                view(w, :, :, (size(w, 3)-Lχ+1):size(w, 3))
             return W
         else
             Lχ = Int((Jχ) / 2 - 1)
-            W[:, :, 1:(Lχ+1)] = w[:, :, 1:(Lχ+1)]
-            W[:, :, (Lχ+2):end] = w[:, :, (end-Lχ):end]
+            view(W, :, :, 1:(Lχ+1)) .= view(w, :, :, 1:(Lχ+1))
+            view(W, :, :, ((Lχ+2):size(W, 3))) .=
+                view(w, :, :, ((size(w, 3)-Lχ):size(w, 3)))
             return W
         end
     elseif 2 * L + 1 < Jχ
-        W[:, :, 1:(L+1)] = w[:, :, 1:(L+1)]
-        W[:, :, (Jχ-L+1):end] = w[:, :, (L+2):end]
+        view(W, :, :, 1:(L+1)) .= view(w, :, :, 1:(L+1))
+        view(W, :, :, (Jχ-L+1):size(W, 3)) .= view(w, :, :, (L+2):size(w, 3))
         return W
     end
     return W
@@ -890,206 +955,79 @@ function _zeropaddingχ(
     W = zeros(C, Nθ, Jϕ, Jχ)
     return _zeropaddingχ!(W, w, L, Jχ)
 end
-
-####################################################################################################
-#                         ^
-#                         |
-####################### auxilliary functions #######################################################
-
-
-####################### fastsphericalforward #######################################################
-#                         |
-#                         v 
-####################################################################################################
-
-
-function fastsphericalforward!(
-    α_inc::AbstractVector{C},
-    β_aut::AbstractVector{C},
-    Jθ::Integer,
-    Jϕ::Integer,
-    Jθoversampled,
-    Jϕoversampled,
-    L,
-    Nθ,
-    Lθ,
-    u,
-    v__,
-    v_,
-    v,
-    S21,
-    Δ,
-    fftplanθ!,
-    fftplanϕ!;
-    firstorder = true,
+function _zeropaddingχ_ad!(
+    W::AbstractArray{C,3},
+    w::AbstractArray{C,3},
+    L::Integer,
+    Jχ::Integer,
 ) where {C<:Complex}
-    # First-order or arbitrary order probe, regular sampling in θ
-    u .= _sum_product_αβ!(u, α_inc, β_aut, L; firstorder = firstorder)
-    v__ .= _expandθmodes!(v__, u, L, Δ; firstorder = firstorder)
-
-
-    # for correct downsample, we must first upsample to integer multiple of Jθ
-    oversamplingfactorθ = Jθoversampled ÷ Jθ
-    v_ .= _zeropaddingθ!(v_, v__, L, Jθoversampled, Lθ)
-    mul!(v_, fftplanθ!, v_)
-
-    # for correct downsample, we must first upsample to integer multiple of Jϕ
-    oversamplingfactorϕ = Jϕoversampled ÷ Jϕ
-    v .= _zeropaddingϕ!(
-        v,
-        view(v_, 1:oversamplingfactorθ:oversamplingfactorθ*Nθ, :, :),
-        L,
-        Jϕoversampled,
-    )
-
-
-    mul!(v, fftplanϕ!, v)
-
-    return _χmodes_to_S12!(
-        S21,
-        view(v, :, 1:oversamplingfactorϕ:Jϕoversampled, :),
-        firstorder = firstorder,
-    )
-end
-
-function fastsphericalforward(
-    α_inc::AbstractVector{C},
-    β_aut::AbstractVector{C},
-    Jθ::Integer,
-    Jϕ::Integer;
-    firstorder = true,
-) where {C<:Complex}
-    # First-order or arbitrary order probe, regular sampling in θ
-
-    L, Nθ, Lθ, u, v__, v_, v, S21, Δ, fftplanθ!, fftplanϕ!, Jθoversampled, Jϕoversampled =
-        _storage_fastspherical(α_inc, β_aut, Jθ, Jϕ, firstorder = firstorder)
-
-    return fastsphericalforward!(
-        α_inc,
-        β_aut,
-        Jθ,
-        Jϕ,
-        Jθoversampled,
-        Jϕoversampled,
-        L,
-        Nθ,
-        Lθ,
-        u,
-        v__,
-        v_,
-        v,
-        S21,
-        Δ,
-        fftplanθ!,
-        fftplanϕ!,
-        firstorder = firstorder,
-    )
+    if 2 * L + 1 == Jχ
+        w .= W
+        return w
+    end
+    if 2 * L + 1 > Jχ
+        if isodd(Jχ)
+            Lχ = Int((Jχ - 1) / 2)
+            view(w, :, :, 1:(Lχ+1)) .= view(W, :, :, 1:(Lχ+1))
+            view(w, :, :, (size(w, 3)-Lχ+1):size(w, 3)) .=
+                view(W, :, :, ((Lχ+2):size(W, 3)))
+            return w
+        else
+            Lχ = Int((Jχ) / 2 - 1)
+            view(w, :, :, 1:(Lχ+1)) .= view(W, :, :, 1:(Lχ+1))
+            view(w, :, :, ((size(w, 3)-Lχ):size(w, 3))) .=
+                view(W, :, :, ((Lχ+2):size(W, 3)))
+            return w
+        end
+    elseif 2 * L + 1 < Jχ
+        view(w, :, :, 1:(L+1)) .= view(W, :, :, 1:(L+1))
+        view(w, :, :, (L+2):size(w, 3)) .= view(W, :, :, (Jχ-L+1):size(W, 3))
+        return w
+    end
+    return w
 end
 
 
 
-function fastsphericalforward!(
-    αin::AbstractVector{C},
-    β_aut::AbstractVector{C},
-    Nθ,
-    Jϕ::Integer,
-    Jϕoversampled,
-    L,
-    u,
-    v_,
-    v,
-    S21,
-    cosmθ,
-    sinmθ,
-    Δ,
-    fftplanϕ!,
-) where {C}
-    # First-order probe, irregular sampling in θ
-
-    u .= _sum_product_αβ!(u, αin, β_aut, L; firstorder = true)
-    v_ .= _expandirregularθ!(L, u, v_, cosmθ, sinmθ, Δ)
-    v .= _zeropaddingϕ!(v, v_, L, Jϕoversampled)
-    mul!(v, fftplanϕ!, v)
-
-    # for correct downsample, we must first upsample to integer multiple of Jϕ
-    oversamplingfactorϕ = Jϕoversampled ÷ Jϕ
-
-    return _χmodes_to_S12!(S21, view(v, :, 1:oversamplingfactorϕ:Jϕoversampled, :))
-end
-function fastsphericalforward(
-    αin::AbstractVector{C},
-    β_aut::AbstractVector{C},
-    θvec::AbstractVector{F},
-    Jϕ::Integer,
-) where {C<:Complex,F<:Number}
-    # First-order probe, irregular sampling in θ
-
-    L, u, v_, v, S21, cosmθ, sinmθ, Δ, fftplanϕ!, Jϕoversampled =
-        _storage_fastspherical_irregularθ(αin, θvec, Jϕ)
-    Nθ = length(θvec)
-    return fastsphericalforward!(
-        αin,
-        β_aut,
-        Nθ,
-        Jϕ,
-        Jϕoversampled,
-        L,
-        u,
-        v_,
-        v,
-        S21,
-        cosmθ,
-        sinmθ,
-        Δ,
-        fftplanϕ!,
-    )
+function _φ_integral!(v, w, L, ifft_planϕ!)
+    #irregularly distributed θ
+    mul!(w, ifft_planϕ!, w)
+    view(v, :, 1:L+1, :) .= view(w, :, 1:(L+1), :)  # remove redundant sample of ϕ-harmonics
+    view(v, :, L+2:size(v, 2), :) .= view(w, :, (size(w, 2)-L+1):size(w, 2), :) # remove redundant sample of ϕ-harmonics
+    return v
 end
 
+function _storage_fastsphericalinverse(
+    S12::AbstractArray{C,3},
+    θvec::AbstractArray{F,1},
+) where {C,F}
+    #irregularly distributed θ 
 
-####################################################################################################
-#                         ^
-#                         |
-####################### fastsphericalforward #######################################################
+    a, b, _ = size(S12)
 
-####################### fastsphericalforward adjoint ###############################################
-#                         |
-#                         v 
-####################################################################################################
+    L = minimum([a - 1, (b - 1) ÷ 2])
+    w = Array{C}(undef, a, b, 2)
+    u = zeros(C, L * (L + 2), 2)
+    v = Array{C}(undef, a, 2L + 1, 2)
+    nthet = length(θvec)
+    cosmθ = [2 * cos.(mθ * θvec) for mθ = 1:L]
+    sinmθ = [complex(0, 2) * sin.(mθ * θvec) for mθ = 1:L]
+    dvec = Array{C}(undef, nthet)
+    Δ = Vector{Matrix{Float64}}(undef, L)
+    for ℓ = 1:L
+        Δ[ℓ] = Matrix{Float64}(undef, 2ℓ + 1, 2ℓ + 1)
+        ifftshift!(Δ[ℓ], _Δℓ_mμ(ℓ))
+    end
 
+    βaut = Vector{C}(undef, 2 * L * (L + 2))
+    αaut = Vector{C}(undef, 2 * L * (L + 2))
+    Amat = Matrix{C}(undef, 2, 2)
+    uvectmp = Vector{C}(undef, 2)
+    ifft_planϕ! = plan_ifft!(w, 2)
 
-"""
-    fastsphericaladjoint(α_inc, S21, Jθ, Jϕ, Jχ)
-  
-  
-Return adjoint to `fastsphericalforward(α_inc,  β_aut, Jθ, Jϕ, Jχ)`.
-"""
-function fastsphericaladjoint(
-    α_inc::Array{C,1},
-    S12::Array{K,3},
-    Jθ::Integer,
-    Jϕ::Integer;
-    firstorder = true,
-) where {C<:Complex} where {K<:Complex}
-    L, Nθ, Lθ = _inputdimensions(α_inc, α_inc, Jθ)
-
-    w = _χmodes_to_S12_ad(S12)
-    V = bfft(w, 2)
-    v = _zeropaddingϕ_ad(V, L, Jϕ, Nθ; firstorder = firstorder)
-    V_ = bfft(v, 1)
-    v_ = _zeropaddingθ_ad(V_, L, Jθ, Lθ; firstorder = firstorder)
-    u = _expandθmodes_ad(v_, L; firstorder = firstorder)
-    β_aut = _sum_product_αβ_ad(u, α_inc, L; firstorder = firstorder)
-    return β_aut
+    return w, u, v, L, ifft_planϕ!, cosmθ, sinmθ, dvec, βaut, αaut, Amat, uvectmp, Δ
 end
-####################################################################################################
-#                         ^
-#                         |
-####################### fastsphericalforward adjoint ###############################################
 
-####################### fastsphericalinverse  ######################################################
-#                         |
-#                         v 
-####################################################################################################
 function _storage_fastsphericalinverse(
     S12::AbstractArray{C,3},
     Jθ::Integer,
@@ -1152,12 +1090,261 @@ function _storage_fastsphericalinverse(
 
 end
 
+####################################################################################################
+#                         ^
+#                         |
+####################### auxilliary functions #######################################################
+
+
+####################### fastsphericalforward #######################################################
+#                         |
+#                         v 
+####################################################################################################
 """
-    fastsphericalinverse(S12, αin, [θvec, weightvec])
+    fastsphericalforward(α_inc::AbstractVector{C}, β_aut::AbstractVector{C}, ...)
 
 
-Return (receiving) spherical mode coefficients from measured S12 data with regular grid points on sphere.
-S12 is expected to have dimensions (L+1) × (2L+1) × 2 
+Return S12 data with grid points on sphere from (receiving) AUT spherical mode coefficients 'β_aut' and  incident probe field coefficients 'α_inc'.
+"""
+function fastsphericalforward(
+    α_inc::AbstractVector{C},
+    β_aut::AbstractVector{C},
+    Jθ::Integer,
+    Jϕ::Integer;
+    firstorder = true,
+) where {C<:Complex}
+    # First-order or arbitrary order probe, regular sampling in θ
+
+    L, Nθ, Lθ, u, v__, v_, v, S21, Δ, fftplanθ!, fftplanϕ!, Jθoversampled, Jϕoversampled =
+        _storage_fastspherical(α_inc, β_aut, Jθ, Jϕ, firstorder = firstorder)
+
+    return fastsphericalforward!(
+        α_inc,
+        β_aut,
+        Jθ,
+        Jϕ,
+        Jθoversampled,
+        Jϕoversampled,
+        L,
+        Nθ,
+        Lθ,
+        u,
+        v__,
+        v_,
+        v,
+        S21,
+        Δ,
+        fftplanθ!,
+        fftplanϕ!,
+        firstorder = firstorder,
+    )
+end
+function fastsphericalforward(
+    αin::AbstractVector{C},
+    β_aut::AbstractVector{C},
+    θvec::AbstractVector{F},
+    Jϕ::Integer,
+) where {C<:Complex,F<:Number}
+    # First-order probe, irregular sampling in θ
+
+    L, u, v_, v, S21, cosmθ, sinmθ, Δ, fftplanϕ!, Jϕoversampled =
+        _storage_fastspherical_irregularθ(αin, β_aut, θvec, Jϕ)
+    Nθ = length(θvec)
+    return fastsphericalforward!(
+        αin,
+        β_aut,
+        Nθ,
+        Jϕ,
+        Jϕoversampled,
+        L,
+        u,
+        v_,
+        v,
+        S21,
+        cosmθ,
+        sinmθ,
+        Δ,
+        fftplanϕ!,
+    )
+end
+
+"""
+    fastsphericalforward!(α_inc::AbstractVector{C}, β_aut::AbstractVector{C}, ...)
+
+
+Return S12 data with grid points on sphere from (receiving) AUT spherical mode coefficients 'β_aut' and  incident probe field coefficients 'α_inc'.
+In-place version of `fastsphericalforward`.
+"""
+function fastsphericalforward!(
+    α_inc::AbstractVector{C},
+    β_aut::AbstractVector{C},
+    Jθ::Integer,
+    Jϕ::Integer,
+    Jθoversampled,
+    Jϕoversampled,
+    L,
+    Nθ,
+    Lθ,
+    u,
+    v__,
+    v_,
+    v,
+    S21,
+    Δ,
+    fftplanθ!,
+    fftplanϕ!;
+    firstorder = true,
+) where {C<:Complex}
+    # First-order or arbitrary order probe, regular sampling in θ
+    u .= _sum_product_αβ!(u, α_inc, β_aut, L; firstorder = firstorder)
+    v__ .= _expandθmodes!(v__, u, L, Δ; firstorder = firstorder)
+
+
+    # for correct downsample, we must first upsample to integer multiple of Jθ
+    oversamplingfactorθ = Jθoversampled ÷ Jθ
+    v_ .= _zeropaddingθ!(v_, v__, L, Jθoversampled, Lθ)
+    mul!(v_, fftplanθ!, v_)
+
+    # for correct downsample, we must first upsample to integer multiple of Jϕ
+    oversamplingfactorϕ = Jϕoversampled ÷ Jϕ
+    v .= _zeropaddingϕ!(
+        v,
+        view(v_, 1:oversamplingfactorθ:oversamplingfactorθ*Nθ, :, :),
+        L,
+        Jϕoversampled,
+    )
+
+
+    mul!(v, fftplanϕ!, v)
+
+    return _χmodes_to_S12!(
+        S21,
+        view(v, :, 1:oversamplingfactorϕ:Jϕoversampled, :),
+        firstorder = firstorder,
+    )
+end
+function fastsphericalforward!(
+    αin::AbstractVector{C},
+    β_aut::AbstractVector{C},
+    Nθ,
+    Jϕ::Integer,
+    Jϕoversampled,
+    L,
+    u,
+    v_,
+    v,
+    S21,
+    cosmθ,
+    sinmθ,
+    Δ,
+    fftplanϕ!,
+) where {C}
+    # First-order probe, irregular sampling in θ
+
+    u .= _sum_product_αβ!(u, αin, β_aut, L; firstorder = true)
+    v_ .= _expandirregularθ!(L, u, v_, cosmθ, sinmθ, Δ)
+    v .= _zeropaddingϕ!(v, v_, L, Jϕoversampled)
+    mul!(v, fftplanϕ!, v)
+
+    # for correct downsample, we must first upsample to integer multiple of Jϕ
+    oversamplingfactorϕ = Jϕoversampled ÷ Jϕ
+
+    return _χmodes_to_S12!(S21, view(v, :, 1:oversamplingfactorϕ:Jϕoversampled, :))
+end
+
+
+
+####################################################################################################
+#                         ^
+#                         |
+####################### fastsphericalforward #######################################################
+
+####################### fastsphericalforward adjoint ###############################################
+#                         |
+#                         v 
+####################################################################################################
+
+
+"""
+    fastsphericalforward_ad!(
+    αin::AbstractVector{C},
+    β_aut::AbstractVector{C}, ...)
+  
+  
+Return adjoint to `fastsphericalforward!(α_inc,  β_aut,  ...`.
+"""
+function fastsphericalforward_ad!(
+    α_inc::AbstractVector{C},
+    β_aut::AbstractVector{C},
+    Jθ::Integer,
+    Jϕ::Integer,
+    Jθoversampled,
+    Jϕoversampled,
+    L,
+    Nθ,
+    Lθ,
+    u,
+    v__,
+    v_,
+    v,
+    S21,
+    Δ,
+    fftplanθ!,
+    fftplanϕ!;
+    firstorder = true,
+) where {C<:Complex}
+    # First-order or arbitrary order probe, regular sampling in θ
+    oversamplingfactorθ = Jθoversampled ÷ Jθ
+    oversamplingfactorϕ = Jϕoversampled ÷ Jϕ
+    _χmodes_to_S12_ad!(
+        S21,
+        view(v, :, 1:oversamplingfactorϕ:Jϕoversampled, :),
+        firstorder = firstorder,
+    )
+    mul!(v, adjoint(fftplanϕ!), v)
+    view(v_, 1:oversamplingfactorθ:oversamplingfactorθ*Nθ, :, :) .= _zeropaddingϕ_ad!(
+        v,
+        view(v_, 1:oversamplingfactorθ:oversamplingfactorθ*Nθ, :, :),
+        L,
+        Jϕoversampled,
+    )
+
+
+    u .= _sum_product_αβ!(u, α_inc, β_aut, L; firstorder = firstorder)
+    v__ .= _expandθmodes!(v__, u, L, Δ; firstorder = firstorder)
+
+
+    # for correct downsample, we must first upsample to integer multiple of Jθ
+
+    v_ .= _zeropaddingθ!(v_, v__, L, Jθoversampled, Lθ)
+    mul!(v_, fftplanθ!, v_)
+
+    # for correct downsample, we must first upsample to integer multiple of Jϕ
+
+
+
+
+
+
+    return
+end
+
+####################################################################################################
+#                         ^
+#                         |
+####################### fastsphericalforward adjoint ###############################################
+
+####################### fastsphericalinverse  ######################################################
+#                         |
+#                         v 
+####################################################################################################
+
+
+"""
+    fastsphericalinverse(S12, αin, ...)
+
+
+Return (receiving) spherical mode coefficients from measured S12 data with grid points on sphere.
 """
 function fastsphericalinverse(
     S12::AbstractArray{C,3},
@@ -1190,12 +1377,43 @@ function fastsphericalinverse(
         Δ,
     )
 end
+function fastsphericalinverse(
+    S12::AbstractArray{C,3},
+    αin::AbstractArray{C,1},
+    θvec::AbstractArray{F,1},
+    weightvec::AbstractArray{K,1},
+) where {C<:Complex} where {F<:Real} where {K<:Number}
+
+    w, u, v, L, ifft_planϕ!, cosmθ, sinmθ, dvec, βaut, αaut, Amat, uvectmp, Δ =
+        _storage_fastsphericalinverse(S12, θvec)
+
+    return fastsphericalinverse!(
+        S12,
+        αin,
+        weightvec,
+        L,
+        w,
+        u,
+        v,
+        ifft_planϕ!,
+        cosmθ,
+        sinmθ,
+        dvec,
+        βaut,
+        αaut,
+        Amat,
+        uvectmp,
+        Δ,
+    )
+end
+
+
 """
     fastsphericalinverse!(S12, αin, [θvec, weightvec])
 
 
-Return (receiving) spherical mode coefficients from measured S12 data with regular grid points on sphere.
-S12 is expected to have dimensions (L+1) × (2L+1) × 2 
+Return spherical mode coefficients from measured S12 data with grid points on sphere.
+In-place version of `fastsphericalinverse`.
 """
 function fastsphericalinverse!(
     S12::AbstractArray{C,3},
@@ -1223,6 +1441,31 @@ function fastsphericalinverse!(
     u .= _θintegral!(u, vview2, L, P, K, Δ, ifft_planθ)
     return βtoα!(αaut, _receivecoeffs_2by2matrix!(βaut, u, αin, L, Amat, uvectmp))
 end
+function fastsphericalinverse!(
+    S12::AbstractArray{C,3},
+    αin::AbstractArray{C,1},
+    weightvec::AbstractArray{K,1},
+    L,
+    w,
+    u,
+    v,
+    ifft_planϕ!,
+    cosmθ,
+    sinmθ,
+    dvec,
+    βaut,
+    αaut,
+    Amat,
+    uvectmp,
+    Δ,
+) where {C<:Complex} where {K<:Number}
+    #irregularly distributed θ
+    w .= _χ_integral!(w, S12)
+    v .= _φ_integral!(v, w, L, ifft_planϕ!)
+    u .= _θintegral!(u, v, dvec, weightvec, sinmθ, cosmθ, Δ, L)
+    return βtoα!(αaut, _receivecoeffs_2by2matrix!(βaut, u, αin, L, Amat, uvectmp))
+end
+
 
 
 ####################################################################################################
