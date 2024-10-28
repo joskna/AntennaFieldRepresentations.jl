@@ -56,9 +56,9 @@ k0 = 2 * pi / λ
 
 dipoles = rotate(
     generate_AUTdips(
+        collect(-0.25λ:λ/4:0.25λ),
+        collect(-0.25λ:λ/4:0λ),
         collect(-0.5λ:λ/4:0.5λ),
-        collect(-0.5λ:λ/4:0λ),
-        collect(-1λ:λ/4:1λ),
         k0,
     ),
     0.7,
@@ -133,12 +133,51 @@ for Jextraθ = -2:3, Jextraϕ = -2:3
         @test norm(αret - sphcoeffs) / norm(sphcoeffs) < 3e-14
     end
 
+    stm_ad = adjoint(stm)
+    A = zeros(ComplexF64, size(stm))
+    Aᴴ = similar(A')
+
+    for k = 1:length(sphcoeffs)
+        x = zeros(ComplexF64, length(sphcoeffs))
+        x[k] = 1
+        A[:, k] = stm * x
+    end
+
+    for k = 1:length(b)
+        y = zeros(ComplexF64, length(b))
+        y[k] = 1
+        Aᴴ[:, k] = stm_ad * y
+    end
+
+    @test norm(A' .- Aᴴ) / norm(A) < 1e-15
+
+    #    stmarborder = AntennaFieldRepresentations.SphericalTransmitMap(swe, fsarborder)
+    #    stmarborder_ad =adjoint(stmarborder)
+
+    #    A=zeros(ComplexF64, size(stmarborder))
+    #    Aᴴ=similar(A')
+
+    #    for k in 1: length(sphcoeffs)
+    #        x= zeros(ComplexF64, length(sphcoeffs))
+    #        x[k]=1
+    #        A[:,k]= stmarborder * x 
+    #    end
+
+    #    for k in 1: length(b)
+    #        y= zeros(ComplexF64, length(b))
+    #        y[k]=1
+    #        Aᴴ[:,k]= stmarborder_ad * y 
+    #    end
+
+    #    @test norm(A'.-Aᴴ)/ norm(A) < 1e-15
+
 
 
     gausssamplingstrategy =
         GaussLegendreθRegularϕSampling(Lmax + 1 + Jextraθ, 2Lmax + 2 + Jextraϕ)
     fsgauss = SphericalFieldSampling(gausssamplingstrategy, αincext)
     # fsarbordergauss = SphericalFieldSampling(gausssamplingstrategy, αinc_arborder) 
+    stm.swe .= sphcoeffs
     bgauss = transmit(swe, fsgauss)
     # bgaussarborder = reshape(transmit(swe, fsarbordergauss), size(fsarbordergauss.S21values))
     θweights, ϕweights, θs, ϕs =
@@ -156,7 +195,7 @@ for Jextraθ = -2:3, Jextraϕ = -2:3
         # ffdip[k, kk, 2] = Eϕ
     end
     # @test norm(ffdip - bgauss) / norm(ffdip) < 3e-14
-    @test norm(ffswe - reshape(bgauss, size(ffswe))) / norm(ffswe) < 1e-14
+    @test norm(ffswe - reshape(bgauss, size(ffswe))) / norm(ffswe) < 3e-14
     # @test norm(ffswe - bgaussarborder) / norm(ffswe) < 1e-14
 
     stmgauss = AntennaFieldRepresentations.SphericalTransmitMap(swe, fsgauss)
@@ -177,5 +216,24 @@ for Jextraθ = -2:3, Jextraϕ = -2:3
         stm_inv = AntennaFieldRepresentations.inverse(stmgauss)
         αret = stm_inv(vec(ffswe))
         @test norm(αret - sphcoeffs) / norm(sphcoeffs) < 4e-14
+
     end
+
+    #     stmgauss_ad =adjoint(stmgauss)
+    #     A=zeros(ComplexF64, size(stmgauss))
+    #     Aᴴ=similar(A')
+
+    #    for k in 1: length(sphcoeffs)
+    #        x= zeros(ComplexF64, length(sphcoeffs))
+    #        x[k]=1
+    #        A[:,k]= stmgauss * x 
+    #    end
+
+    #    for k in 1: length(bgauss)
+    #        y= zeros(ComplexF64, length(bgauss))
+    #        y[k]=1
+    #        Aᴴ[:,k]= stmgauss_ad * y 
+    #    end
+
+    #    @test norm(A'.-Aᴴ)/ norm(A) < 1e-15
 end

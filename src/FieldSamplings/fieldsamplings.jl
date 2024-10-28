@@ -214,7 +214,7 @@ struct RegularSphericalFieldSampling{
 } <: FieldSampling{C}
     samplingstrategy::Y
     incidentcoefficients::S
-    S21values::Matrix{C}
+    S21values::Array{C,3}
 end
 Base.size(fs::RegularSphericalFieldSampling) = length(fs.S21values)
 Base.getindex(fs::RegularSphericalFieldSampling, i) = getindex(fs.S21values, i)
@@ -286,7 +286,7 @@ struct SphericalFieldSampling{
 } <: FieldSampling{C}
     incidentcoefficients::A
     samplingstrategy::Y
-    S21values::Array{C}
+    S21values::Array{C,3}
 end
 function SphericalFieldSampling(
     samplingstrategy::Y,

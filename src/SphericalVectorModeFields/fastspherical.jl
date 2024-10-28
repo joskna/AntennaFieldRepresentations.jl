@@ -338,15 +338,16 @@ function _sum_product_αβ!(
 end
 
 # function αβ_to_u_ad(u,α_inc,L;firstorder=true)
-function _sum_product_αβ_ad(
-    u::AbstractArray{C,2},
+function _sum_product_αβ_ad!(
+    u,
     α_inc::AbstractVector{C},
+    β_aut::AbstractVector{C},
     L::Integer;
     firstorder = true,
 ) where {C<:Complex}
     ## |  u_μℓm = Σ_s α_sℓμ β_sℓm
     ## v 
-    β_aut = zeros(C, size(α_inc))
+    fill!(β_aut, zero(C))
     # iterate over all ℓ m μ
     for ℓ = 1:L
         for m = (-ℓ):ℓ
@@ -364,8 +365,8 @@ function _sum_product_αβ_ad(
                 k = ℓ * (ℓ + 1) + m
                 j = 2 * (ℓ * (ℓ + 1) + m - 1) + 1
                 j_ = 2 * (ℓ * (ℓ + 1) + μ - 1) + 1
-                β_aut[j] += u[k, μind] * conj(α_inc[j_])
-                β_aut[j+1] += u[k, μind] * conj(α_inc[j_+1])
+                β_aut[j] += u[k, μind] * conj.(α_inc[j_])
+                β_aut[j+1] += u[k, μind] * conj.(α_inc[j_+1])
             end
         end
     end
@@ -465,22 +466,18 @@ function _complexunitpower(n::I) where {I<:Integer}
 
 end
 
-function _expandθmodes_ad(
-    v_::AbstractArray{C,3},
-    L::Integer;
+function _expandθmodes_ad!(
+    v_,
+    u::AbstractArray{C,2},
+    L::Integer,
+    Δ;
     firstorder = true,
 ) where {C<:Complex}
     ## |  v_{μ,m,mθ} = j^{m-μ} ∑_ℓ Δ^{ℓ}_mθ,μ Δ^{ℓ}_mθ,m u_μℓm
     ## v
-    Nχ = 2
-    if !firstorder
-        Nχ = 2 * L + 1
-    end
-    u = zeros(C, L * (L + 2), Nχ)
+    fill!(u, zero(C))
     for ℓ = 1:L
-        Δℓ = _Δℓ_mμ(ℓ) # Wigner-d-matrices from WignerD.jl
-        Δℓ = ifftshift(Δℓ, 1)
-        Δℓ = ifftshift(Δℓ, 2)
+        Δℓ = Δ[ℓ]
         for m = (-ℓ):ℓ
             mind = mod(m, 2 * L + 1) + 1
             Δmind = mod(m, 2 * ℓ + 1) + 1
@@ -499,8 +496,11 @@ function _expandθmodes_ad(
                             Δμind = 2 * ℓ + 1
                         end
                         u[k, μind] +=
-                            conj(Δℓ[Δmθind, Δμind] * Δℓ[Δmθind, Δmind] * (1.0im)^(m - μ)) *
-                            v_[mθind, mind, μind]
+                            conj.(
+                                Δℓ[Δmθind, Δμind] *
+                                Δℓ[Δmθind, Δmind] *
+                                _complexunitpower(m - μ)
+                            ) * v_[mθind, mind, μind]
 
                     end
                 else
@@ -508,8 +508,11 @@ function _expandθmodes_ad(
                         μind = mod(μ, 2 * L + 1) + 1 #μ+L+1
                         Δμind = mod(μ, 2 * ℓ + 1) + 1#μ+ℓ+1
                         u[k, μind] +=
-                            conj(Δℓ[Δmθind, Δμind] * Δℓ[Δmθind, Δmind] * (1.0im)^(m - μ)) *
-                            v_[mθind, mind, μind]
+                            conj.(
+                                Δℓ[Δmθind, Δμind] *
+                                Δℓ[Δmθind, Δmind] *
+                                _complexunitpower(m - μ)
+                            ) * v_[mθind, mind, μind]
 
                     end
                 end
@@ -523,11 +526,16 @@ end
 
 
 function _upsampleθ!(V, v_, L)
-    V[1:(L+1), :, :] = v_[1:(L+1), :, :]
-    V[(end-L+1):end, :, :] = v_[(L+2):end, :, :]
-    V[(L+2):(end-L), :, :] .= 0
+    view(V, 1:(L+1), :, :) .= view(v_, 1:(L+1), :, :)
+    view(V, (size(V, 1)-L+1):size(V, 1), :, :) .= view(v_, (L+2):size(v_, 1), :, :)
+    view(V, (L+2):(size(V, 1)-L), :, :) .= 0
 
     return V
+end
+function _upsampleθ_ad!(V, v_, L)
+    view(v_, 1:(L+1), :, :) .= view(V, 1:(L+1), :, :)
+    view(v_, (L+2):size(v_, 1), :, :) .= view(V, (size(V, 1)-L+1):size(V, 1), :, :)
+    return v_
 end
 function _downsampleθ!(V, v_, Lθ, Jθ)
     V[1:(Lθ+1), :, :] = v_[1:(Lθ+1), :, :]
@@ -571,43 +579,40 @@ function _zeropaddingθ(
     V = Array{C}(undef, Jθ, 2 * L + 1, Nχ)
     return zeropaddingθ!(V, v_, L, Jθ, Lθ)
 end
-function _zeropaddingθ_ad(
-    V_::AbstractArray{C,3},
+function _zeropaddingθ_ad!(
+    V::AbstractArray{C},
+    v_::AbstractArray{C,3},
     L::Integer,
     Jθ::Integer,
-    Lθ::Integer;
-    firstorder = true,
+    Lθ::Integer,
 ) where {C<:Complex}
-    #remove zero-padding in θ
-    Nχ = 2
-    if !firstorder
-        Nχ = 2 * L + 1
+    if (2 * L + 1) == Jθ
+        v_ .= V
+        return v_
     end
-    v_ = zeros(C, 2 * L + 1, 2 * L + 1, Nχ)
     if 2 * L + 1 < Jθ
-        v_[1:(L+1), :, :] = V_[1:(L+1), :, :]
-        v_[(L+2):end, :, :] = V_[(end-L+1):end, :, :]
-        # V=0 # release memory
+        v_ .= _upsampleθ_ad!(V, v_, L)
+        return v_
 
     elseif 2 * L + 1 > Jθ
-        v_[1:(Lθ+1), :, :] = V_[1:(Lθ+1), :, :]
-        if isodd(Jθ)
-            v_[(end-Lθ+1):end, :, :] = V_[(Lθ+2):end, :, :]
-        else
-            v_[(end-Lθ):end, :, :] = V_[(Lθ+2):end, :, :]
-        end
-        # V=0 # release memory
+        v_ .= _downsampleθ_ad!(V, v_, Lθ, Jθ)
+        v_
     end
-    return v_
+
 end
 
 
 function _upsampleϕ!(V, v, L, Jϕ)
     stopindex = size(v, 2)
-    V[:, 1:(L+1), :] .= view(v, :, 1:(L+1), :)
+    view(V, :, 1:(L+1), :) .= view(v, :, 1:(L+1), :)
     V[:, (Jϕ-L+1):end, :] .= view(v, :, (L+2):stopindex, :)
     V[:, (L+2):(end-L), :] .= 0
     return V
+end
+function _upsampleϕ_ad!(V, v, L, Jϕ)
+    view(v, :, 1:(L+1), :) .= view(V, :, 1:(L+1), :)
+    view(v, :, (L+2):size(v, 2), :) .= view(V, :, (Jϕ-L+1):size(V, 2), :)
+    return v
 end
 function _downsampleϕ!(V, v, Jϕ)
     if isodd(Jϕ)
@@ -628,49 +633,39 @@ function _zeropaddingϕ!(
     Jϕ::Integer,
 ) where {C<:Complex}
     if (2 * L + 1) == Jϕ
-        V[1:size(v, 1), 1:size(v, 2), :] .= v
+        view(V, 1:size(v, 1), 1:size(v, 2), :) .= v
         return V
     end
 
     if 2 * L + 1 < Jϕ
-        return _upsampleϕ!(V, v, L, Jϕ)
+        V .= _upsampleϕ!(V, v, L, Jϕ)
+        return V
     elseif 2 * L + 1 > Jϕ
-        return _downsampleϕ!(V, v, Jϕ)
+        V .= _downsampleϕ!(V, v, Jϕ)
+        return V
     end
 
 end
-function _zeropaddingϕ_ad(
+function _zeropaddingϕ_ad!(
     V::AbstractArray{C,3},
+    v::AbstractArray{C,3},
     L::Integer,
     Jϕ::Integer,
-    Nθ::Integer;
-    firstorder = true,
 ) where {C<:Complex}
-    Nχ = 2
-    if !firstorder
-        Nχ = 2 * L + 1
+    fill!(v, zero(C))
+    if (2 * L + 1) == Jϕ
+        v .= view(V, 1:size(v, 1), 1:size(v, 2), :)
+        return v
     end
-    v = zeros(C, Jθ, 2 * L + 1, Nχ)
-    if 2 * L + 1 < Jϕ
-        v[1:Nθ, 1:(L+1), :] = V[:, 1:(L+1), :]
-        v[1:Nθ, (L+2):end, :] = V[:, (Jϕ-L+1):end, :]
-        # V=0 # release memory
 
+    if 2 * L + 1 < Jϕ
+        v .= _upsampleϕ_ad!(V, v, L, Jϕ)
+        return v
     elseif 2 * L + 1 > Jϕ
-        if isodd(Jϕ)
-            Lϕ = Int((Jϕ - 1) / 2)
-            v[1:Nθ, 1:(Lϕ+1), :] = V[:, 1:(Lϕ+1), :]
-            v[1:Nθ, (end-Lϕ+1):end, :] = V[:, (Lϕ+2):end, :]
-        else
-            Lϕ = Int((Jϕ) / 2 - 1)
-            v[1:Nθ, 1:(Lϕ+1), :] = V[:, 1:(Lϕ+1), :]
-            v[1:Nθ, (end-Lϕ):end, :] = V[:, (Lϕ+2):end, :]
-        end
-        # V=0 # release memory
-    else
-        v[1:Nθ, :, :] = V
+        v .= _downsampleϕ_ad!(V, v, Jϕ)
+        return v
     end
-    return v
+
 end
 
 
@@ -706,9 +701,9 @@ function _χmodes_to_S12_ad!(
         oversamplingfactor = Jχ ÷ 4 + 1
         L = (Jχ - 1) ÷ 2
         v = zeros(C, Nθ, Jϕ, Jχ)
-        v[:, :, [1, oversamplingfactor + 1]] .= S12
+        view(v, :, :, [1, oversamplingfactor + 1]) .= S12
         v = bfft(v, 3)
-        w = _zeropaddingχ!(v, w, L, oversamplingfactor * 4)
+        w .= _zeropaddingχ_ad!(v, w, L, oversamplingfactor * 4)
         return w
     end
 end
@@ -862,6 +857,47 @@ function _expandirregularθ!(L, u, v_, cosmθ, sinmθ, Δ)
         end
     end
     return v_
+end
+function _expandirregularθ_ad!(L, u, v_, cosmθ, sinmθ, Δ)
+    fill!(u, zero(eltype(u)))
+    for ℓ = 1:L
+
+        Δℓ = Δ[ℓ]
+
+        for m = (-ℓ):ℓ
+            mind = mod(m, 2 * L + 1) + 1 #m+L+1
+            Δmind = mod(m, 2 * ℓ + 1) + 1 #m+ℓ+1
+            k = ℓ * (ℓ + 1) + m
+            for μ = -1:2:1
+                Δμind = -1
+                μind = mod(3 + μ, 3) # μind=1 => μ=1;   μind=2 => μ=-1
+                if μ == 1
+                    Δμind = 2
+                elseif μ == -1
+                    Δμind = 2 * ℓ + 1
+                end
+                mθind = 1
+                ΔΔ = Δℓ[mθind, Δμind] * Δℓ[mθind, Δmind]
+                imfac = (_complexunitpower(μ - m))
+
+                # imfac = ((1.0im)^(μ - m) * u[k, μind])
+
+                vview = view(v_, :, mind, μind)
+                u[k, μind] .+= sum(conj.(imfac .* ΔΔ) .* vview)
+
+                trig = isodd(μ + m) ? sinmθ : cosmθ
+                for mθ = 1:ℓ
+                    mθind = mod(mθ, 2 * ℓ + 1) + 1
+                    ΔΔ = Δℓ[mθind, Δμind] * Δℓ[mθind, Δmind]
+
+                    u[k, μind] .+= sum(conj.(imfac .* ΔΔ .* trig[mθ]) .* view)
+                end
+
+
+            end
+        end
+    end
+    return u
 end
 function _storage_fastspherical_irregularθ(
     αin::AbstractVector{C},
@@ -1296,37 +1332,62 @@ function fastsphericalforward_ad!(
     # First-order or arbitrary order probe, regular sampling in θ
     oversamplingfactorθ = Jθoversampled ÷ Jθ
     oversamplingfactorϕ = Jϕoversampled ÷ Jϕ
-    _χmodes_to_S12_ad!(
+    fill!(v, zero(C))
+    view(v, :, 1:oversamplingfactorϕ:Jϕoversampled, :) .= _χmodes_to_S12_ad!(
         S21,
         view(v, :, 1:oversamplingfactorϕ:Jϕoversampled, :),
         firstorder = firstorder,
     )
-    mul!(v, adjoint(fftplanϕ!), v)
+
+    bfftplanϕ! = (Jϕoversampled * inv(fftplanϕ!))
+    mul!(v, bfftplanϕ!, v)
+    fill!(v_, zero(C))
     view(v_, 1:oversamplingfactorθ:oversamplingfactorθ*Nθ, :, :) .= _zeropaddingϕ_ad!(
         v,
         view(v_, 1:oversamplingfactorθ:oversamplingfactorθ*Nθ, :, :),
         L,
         Jϕoversampled,
     )
-
-
-    u .= _sum_product_αβ!(u, α_inc, β_aut, L; firstorder = firstorder)
-    v__ .= _expandθmodes!(v__, u, L, Δ; firstorder = firstorder)
-
-
-    # for correct downsample, we must first upsample to integer multiple of Jθ
-
-    v_ .= _zeropaddingθ!(v_, v__, L, Jθoversampled, Lθ)
+    fftplanθ! = (Jθoversampled * inv(fftplanθ!))
     mul!(v_, fftplanθ!, v_)
+    v__ .= _zeropaddingθ_ad!(v_, v__, L, Jθoversampled, Lθ)
+    u .= _expandθmodes_ad!(v__, u, L, Δ; firstorder = firstorder)
+    β_aut .= _sum_product_αβ_ad!(u, α_inc, β_aut, L; firstorder = firstorder)
 
-    # for correct downsample, we must first upsample to integer multiple of Jϕ
+    return β_aut
+end
+function fastsphericalforward_ad!(
+    αin::AbstractVector{C},
+    β_aut::AbstractVector{C},
+    Nθ,
+    Jϕ::Integer,
+    Jϕoversampled,
+    L,
+    u,
+    v_,
+    v,
+    S21,
+    cosmθ,
+    sinmθ,
+    Δ,
+    fftplanϕ!,
+) where {C}
+    # First-order probe, irregular sampling in θ
+    oversamplingfactorϕ = Jϕoversampled ÷ Jϕ
+    view(v, :, 1:oversamplingfactorϕ:Jϕoversampled, :) .= _χmodes_to_S12_ad!(
+        S21,
+        view(v, :, 1:oversamplingfactorϕ:Jϕoversampled, :),
+        firstorder = firstorder,
+    )
 
+    bfftplanϕ! = (UniformScaling(size(v, 2)) * inv(fftplanϕ!))
+    mul!(v, bfftplanϕ!, v)
+    v_ .= _zeropaddingϕ_ad!(v, v_, L, Jϕoversampled)
+    u .= _expandirregularθ_ad!(L, u, v_, cosmθ, sinmθ, Δ)
 
+    β_aut .= _sum_product_αβ_ad!(u, αin, β_aut, L; firstorder = true)
 
-
-
-
-    return
+    return β_aut
 end
 
 ####################################################################################################
