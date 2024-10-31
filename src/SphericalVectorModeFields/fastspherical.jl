@@ -683,6 +683,7 @@ function _χmodes_to_S12!(S12, w::AbstractArray{C,3}; firstorder = true) where {
         v = zeros(C, Nθ, Jϕ, oversamplingfactor * 4)
         v = _zeropaddingχ!(v, w, L, oversamplingfactor * 4)
         S12 .= fft(v, 3)[:, :, [1, oversamplingfactor + 1]]
+        return S12
     end
 end
 function _χmodes_to_S12_ad!(
@@ -700,7 +701,7 @@ function _χmodes_to_S12_ad!(
         Nθ, Jϕ, Jχ = size(w)
         oversamplingfactor = Jχ ÷ 4 + 1
         L = (Jχ - 1) ÷ 2
-        v = zeros(C, Nθ, Jϕ, Jχ)
+        v = zeros(C, Nθ, Jϕ, oversamplingfactor * 4)
         view(v, :, :, [1, oversamplingfactor + 1]) .= S12
         v = bfft(v, 3)
         w .= _zeropaddingχ_ad!(v, w, L, oversamplingfactor * 4)
@@ -883,14 +884,14 @@ function _expandirregularθ_ad!(L, u, v_, cosmθ, sinmθ, Δ)
                 # imfac = ((1.0im)^(μ - m) * u[k, μind])
 
                 vview = view(v_, :, mind, μind)
-                u[k, μind] .+= sum(conj.(imfac .* ΔΔ) .* vview)
+                u[k, μind] += sum(conj.(imfac .* ΔΔ) .* vview)
 
                 trig = isodd(μ + m) ? sinmθ : cosmθ
                 for mθ = 1:ℓ
                     mθind = mod(mθ, 2 * ℓ + 1) + 1
                     ΔΔ = Δℓ[mθind, Δμind] * Δℓ[mθind, Δmind]
 
-                    u[k, μind] .+= sum(conj.(imfac .* ΔΔ .* trig[mθ]) .* view)
+                    u[k, μind] += sum(conj.(imfac .* ΔΔ .* trig[mθ]) .* vview)
                 end
 
 
@@ -1377,7 +1378,7 @@ function fastsphericalforward_ad!(
     view(v, :, 1:oversamplingfactorϕ:Jϕoversampled, :) .= _χmodes_to_S12_ad!(
         S21,
         view(v, :, 1:oversamplingfactorϕ:Jϕoversampled, :),
-        firstorder = firstorder,
+        firstorder = true,
     )
 
     bfftplanϕ! = (UniformScaling(size(v, 2)) * inv(fftplanϕ!))

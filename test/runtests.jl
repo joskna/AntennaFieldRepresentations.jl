@@ -36,6 +36,12 @@ using Test
         @testset "fastsphericalforward" begin
             include(joinpath("test_FastSpherical", "test_fastsphericalforward.jl"))
         end
+        @testset "fastsphericalinverse" begin
+            include(joinpath("test_FastSpherical", "test_fastsphericalinverse.jl"))
+        end
+        @testset "fastsphericaladjoint" begin
+            include(joinpath("test_FastSpherical", "test_fastsphericaladjoint.jl"))
+        end
     end
 
     # @testset "PlaneWaveRepresentations" verbose=true begin
