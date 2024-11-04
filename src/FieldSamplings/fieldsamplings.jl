@@ -1,7 +1,10 @@
 """
-    ProbeAntenna{A::AntennaFieldRepresentation}
+    ProbeAntenna{A}
 
 Wrapper around an `AntennaFieldRepresentation` to indicate that it is used as a probe.
+
+# Type Parameters
+- `A <: AntennaFieldRepresentation`
 """
 struct ProbeAntenna{A<:AntennaFieldRepresentation}
     aut_field::A
@@ -29,9 +32,14 @@ abstract type FieldSampling{C} end
 Base.length(fs::FieldSampling) = prod(size(fs))
 
 """
-    IrregularFieldSampling{P<:ProbeAntenna, T<: Real, C<: Complex}
+    IrregularFieldSampling{N, T, C}
 
-Field sampling with arbitrary probes at irregularly distributed measurement positions 
+Field sampling with arbitrary probes at irregularly distributed measurement positions.
+
+# Type Parameters
+- `N <: ProbeAntenna`
+- `T <: Real`
+- `C <: Complex`
 """
 struct IrregularFieldSampling{P<:ProbeAntenna,T<:Real,C<:Complex} <: FieldSampling{C}
     positions::Array{SVector{3,T}}
@@ -203,17 +211,22 @@ function HfieldSampling(positions::Vector{V}) where {V}
 end
 
 """
-    RegularSphericalFieldSampling{Y<:SphereSamplingStrategy, S<:AbstractSphericalCoefficients, C<:Complex}
+    RegularSphericalFieldSampling{Y, H, C}
     
-Field sampling on spherical measurement surface with measurement positions distributed according to a `SphereSamplingStrategy`
+Field sampling on spherical measurement surface with measurement positions distributed according to a `SphereSamplingStrategy`.
+
+# Type Parameters
+- `Y <: SphereSamplingStrategy`
+- `H <: AbstractSphericalCoefficients`
+- `C <: Complex`
 """
 struct RegularSphericalFieldSampling{
     Y<:SphereSamplingStrategy,
-    S<:AbstractSphericalCoefficients,
+    H<:AbstractSphericalCoefficients,
     C<:Complex,
 } <: FieldSampling{C}
     samplingstrategy::Y
-    incidentcoefficients::S
+    incidentcoefficients::H
     S21values::Array{C,3}
 end
 Base.size(fs::RegularSphericalFieldSampling) = length(fs.S21values)
@@ -231,60 +244,21 @@ function asvector(fs::RegularSphericalFieldSampling)
 end
 
 """
-    FarFieldSampling{Y<:SphereSamplingStrategy, C<:Complex}
-
-Field sampling of the far-field ϑ- and ϕ-components with measurement positions distributed according to a `SphereSamplingStrategy`
-"""
-struct FarFieldSampling{Y<:SphereSamplingStrategy,C<:Complex} <: FieldSampling{C}
-    samplingstrategy::Y
-    Eθϕ::Matrix{C}
-end
-Base.size(fs::FarFieldSampling) = length(fs.Eθϕ)
-Base.getindex(fs::FarFieldSampling, i) = getindex(fs.Eθϕ, i)
-Base.setindex!(fs::FarFieldSampling, i, v) = setindex!(fs.Eθϕ, i, v)
-function Base.similar(fs::FarFieldSampling)
-    return FarFieldSampling(fs.samplingstrategy, similar(fs.Eθϕ))
-end
-function asvector(fs::FarFieldSampling)
-    return vec(fs.Eθϕ)
-end
-
-"""
-    FarFieldSampling{Y<:SphericalSamplingStrategy, C<:Complex}
-
-Field sampling of the far-field ϑ- and ϕ-components with measurement positions irregularly distributed on the far-field sphere
-"""
-struct IrregularFarFieldSampling{C<:Complex,T1<:Number,T2<:Real} <: FieldSampling{C}
-    θϕ::Vector{Tuple{T1,T2}}
-    Eθϕ::Vector{C}
-end
-Base.size(fs::IrregularFarFieldSampling) = length(fs.Eθϕ)
-Base.getindex(fs::IrregularFarFieldSampling, i) = getindex(fs.Eθϕ, i)
-Base.setindex!(fs::IrregularFarFieldSampling, i, v) = setindex!(fs.Eθϕ, i, v)
-function Base.similar(fs::IrregularFarFieldSampling)
-    return IrregularFarFieldSampling(fs.θϕ, similar(fs.Eθϕ))
-end
-function asvector(fs::IrregularFarFieldSampling)
-    return vec([fs.Eθ; fs.Eϕ])
-end
-function _eθ(fs::IrregularFarFieldSampling)
-    return view(fs.Eθϕ, :, 1:(length(fs)÷2))
-end
-function _eϕ(fs::IrregularFarFieldSampling)
-    return view(fs.Eθϕ, :, (length(fs)÷2+1):length(fs))
-end
-
-"""
-    SphericalFieldSampling
+    SphericalFieldSampling{Y,H,C} <: FieldSampling{C}
 
 Field sampling on regularly distributed measurement positions on a spherical surface
+
+# Type Parameters
+- `Y <: SphereSamplingStrategy`
+- `H <: AbstractSphericalCoefficients`
+- `C <: Complex`
 """
 struct SphericalFieldSampling{
     Y<:SphereSamplingStrategy,
-    A<:AbstractSphericalCoefficients,
+    H<:AbstractSphericalCoefficients,
     C<:Complex,
 } <: FieldSampling{C}
-    incidentcoefficients::A
+    incidentcoefficients::H
     samplingstrategy::Y
     S21values::Array{C,3}
 end

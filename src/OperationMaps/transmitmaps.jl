@@ -1,15 +1,20 @@
 
 """
-    SphericalTransmitMap{Y<:SphericalWaveExpansion{Radiated}, F<:SphericalFieldSampling, C <: Complex } <: TransmitMap{C, Y, F}
+    SphericalTransmitMap{S,F,C} <: TransmitMap{S,F,C}
 
-Function-like object which corresponds to a `transmit` method between a `SphericalWaveExpansion{Radiated}` and a `SphericalFieldSampling`.
+Linear map which corresponds to a `transmit` method between a `SphericalWaveExpansion{Radiated}` and a `SphericalFieldSampling`.
+
+# Type Parameters
+- `S <: SphericalWaveExpansion{Radiated}`
+- `F <: SphericalFieldSampling`
+- `C <: Complex`
 """
 struct SphericalTransmitMap{
-    Y<:SphericalWaveExpansion{Radiated},
+    S<:SphericalWaveExpansion{Radiated},
     F<:SphericalFieldSampling,
     C<:Complex,
-} <: TransmitMap{C,Y,F}
-    swe::Y
+} <: TransmitMap{S,F,C}
+    swe::S
     fs::F
     L::Integer
     Nθ::Integer
@@ -34,12 +39,15 @@ function Base.size(stm::SphericalTransmitMap)
     return length(stm.fs), length(stm.swe)
 end
 
+function TransmitMap(swe::SphericalWaveExpansion, fs::SphericalFieldSampling)
+    return SphericalTransmitMap(swe, fs)
+end
 
 function SphericalTransmitMap(
-    swe::SphericalWaveExpansion{Radiated,C,S},
-    fs::SphericalFieldSampling{RegularθRegularϕSampling,S2,C},
-) where {C<:Complex,S<:AbstractSphericalCoefficients,S2<:AbstractSphericalCoefficients}
-    firstorder = _isfirstorder(S2)
+    swe::SphericalWaveExpansion{Radiated,H1,C},
+    fs::SphericalFieldSampling{RegularθRegularϕSampling,H,C},
+) where {C<:Complex,H1<:AbstractSphericalCoefficients,H<:AbstractSphericalCoefficients}
+    firstorder = _isfirstorder(H)
     L, Nθ, Lθ, u, v__, v_, v, S21, Δ, fftplanθ!, fftplanϕ!, Jθoversampled, Jϕoversampled =
         _storage_fastspherical(
             asvector(swe),
@@ -51,8 +59,8 @@ function SphericalTransmitMap(
     cosmθ = Vector{Vector{Float64}}(undef, 0)
     sinmθ = Vector{Vector{Float64}}(undef, 0)
     return SphericalTransmitMap{
-        SphericalWaveExpansion{Radiated,C,S},
-        SphericalFieldSampling{RegularθRegularϕSampling,S2,C},
+        SphericalWaveExpansion{Radiated,H1,C},
+        SphericalFieldSampling{RegularθRegularϕSampling,H,C},
         C,
     }(
         swe,
@@ -75,13 +83,13 @@ function SphericalTransmitMap(
 end
 
 function SphericalTransmitMap(
-    swe::SphericalWaveExpansion{Radiated,C,S},
+    swe::SphericalWaveExpansion{Radiated,H,C},
     fs::SphericalFieldSampling{
         GaussLegendreθRegularϕSampling,
         FirstOrderSphericalCoefficients{C},
         C,
     },
-) where {C<:Complex,S<:AbstractSphericalCoefficients}
+) where {C<:Complex,H<:AbstractSphericalCoefficients}
 
     θweights, ϕweights, θs, ϕs = weightsandsamples(fs.samplingstrategy)
 
@@ -95,7 +103,7 @@ function SphericalTransmitMap(
 
 
     return SphericalTransmitMap{
-        SphericalWaveExpansion{Radiated,C,S},
+        SphericalWaveExpansion{Radiated,H,C},
         SphericalFieldSampling{
             GaussLegendreθRegularϕSampling,
             FirstOrderSphericalCoefficients{C},
@@ -122,57 +130,25 @@ function SphericalTransmitMap(
     )
 end
 
+"""
+    InverseSphericalTransmitMap{S,F,C} <: TransmitMap{S,F,C}
 
-function _isfirstorder(::Type{FirstOrderSphericalCoefficients{C}}) where {C}
-    return true
-end
-function _isfirstorder(::Type{SphericalCoefficients{C}}) where {C}
-    return false
-end
+Linear map which corresponds to the inverse of a `SphericalTransmitMap`.
 
-function LinearMaps._unsafe_mul!(y, stm::SphericalTransmitMap, x::AbstractVector)
-    αtoβ!(stm.swe, x)
-    y .= asvector(fastsphericalforward!(stm))
-    return y
-end
+An `InverseSphericalTransmitMap` is not necessarily available for all `SphericalTransmitMap`s, but only if efficient algorithms are known.
+As a fallback, it is always possible to approximate the inverse via an iterative solver.
 
-
-function transmit(
-    swe::SphericalWaveExpansion{Radiated,C,S},
-    fs::SphericalFieldSampling,
-) where {C<:Complex,S<:AbstractSphericalCoefficients}
-    stm = SphericalTransmitMap(swe, fs)
-    stm.swe .= αtoβ(stm.swe)
-    y = asvector(fastsphericalforward!(stm))
-    stm.swe .= βtoα(stm.swe)
-    return y
-end
-# function transmit(
-#     swe::SphericalWaveExpansion{Radiated,C,S},
-#     fs::SphericalFieldSampling{
-#         GaussLegendreθRegularϕSampling,
-#         FirstOrderSphericalCoefficients{C},
-#         C,
-#     },
-# ) where {C<:Complex,S<:AbstractSphericalCoefficients}
-
-#     θweights, ϕweights, θs, ϕs = weightsandsamples(fs.samplingstrategy)
-#     fs.S21values .= fastsphericalforward(
-#         fs.incidentcoefficients,
-#         αtoβ(swe.coefficients),
-#         θs,
-#         fs.samplingstrategy.Jϕ,
-#     )
-#     return asvector(fs.S21values)
-# end
-
-
+# Type Parameters
+- `S <: SphericalWaveExpansion{Radiated}`
+- `F <: SphericalFieldSampling`
+- `C <: Complex`
+"""
 struct InverseSphericalTransmitMap{
-    Y<:SphericalWaveExpansion{Radiated},
+    S<:SphericalWaveExpansion{Radiated},
     F<:SphericalFieldSampling,
     C<:Complex,
-} <: OperationMap{C,Y}
-    swe::Y
+} <: OperationMap{S,C}
+    swe::S
     fs::F
     L::Integer
     v::Array{C}
@@ -199,10 +175,10 @@ function Base.size(istm::InverseSphericalTransmitMap)
 end
 
 function InverseSphericalTransmitMap(
-    swe::SphericalWaveExpansion{Radiated,C,S},
-    fs::SphericalFieldSampling{RegularθRegularϕSampling,S2,C},
-) where {C<:Complex,S<:AbstractSphericalCoefficients,S2<:AbstractSphericalCoefficients}
-    if !(_isfirstorder(S2))
+    swe::SphericalWaveExpansion{Radiated,H,C},
+    fs::SphericalFieldSampling{RegularθRegularϕSampling,H2,C},
+) where {C<:Complex,H<:AbstractSphericalCoefficients,H2<:AbstractSphericalCoefficients}
+    if !(_isfirstorder(H2))
         error("InverseSphericalTransmitMap only defined for first-order probe samplings.")
     end
     L, v, vview, vview2, ifft_planϕ, ifft_planθ, u, P, K, βaut, αaut, Amat, uvectmp, Δ =
@@ -212,7 +188,7 @@ function InverseSphericalTransmitMap(
             fs.samplingstrategy.Jϕ,
         )
     return InverseSphericalTransmitMap{
-        SphericalWaveExpansion{Radiated,C,S},
+        SphericalWaveExpansion{Radiated,H,C},
         SphericalFieldSampling{
             RegularθRegularϕSampling,
             FirstOrderSphericalCoefficients{C},
@@ -242,77 +218,12 @@ function InverseSphericalTransmitMap(
         Δ,
     )
 end
-# function (
-#     istm::InverseSphericalTransmitMap{
-#         SphericalWaveExpansion{Radiated,C,A1},
-#         SphericalFieldSampling{
-#             RegularθRegularϕSampling,
-#             FirstOrderSphericalCoefficients{C},
-#             C,
-#         },
-#         C,
-#     }
-# )(
-#     S12::AbstractArray,
-# ) where {A1<:AbstractSphericalCoefficients,C<:Complex}
-#     istm.fs.S21values .= S12
-#     fastsphericalinverse!(
-#         istm.fs.S21values,
-#         istm.fs.incidentcoefficients,
-#         istm.fs.samplingstrategy.Jθ,
-#         istm.fs.samplingstrategy.Jϕ,
-#         istm.L,
-#         istm.v,
-#         istm.vview,
-#         istm.vview2,
-#         istm.ifft_planϕ,
-#         istm.ifft_planθ,
-#         istm.u,
-#         istm.P,
-#         istm.K,
-#         istm.βaut,
-#         istm.αaut,
-#         istm.Amat,
-#         istm.uvectmp,
-#         istm.Δ,
-#     )
-#     if length(istm.αaut) < length(istm.swe.coefficients)
-#         fill!(istm.swe.coefficients, zero(C))
-#         istm.swe.coefficients[1:length(istm.αaut)] .= istm.αaut
-#     else
-#         istm.swe.coefficients .= istm.αaut[1:length(istm.swe.coefficients)]
-#     end
-
-#     return istm.swe.coefficients
-# end
-function LinearMaps._unsafe_mul!(y, istm::InverseSphericalTransmitMap, x::AbstractVector)
-    istm.fs.S21values .= reshape(x, size(istm.fs.S21values))
-    fastsphericalinverse!(istm)
-    if length(y) > length(istm.αaut)
-        fill!(y, zero(eltype(y)))
-        view(y, 1:length(istm.αaut)) .= istm.αaut
-    else
-        y .= view(istm.αaut, 1:length(y))
-    end
-    return y
-end
-function LinearMaps._unsafe_mul!(
-    y,
-    stm_ad::LinearMaps.AdjointMap{C,SphericalTransmitMap{A,B,C}},
-    x::AbstractVector,
-) where {A,B,C}
-    stm = stm_ad.lmap
-    stm.fs.S21values .= reshape(x, size(stm.fs.S21values))
-    y .= βtoα!(y, fastsphericalforward_ad!(stm)) ./ 4
-    return y
-end
-
 
 function InverseSphericalTransmitMap(
-    swe::SphericalWaveExpansion{Radiated,C,S},
-    fs::SphericalFieldSampling{GaussLegendreθRegularϕSampling,S2,C},
-) where {C<:Complex,S<:AbstractSphericalCoefficients,S2<:AbstractSphericalCoefficients}
-    if !(_isfirstorder(S2))
+    swe::SphericalWaveExpansion{Radiated,H,C},
+    fs::SphericalFieldSampling{GaussLegendreθRegularϕSampling,H2,C},
+) where {C<:Complex,H<:AbstractSphericalCoefficients,H2<:AbstractSphericalCoefficients}
+    if !(_isfirstorder(H2))
         error("InverseSphericalTransmitMap only defined for first-order probe samplings.")
     end
     θweights, ϕweights, θs, ϕs =
@@ -321,7 +232,7 @@ function InverseSphericalTransmitMap(
         _storage_fastsphericalinverse(fs.S21values, θs)
 
     return InverseSphericalTransmitMap{
-        SphericalWaveExpansion{Radiated,C,S},
+        SphericalWaveExpansion{Radiated,H,C},
         SphericalFieldSampling{
             GaussLegendreθRegularϕSampling,
             FirstOrderSphericalCoefficients{C},
@@ -359,12 +270,12 @@ end
 
 function fastsphericalforward!(
     stm::SphericalTransmitMap{
-        SphericalWaveExpansion{Radiated,C,A1},
-        SphericalFieldSampling{RegularθRegularϕSampling,A2,C},
+        SphericalWaveExpansion{Radiated,H,C},
+        SphericalFieldSampling{RegularθRegularϕSampling,H2,C},
         C,
     },
-) where {A1<:AbstractSphericalCoefficients,A2<:AbstractSphericalCoefficients,C<:Complex}
-    firstorder = _isfirstorder(A2)
+) where {H<:AbstractSphericalCoefficients,H2<:AbstractSphericalCoefficients,C<:Complex}
+    firstorder = _isfirstorder(H2)
     return fastsphericalforward!(
         stm.fs.incidentcoefficients,
         stm.swe.coefficients,
@@ -389,12 +300,12 @@ end
 
 function fastsphericalforward!(
     stm::SphericalTransmitMap{
-        SphericalWaveExpansion{Radiated,C,A1},
-        SphericalFieldSampling{GaussLegendreθRegularϕSampling,A2,C},
+        SphericalWaveExpansion{Radiated,H,C},
+        SphericalFieldSampling{GaussLegendreθRegularϕSampling,H2,C},
         C,
     },
-) where {A1<:AbstractSphericalCoefficients,A2<:AbstractSphericalCoefficients,C<:Complex}
-    firstorder = _isfirstorder(A2)
+) where {H<:AbstractSphericalCoefficients,H2<:AbstractSphericalCoefficients,C<:Complex}
+    firstorder = _isfirstorder(H2)
     if !(firstorder)
         throw(
             error(
@@ -421,12 +332,12 @@ function fastsphericalforward!(
 end
 function fastsphericalforward_ad!(
     stm::SphericalTransmitMap{
-        SphericalWaveExpansion{Radiated,C,A1},
-        SphericalFieldSampling{RegularθRegularϕSampling,A2,C},
+        SphericalWaveExpansion{Radiated,H,C},
+        SphericalFieldSampling{RegularθRegularϕSampling,H2,C},
         C,
     },
-) where {A1<:AbstractSphericalCoefficients,A2<:AbstractSphericalCoefficients,C<:Complex}
-    firstorder = _isfirstorder(A2)
+) where {H<:AbstractSphericalCoefficients,H2<:AbstractSphericalCoefficients,C<:Complex}
+    firstorder = _isfirstorder(H2)
     return fastsphericalforward_ad!(
         stm.fs.incidentcoefficients,
         stm.swe.coefficients,
@@ -450,12 +361,12 @@ function fastsphericalforward_ad!(
 end
 function fastsphericalforward_ad!(
     stm::SphericalTransmitMap{
-        SphericalWaveExpansion{Radiated,C,A1},
-        SphericalFieldSampling{GaussLegendreθRegularϕSampling,A2,C},
+        SphericalWaveExpansion{Radiated,H,C},
+        SphericalFieldSampling{GaussLegendreθRegularϕSampling,H2,C},
         C,
     },
-) where {A1<:AbstractSphericalCoefficients,A2<:AbstractSphericalCoefficients,C<:Complex}
-    firstorder = _isfirstorder(A2)
+) where {H<:AbstractSphericalCoefficients,H2<:AbstractSphericalCoefficients,C<:Complex}
+    firstorder = _isfirstorder(H2)
     if !(firstorder)
         throw(
             error(
@@ -481,11 +392,9 @@ function fastsphericalforward_ad!(
     )
 end
 
-
-
 function fastsphericalinverse!(
     istm::InverseSphericalTransmitMap{
-        SphericalWaveExpansion{Radiated,C,A1},
+        SphericalWaveExpansion{Radiated,H,C},
         SphericalFieldSampling{
             GaussLegendreθRegularϕSampling,
             FirstOrderSphericalCoefficients{C},
@@ -493,7 +402,7 @@ function fastsphericalinverse!(
         },
         C,
     },
-) where {A1<:AbstractSphericalCoefficients,C<:Complex}
+) where {H<:AbstractSphericalCoefficients,C<:Complex}
     θweights, ϕweights, θs, ϕs = weightsandsamples(istm.fs.samplingstrategy)
     return fastsphericalinverse!(
         istm.fs.S21values,
@@ -517,7 +426,7 @@ end
 
 function fastsphericalinverse!(
     istm::InverseSphericalTransmitMap{
-        SphericalWaveExpansion{Radiated,C,A1},
+        SphericalWaveExpansion{Radiated,H,C},
         SphericalFieldSampling{
             RegularθRegularϕSampling,
             FirstOrderSphericalCoefficients{C},
@@ -525,7 +434,7 @@ function fastsphericalinverse!(
         },
         C,
     },
-) where {A1<:AbstractSphericalCoefficients,C<:Complex}
+) where {H<:AbstractSphericalCoefficients,C<:Complex}
     return fastsphericalinverse!(
         istm.fs.S21values,
         istm.fs.incidentcoefficients,
@@ -546,4 +455,62 @@ function fastsphericalinverse!(
         istm.uvectmp,
         istm.Δ,
     )
+end
+
+function _isfirstorder(::Type{FirstOrderSphericalCoefficients{C}}) where {C}
+    return true
+end
+function _isfirstorder(::Type{SphericalCoefficients{C}}) where {C}
+    return false
+end
+
+function transmit(
+    swe::SphericalWaveExpansion{Radiated,H,C},
+    fs::SphericalFieldSampling,
+) where {C<:Complex,H<:AbstractSphericalCoefficients}
+    stm = SphericalTransmitMap(swe, fs)
+    stm.swe .= αtoβ(stm.swe)
+    y = asvector(fastsphericalforward!(stm))
+    stm.swe .= βtoα(stm.swe)
+    return y
+end
+
+function LinearMaps._unsafe_mul!(y, stm::SphericalTransmitMap, x::AbstractVector)
+    αtoβ!(stm.swe, x)
+    y .= asvector(fastsphericalforward!(stm))
+    return y
+end
+
+function LinearMaps._unsafe_mul!(y, istm::InverseSphericalTransmitMap, x::AbstractVector)
+    istm.fs.S21values .= reshape(x, size(istm.fs.S21values))
+    fastsphericalinverse!(istm)
+    if length(y) > length(istm.αaut)
+        fill!(y, zero(eltype(y)))
+        view(y, 1:length(istm.αaut)) .= istm.αaut
+    else
+        y .= view(istm.αaut, 1:length(y))
+    end
+    return y
+end
+
+function LinearMaps._unsafe_mul!(
+    y,
+    stm_ad::LinearMaps.AdjointMap{C,SphericalTransmitMap{A,B,C}},
+    x::AbstractVector,
+) where {A,B,C}
+    stm = stm_ad.lmap
+    stm.fs.S21values .= reshape(x, size(stm.fs.S21values))
+    y .= βtoα!(y, fastsphericalforward_ad!(stm)) ./ 4 # division by 4 because βtoα! is 4 times the adjoint of αtoβ! .
+    return y
+end
+
+function LinearMaps._unsafe_mul!(
+    y,
+    stm_ad::LinearMaps.TransposeMap{C,SphericalTransmitMap{A,B,C}},
+    x::AbstractVector,
+) where {A,B,C}
+    stm = stm_ad.lmap
+    stm.fs.S21values .= reshape(conj.(x), size(stm.fs.S21values))
+    y .= conj.(βtoα!(y, fastsphericalforward_ad!(stm)) ./ 4) # division by 4 because βtoα! is 4 times the adjoint of αtoβ! .
+    return y
 end

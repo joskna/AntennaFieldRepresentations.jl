@@ -85,6 +85,22 @@ function _countsamples(samplingstrategy::GaussLegendreθRegularϕSampling)
 end
 
 """
+    _standardsampling(Type{<:SphereSamplingStrategy}, Lmax::Integer)
+
+Return the standard `SphereSamplingStrategy` of specified type for a `PlaneWaveExpansion` with `equivalentorder=Lmax`.
+"""
+function _standardsampling(::Type{RegularθRegularϕSampling}, Lmax::Integer)
+    Jθ = 2Lmax + 1
+    Jϕ = 2Lmax + 2
+    return RegularθRegularϕSampling(Jθ, Jϕ)
+end
+function _standardsampling(::Type{GaussLegendreθRegularϕSampling}, Lmax::Integer)
+    Nθ = Lmax + 1
+    Jϕ = 2Lmax + 2
+    return GaussLegendreθRegularϕSampling(Nθ, Jϕ)
+end
+
+"""
     weightsandsamples(samplingstrategy::SphereSamplingStrategy) -> ( θweights::Array{Float64,1}, ϕweights::Array{Float64,1}, θs::Array{Float64,1}, ϕs::Array{Float64,1} )
 
 Return integration weights `θweights, ϕweights` and sampling points `θs, ϕs` for the `samplingstrategy`.
@@ -363,6 +379,13 @@ shifted_hspherical=changerepresentation(SphericalWaveExpansion{Radiated}, shifte
 """
 function changerepresentation end
 
+
+"""
+    equivalentorder(aut_field::AntennaFieldRepresentation; ϵ= 1e-7)
+
+Return the estimated spherical mode order L which is needed forin a spherical mode expansion to approximate the `aut_field` to the desired accuracy `ϵ`.
+"""
+function equivalentorder end
 #
 #
 # End of definition of AntennaFieldRepresentation Interface

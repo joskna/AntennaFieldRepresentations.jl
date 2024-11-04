@@ -45,7 +45,9 @@ Any subtype of `AntennaFieldrepresentation` implements the following methods[^1]
 | [`spatialshift`](@ref)    | Yes      | `spatialshift!`      | Spatially shift representation to new location `R`                    |
 | [`spatialshift!`](@ref)   | No       |                      | In-place version of `spatialshift`                                    |
 |                           |          |                      |                                                                       |
-| [`changerepresentation`](@ref)    | Yes      |                      | Change the representation type. Not all resulting types are supported |
+| [`equivalentorder`](@ref) | No       |                      | Return the estimated spherical mode order L of the representation     |
+|                           |          |                      |                                                                       |
+| [`changerepresentation`](@ref)    | Yes      |              | Change the representation type. Not all resulting types are supported |
 | `transmit`                | No       |                      | Calculate transmission between AUT and field sampling                 |
 
 [^1]: Note for developers: If you want to implement your own subtype of `AntennaFieldrepresentation`, make sure to support this interface to adhere to the general functionality of this package.

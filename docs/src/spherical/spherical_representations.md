@@ -2,14 +2,15 @@
 
 One of the most popular ways to represent an antenna field is by a [spherical mode expansion](@ref sphericalexpansion).
 
-In `AntennaFieldRepresentations.jl`, spherical expansions are represented by a struct `SphericalWaveExpansion{P, C, S}` which is a subtype of [`AntennaFieldRepresentation{P, C}`](@ref fieldrepresentation).
+In `AntennaFieldRepresentations.jl`, spherical expansions are represented by a struct `SphericalWaveExpansion{P, H, C}` which is a subtype of [`AntennaFieldRepresentation{P, C}`](@ref fieldrepresentation).
 The type parameters have the following meaning
 
 | Parameter                                 | Short Description                                                |
 | :---------------------------------------- | :--------------------------------------------------------------- |
 | `P <: PropagationType`                    | Can be `Radiated`, `Absorbed`, or `Incident`                     |
+| `H <: AbstractSphericalCoefficients{C}}`  | [Type of spherical expansion coefficients](@ref abstractsphericalcoeficients). Can be [`SphericalCoefficients{C}`](@ref abstractsphericalcoeficients) for general spherical coefficients or [`FirstOrderSphericalCoefficients{C}`](@ref abstractsphericalcoeficients) for first-order spherical coefficients |
 | `C <: Complex`                            | Element type of the coefficient vector                           |
-| `S <: AbstractSphericalCoefficients{C}}`  | [Type of spherical expansion coefficients](@ref abstractsphericalcoeficients). Can be [`SphericalCoefficients{C}`](@ref abstractsphericalcoeficients) for general spherical coefficients or [`FirstOrderSphericalCoefficients{C}`](@ref abstractsphericalcoeficients) for first-order spherical coefficients |
+
 
 
 `SphericalWaveExpansion`s are particularly efficient when combined with `RegularSphericalFieldSampling`s or `FarFieldSampling`s.
@@ -18,7 +19,7 @@ The type parameters have the following meaning
 To generate a `SphericalWaveExpansion`, use one of the following constructors:
 
 ```julia
-SphericalWaveExpansion{P, C, S}(coefficients::S, wavenumber <: Number) where{P <: PropagationType, C <: Complex, S<: AbstractSphericalCoefficients{C}}
+SphericalWaveExpansion{P, H, C}(coefficients::H, wavenumber <: Number) where{P <: PropagationType, C <: Complex, H<: AbstractSphericalCoefficients{C}}
 ```
 ```julia
 SphericalWaveExpansion(::P, coefficients::AbstractVector{C}, wavenumber) where{P <: PropagationType, C}

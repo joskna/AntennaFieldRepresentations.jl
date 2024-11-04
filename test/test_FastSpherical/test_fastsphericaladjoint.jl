@@ -22,10 +22,10 @@ k0 = 2 * pi / λ
 #     1.3,
 # )
 
-filenameswe=joinpath("testdata","swe.afr")
+filenameswe = joinpath("testdata", "swe.afr")
 # swe = changerepresentation(SphericalWaveExpansion{Radiated}, dipoles)
 # serialize(filenameswe, swe)
-swe= deserialize(filenameswe)
+swe = deserialize(filenameswe)
 
 sphcoeffs = deepcopy(swe.coefficients)
 
@@ -56,7 +56,7 @@ for Jextraθ = 0:1, Jextraϕ = 0:1
     stm = AntennaFieldRepresentations.SphericalTransmitMap(swe, fs)
     stm_ad = adjoint(stm)
 
-    filenameA = joinpath("testdata",string("Amat_", Jextraθ, "_", Jextraϕ, ".afr"))
+    filenameA = joinpath("testdata", string("Amat_", Jextraθ, "_", Jextraϕ, ".afr"))
     # A = zeros(ComplexF64, size(stm))
     # Threads.@threads for k = 1:length(sphcoeffs)
     #     stm_tmp=deepcopy(stm)
@@ -67,12 +67,12 @@ for Jextraθ = 0:1, Jextraϕ = 0:1
     # serialize(filenameA, A)
     A = deserialize(filenameA)
 
-    a,b = size(A)
+    a, b = size(A)
 
     Aᴴ = similar(A')
     Threads.@threads for k = 1:a
         local y = zeros(ComplexF64, a)
-        stm_ad_tmp=deepcopy(stm_ad)
+        stm_ad_tmp = deepcopy(stm_ad)
         y[k] = 1
         Aᴴ[:, k] .= stm_ad_tmp * y
     end
@@ -82,7 +82,7 @@ for Jextraθ = 0:1, Jextraϕ = 0:1
     fsarborder = SphericalFieldSampling(regularsamplingstrategy, αinc_arborder)
     stmarborder = AntennaFieldRepresentations.SphericalTransmitMap(swe, fsarborder)
     stmarborder_ad = adjoint(stm)
-    filenameA = joinpath("testdata",string("Amatarborder_", Jextraθ, "_", Jextraϕ, ".afr"))
+    filenameA = joinpath("testdata", string("Amatarborder_", Jextraθ, "_", Jextraϕ, ".afr"))
     # A = zeros(ComplexF64, size(stmarborder))
     # Threads.@threads for k = 1:length(sphcoeffs)
     #     stm_tmp=deepcopy(stmarborder)
@@ -93,19 +93,19 @@ for Jextraθ = 0:1, Jextraϕ = 0:1
     # serialize(filenameA, A)
     A = deserialize(filenameA)
 
-    a,b = size(A)
+    a, b = size(A)
 
     Aᴴ = similar(A')
     Threads.@threads for k = 1:a
         local y = zeros(ComplexF64, a)
-        stm_ad_tmp=deepcopy(stmarborder_ad)
+        stm_ad_tmp = deepcopy(stmarborder_ad)
         y[k] = 1
         Aᴴ[:, k] .= stm_ad_tmp * y
     end
 
     @test norm(A' .- Aᴴ) / norm(A) < 1e-15
 
-  
+
 
 
     gausssamplingstrategy =
@@ -114,8 +114,8 @@ for Jextraθ = 0:1, Jextraϕ = 0:1
 
 
     stmgauss = AntennaFieldRepresentations.SphericalTransmitMap(swe, fsgauss)
-    stmgauss_ad =adjoint(stmgauss)
-    filenameA = joinpath("testdata",string("Amatgauss", Jextraθ, "_", Jextraϕ, ".afr"))
+    stmgauss_ad = adjoint(stmgauss)
+    filenameA = joinpath("testdata", string("Amatgauss", Jextraθ, "_", Jextraϕ, ".afr"))
     # A = zeros(ComplexF64, size(stmgauss))
     # Threads.@threads for k = 1:length(sphcoeffs)
     #     stm_tmp=deepcopy(stmgauss)
@@ -126,13 +126,13 @@ for Jextraθ = 0:1, Jextraϕ = 0:1
     # serialize(filenameA, A)
     A = deserialize(filenameA)
 
-    a,b = size(A)
+    a, b = size(A)
 
 
     Aᴴ = similar(A')
     Threads.@threads for k = 1:a
         local y = zeros(ComplexF64, a)
-        stm_ad_tmp=deepcopy(stmgauss_ad)
+        stm_ad_tmp = deepcopy(stmgauss_ad)
         y[k] = 1
         Aᴴ[:, k] .= stm_ad_tmp * y
     end

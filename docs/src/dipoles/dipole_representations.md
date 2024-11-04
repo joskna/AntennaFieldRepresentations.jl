@@ -3,17 +3,18 @@
 One of the simplest ways to represent an antenna field is by a collection of electrically short (i.e., ``\ell \ll \lambda``) dipole antennas. 
 Since the [radiated fields of short dipole antennas are known analytically](@ref dipole_radiated), one can simply superimpose the effects of several spatially distributed dipole antennas to approximate the radiated fields of an antenna.
 
-In `AntennaFieldRepresentations.jl`, collections (or arrays) of electrically short dipole arrays are stored in a struct `DipoleArray{P,E,C,T}` which is a subtype of [`AntennaFieldRepresentation{P, C}`](@ref fieldrepresentation).
+In `AntennaFieldRepresentations.jl`, collections (or arrays) of electrically short dipole arrays are stored in a struct `DipoleArray{P,E,T,C}` which is a subtype of [`AntennaFieldRepresentation{P, C}`](@ref fieldrepresentation).
 The type parameters have the following meaning
 
 | Parameter                 | Short Description                                                |
 | :------------------------ | :--------------------------------------------------------------- |
 | `P <: PropagationType`    | Can be `Radiated`, `Absorbed`, or `Incident`                     |
 | `E <: ElmagType`          | Can be `Electric` or `Magnetic`                                  |
-| `C <: Complex`            | Element type of the coefficient vector                           |
 | `T <: Real`               | Number type used in the vector defining the positions of dipoles |
+| `C <: Complex`            | Element type of the coefficient vector                           |
 
-For extra convenience, the type aliases `HertzArray{C, T} = DipoleArray{Radiated, Electric, C, T}` and `FitzgeraldArray{C, T} = DipoleArray{Radiated, Magnetic, C, T}` are introduced. Therefore, the user will mostly interact with `HertzArray`s and `FitzgeraldArray`s while the `DipoleArray` type is hidden under the hood.
+
+For extra convenience, the type aliases `HertzArray{T,C} = DipoleArray{Radiated, Electric, T, C}` and `FitzgeraldArray{T, C} = DipoleArray{Radiated, Magnetic, T, C}` are introduced. Therefore, the user will mostly interact with `HertzArray`s and `FitzgeraldArray`s while the `DipoleArray` type is hidden under the hood.
 
 ## Constructors for a `DipoleArray`
 To generate a `DipoleArray`, use one of the following constructors:
@@ -22,13 +23,13 @@ To generate a `DipoleArray`, use one of the following constructors:
 DipoleArray{P, E}(positions::Vector{V1}, orientations::Vector{V2}, dipolemoments::Vector{C}, wavenumber) where{P <: PropagationType, E <: ElmagType, C <: Complex>, V1<: AbstractVector, V2<: AbstractVector{C}}
 ```
 ```julia
-DipoleArray{P, E, C, T}(positions::Vector{V1}, orientations::Vector{V2}, dipolemoments::Vector{C}, wavenumber) where{P <: PropagationType, E <: ElmagType, C <: Complex>, V1<: AbstractVector, V2<: AbstractVector{C}}
+DipoleArray{P, E, T, C}(positions::Vector{V1}, orientations::Vector{V2}, dipolemoments::Vector{C}, wavenumber) where{P <: PropagationType, E <: ElmagType, C <: Complex>, V1<: AbstractVector, V2<: AbstractVector{C}}
 ```
 ```julia
-HertzArray{C, T}(positions::Vector{V1}, orientations::Vector{V2}, dipolemoments::Vector{C}, wavenumber) where{C <: Complex>, V1<: AbstractVector, V2<: AbstractVector{C}}
+HertzArray{T, C}(positions::Vector{V1}, orientations::Vector{V2}, dipolemoments::Vector{C}, wavenumber) where{C <: Complex>, V1<: AbstractVector, V2<: AbstractVector{C}}
 ```
 ```julia
-FitzgeraldArray{C, T}(positions::Vector{V1}, orientations::Vector{V2}, dipolemoments::Vector{C}, wavenumber) where{C <: Complex>, V1<: AbstractVector, V2<: AbstractVector{C}}
+FitzgeraldArray{T, C}(positions::Vector{V1}, orientations::Vector{V2}, dipolemoments::Vector{C}, wavenumber) where{C <: Complex>, V1<: AbstractVector, V2<: AbstractVector{C}}
 ```
 ```julia
 HertzArray(positions::Vector{V1}, orientations::Vector{V2}, dipolemoments::Vector{C}, wavenumber) where{C <: Complex>, V1<: AbstractVector, V2<: AbstractVector{C}}

@@ -141,6 +141,7 @@ include(joinpath("SphericalVectorModeFields", "spherical.jl"))
 include(joinpath("SurfaceCurrentDensities", "currentrepresentations.jl"))
 include(joinpath("FieldSamplings", "fieldsamplings.jl"))
 include(joinpath("OperationMaps", "operationmaps.jl"))
+include(joinpath("OperationMaps", "changerepresentationmaps.jl"))
 
 export PropagationType, Radiated, Absorbed, Incident
 export AntennaFieldRepresentation
@@ -154,9 +155,11 @@ export SphereSamplingStrategy,
     PlaneWaveExpansion, RegularθRegularϕSampling, GaussLegendreθRegularϕSampling
 export SurfaceCurrentDensity
 export FieldSampling, IrregularFieldSampling, ProbeAntenna, EfieldSampling, HfieldSampling
+export RegularSphericalFieldSampling
 export j_to_sℓm, sℓm_to_j
-export getwavenumber
+export getwavenumber, equivalentorder
 export changerepresentation, transmit
+export ChangeRepresentationMap, TransmitMap
 export SphericalFieldSampling, SphericalTransmitMap
 
 

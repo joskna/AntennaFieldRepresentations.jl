@@ -206,19 +206,23 @@ function j_to_sℓm(j::Integer)
 end
 
 """
-    SphericalWaveExpansion{P <: PropagationType, S <: AbstractSphericalCoefficients{C <: Number}} <: AntennaFieldRepresentation{P, C}
+    SphericalWaveExpansion{P,H,C} <: AntennaFieldRepresentation{P, C}
 
 Representation of an electromagnetic field as superposition spherical vector wave functions.
 
 Behaves like an `AbstractVector{C}` with extra context.
-The type parameter `S` defines how the spherical coefficients are ordered in memory.
+
+# Type parameters
+- `P <: PropagationType`
+- `H <: AbstractSphericalCoefficients{C <: Number}` : defines how the spherical coefficients are ordered in memory.
+- `C <: Complex`
 """
 struct SphericalWaveExpansion{
     P<:PropagationType,
+    H<:AbstractSphericalCoefficients,
     C<:Number,
-    S<:AbstractSphericalCoefficients{C},
 } <: AntennaFieldRepresentation{P,C}
-    coefficients::S
+    coefficients::H
     wavenumber::Number
 end
 function asvector(s::SphericalWaveExpansion)
@@ -231,26 +235,26 @@ Base.setindex!(swe::SphericalWaveExpansion, v, j) = setindex!(swe.coefficients, 
 Base.setindex!(swe::SphericalWaveExpansion, v, s, ℓ, m) =
     setindex!(swe.coefficients, v, sℓm_to_j(s, ℓ, m))
 Base.size(swe::SphericalWaveExpansion) = size(swe.coefficients)
-function Base.similar(swe::SphericalWaveExpansion{P,C,S}) where {P,C,S}
-    return SphericalWaveExpansion{P,C,S}(similar(swe.coefficients), swe.wavenumber)
+function Base.similar(swe::SphericalWaveExpansion{P,H,C}) where {P,H,C}
+    return SphericalWaveExpansion{P,H,C}(similar(swe.coefficients), swe.wavenumber)
 end
 function SphericalWaveExpansion(
     ::P,
     coefficients::AbstractVector{C},
     wavenumber::Number,
 ) where {P<:PropagationType,C}
-    S = SphericalCoefficients{C}
-    return SphericalWaveExpansion{P,C,S}(S(coefficients), wavenumber)
+    H = SphericalCoefficients{C}
+    return SphericalWaveExpansion{P,H,C}(H(coefficients), wavenumber)
 end
 function SphericalWaveExpansion(
     ::P,
-    coefficients::S,
+    coefficients::H,
     wavenumber::Number,
-) where {P<:PropagationType,C,S<:AbstractSphericalCoefficients{C}}
-    return SphericalWaveExpansion{P,C,S}(coefficients, wavenumber)
+) where {P<:PropagationType,C,H<:AbstractSphericalCoefficients{C}}
+    return SphericalWaveExpansion{P,H,C}(coefficients, wavenumber)
 end
-function setwavenumber!(swe::SphericalWaveExpansion{P,C,S}, val) where {P,C,S}
-    swe = SphericalWaveExpansion{P,C,S}(swe.coefficients, val)
+function setwavenumber!(swe::SphericalWaveExpansion{P,H,C}, val) where {P,H,C}
+    swe = SphericalWaveExpansion{P,H,C}(swe.coefficients, val)
     return swe
 end
 
@@ -262,10 +266,10 @@ include("fastspherical.jl")
 
 function efield!(
     storage,
-    aut_field::SphericalWaveExpansion{P,C,S},
+    aut_field::SphericalWaveExpansion{P,H,C},
     R;
     reset = true,
-) where {P<:PropagationType,C<:Number,S<:AbstractSphericalCoefficients{C}}
+) where {P<:PropagationType,C<:Number,H<:AbstractSphericalCoefficients{C}}
     sqrtZ₀ = convert(C, sqrt(Z₀))
     k0 = getwavenumber(aut_field)
     ϵ = 1e-10
@@ -296,10 +300,10 @@ end
 
 function hfield!(
     storage,
-    aut_field::SphericalWaveExpansion{P,C,S},
+    aut_field::SphericalWaveExpansion{P,H,C},
     R;
     reset = true,
-) where {P<:PropagationType,C<:Number,S<:AbstractSphericalCoefficients{C}}
+) where {P<:PropagationType,C<:Number,H<:AbstractSphericalCoefficients{C}}
     sqrtZ₀ = convert(C, sqrt(Z₀))
     k0 = getwavenumber(aut_field)
     ϵ = 1e-10
@@ -308,16 +312,16 @@ function hfield!(
 
         Fx, Fy, Fz = curlF_sℓm_cartesian_array(J, P(), R, k0)
         fac = (C(0.0, k0) / sqrtZ₀)
-        H = fac .* (udot(F, aut_field) for F in (Fx, Fy, Fz))
+        Hfield = fac .* (udot(F, aut_field) for F in (Fx, Fy, Fz))
 
     else
-        H = _H_at_origin(aut_field)
+        Hfield = _H_at_origin(aut_field)
     end
 
     if reset
-        storage .= H
+        storage .= Hfield
     else
-        storage .= H .+ storage
+        storage .= Hfield .+ storage
     end
     return storage
 end
@@ -325,10 +329,10 @@ end
 function ehfield!(
     storage_efield,
     storage_hfield,
-    aut_field::SphericalWaveExpansion{P,C,S},
+    aut_field::SphericalWaveExpansion{P,H,C},
     R;
     reset = true,
-) where {P<:PropagationType,C<:Number,S<:AbstractSphericalCoefficients{C}}
+) where {P<:PropagationType,C<:Number,H<:AbstractSphericalCoefficients{C}}
     sqrtZ₀ = C(sqrt(Z₀))
     k0 = getwavenumber(aut_field)
     ϵ = 1e-10
@@ -367,8 +371,8 @@ function _F2m1cartesian_at_origin(C::Type{<:Complex} = ComplexF64)
 end
 
 function _H_at_origin(
-    aut_field::SphericalWaveExpansion{Incident,C,S},
-) where {C<:Number,S<:AbstractSphericalCoefficients{C}}
+    aut_field::SphericalWaveExpansion{Incident,H,C},
+) where {C<:Number,H<:AbstractSphericalCoefficients{C}}
     F2m11, F201, F211 = _F2m1cartesian_at_origin(C)
     Hcartesian =
         C(0, getwavenumber(aut_field)) / sqrt(Z₀) * (
@@ -379,29 +383,23 @@ function _H_at_origin(
     return Hcartesian
 end
 function _H_at_origin(
-    aut_field::SphericalWaveExpansion{Absorbed,C,S},
-) where {C<:Number,S<:AbstractSphericalCoefficients{C}}
+    aut_field::SphericalWaveExpansion{Absorbed,H,C},
+) where {C<:Number,H<:AbstractSphericalCoefficients{C}}
     return _H_at_origin(
-        phericalWaveExpansionwhere{Incident,C,S}(
-            aut_field.coefficients,
-            aut_field.wavenumber,
-        ),
+        SphericalWaveExpansion{Incident,H,C}(aut_field.coefficients, aut_field.wavenumber),
     ) .+ C(0.0, Inf)
 end
 function _H_at_origin(
-    aut_field::SphericalWaveExpansion{Radiated,C,S},
-) where {C<:Number,S<:AbstractSphericalCoefficients{C}}
+    aut_field::SphericalWaveExpansion{Radiated,H,C},
+) where {C<:Number,H<:AbstractSphericalCoefficients{C}}
     return _H_at_origin(
-        phericalWaveExpansionwhere{Incident,C,S}(
-            aut_field.coefficients,
-            aut_field.wavenumber,
-        ),
+        SphericalWaveExpansion{Incident,H,C}(aut_field.coefficients, aut_field.wavenumber),
     ) .+ C(0.0, Inf)
 end
 
 function _E_at_origin(
-    aut_field::SphericalWaveExpansion{Incident,C,S},
-) where {C<:Number,S<:AbstractSphericalCoefficients{C}}
+    aut_field::SphericalWaveExpansion{Incident,H,C},
+) where {C<:Number,H<:AbstractSphericalCoefficients{C}}
     F2m11, F201, F211 = _F2m1cartesian_at_origin(C)
     Ecartesian =
         getwavenumber(aut_field) *
@@ -414,32 +412,26 @@ function _E_at_origin(
     return Ecartesian
 end
 function _E_at_origin(
-    aut_field::SphericalWaveExpansion{Absorbed,C,S},
-) where {C<:Number,S<:AbstractSphericalCoefficients{C}}
+    aut_field::SphericalWaveExpansion{Absorbed,H,C},
+) where {C<:Number,H<:AbstractSphericalCoefficients{C}}
     return _E_at_origin(
-        phericalWaveExpansionwhere{Incident,C,S}(
-            aut_field.coefficients,
-            aut_field.wavenumber,
-        ),
+        SphericalWaveExpansion{Incident,H,C}(aut_field.coefficients, aut_field.wavenumber),
     ) .+ C(0.0, Inf)
 end
 function _E_at_origin(
-    aut_field::SphericalWaveExpansion{Radiated,C,S},
-) where {C<:Number,S<:AbstractSphericalCoefficients{C}}
+    aut_field::SphericalWaveExpansion{Radiated,H,C},
+) where {C<:Number,H<:AbstractSphericalCoefficients{C}}
     return _E_at_origin(
-        phericalWaveExpansionwhere{Incident,C,S}(
-            aut_field.coefficients,
-            aut_field.wavenumber,
-        ),
+        SphericalWaveExpansion{Incident,H,C}(aut_field.coefficients, aut_field.wavenumber),
     ) .+ C(0.0, Inf)
 end
 
 
 function farfield(
-    aut_field::SphericalWaveExpansion{Radiated,C,S},
+    aut_field::SphericalWaveExpansion{Radiated,H,C},
     ϑ::Number,
     φ::Real,
-) where {C<:Number,S<:AbstractSphericalCoefficients{C}}
+) where {C<:Number,H<:AbstractSphericalCoefficients{C}}
     J = length(aut_field)
     Kϑ, Kφ = K_sℓm_array(J, ϑ, φ)
     Fϑ = udot(Kϑ[1:J], aut_field)
@@ -449,12 +441,12 @@ end
 
 
 function rotate!(
-    rotated_aut_field::SphericalWaveExpansion{P,C,S},
-    aut_field::SphericalWaveExpansion{P,C,S},
+    rotated_aut_field::SphericalWaveExpansion{P,H,C},
+    aut_field::SphericalWaveExpansion{P,H,C},
     χ::Real,
     θ::Real,
     ϕ::Real,
-) where {P<:PropagationType,C<:Number,S<:AbstractSphericalCoefficients{C}}
+) where {P<:PropagationType,C<:Number,H<:AbstractSphericalCoefficients{C}}
     _, Lmax, __ = j_to_sℓm(length(aut_field))
 
     fill!(rotated_aut_field.coefficients, 0.0)
@@ -519,18 +511,7 @@ function _negpow1(m::Integer)
     end
 end
 
-function _modeorder(rmax::Real, wavenumber::Real; ϵ = 1e-7)
-    L = maximum([
-        3,
-        Int(
-            ceil(
-                wavenumber * rmax +
-                1.8 * (log10(1 / ϵ))^(2 / 3) * (wavenumber * rmax)^(1 / 3),
-            ),
-        ),
-    ])
-    return L
-end
+
 
 function _outputmode_dipo2sph(Psph::PropagationType, Pdip::PropagationType)
     if Pdip == Radiated()
@@ -541,14 +522,14 @@ function _outputmode_dipo2sph(Psph::PropagationType, Pdip::PropagationType)
     throw(ErrorException("Cannot perform conversion with given PropagationTypes."))
 end
 function changerepresentation(
-    Tnew::Type{SphericalWaveExpansion{Psph,C,S}},
-    dipoles::DipoleArray{Pdip,E,C,T},
-) where {Psph,C,S,Pdip,E,T}
+    Tnew::Type{SphericalWaveExpansion{Psph,H,C}},
+    dipoles::DipoleArray{Pdip,E,T,C},
+) where {Psph,C,H,Pdip,E,T}
     # Pdual= _dualtype(P)
     Ptmp = _outputmode_dipo2sph(Psph(), Pdip())
     k0 = getwavenumber(dipoles)
-    rsph = (Psph() == Radiated()) ? (2 * _rmax(dipoles)) : (2 * _rmin(dipoles))
-    L = _modeorder(rsph, k0; ϵ = 1e-7)
+    # rsph = (Psph() == Radiated()) ? (2 * _rmax(dipoles)) : (2 * _rmin(dipoles))
+    L = equivalentorder(dipoles; ϵ = 1e-7)
     Jmax = sℓm_to_j(2, L, L)
     tempcoeffs = _dipole_spherical_innerprod(dipoles, Jmax, Ptmp, k0)
     coefficients = zeros(C, Jmax)
@@ -557,20 +538,19 @@ function changerepresentation(
         coefficients[sℓm_to_j(s, ℓ, -m)] = (-1)^(m + 1) * val
     end
     return Tnew(SphericalCoefficients(coefficients), k0)
-
 end
 function changerepresentation(
     Tnew::Type{SphericalWaveExpansion{Psph}},
-    dipoles::DipoleArray{Pdip,E,C,T},
+    dipoles::DipoleArray{Pdip,E,T,C},
 ) where {Psph,C,Pdip,E,T}
     return changerepresentation(
-        SphericalWaveExpansion{Psph,C,SphericalCoefficients{C}},
+        SphericalWaveExpansion{Psph,SphericalCoefficients{C},C},
         dipoles,
     )
 end
 
 function _dipole_spherical_innerprod(
-    dipoles::HertzArray{C,T},
+    dipoles::HertzArray{T,C},
     Jmax::Integer,
     P::PropagationType,
     k0::Number,
@@ -584,7 +564,7 @@ function _dipole_spherical_innerprod(
     return tempcoeffs
 end
 function _dipole_spherical_innerprod(
-    dipoles::FitzgeraldArray{C,T},
+    dipoles::FitzgeraldArray{T,C},
     Jmax::Integer,
     P::PropagationType,
     k0::Number,
@@ -648,4 +628,11 @@ function αinc_dipole(z::Real, L::Integer, wavenumber::Real)
     return αin
 end
 
+function equivalentorder(coefficients::AbstractSphericalCoefficients; ϵ = 1e-7)
+    _, L, __ = j_to_sℓm(length(coefficients))
+    return L
+end
+function equivalentorder(swe::SphericalWaveExpansion)
+    return equivalentorder(swe.coefficients)
+end
 

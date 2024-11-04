@@ -1,27 +1,31 @@
 
 """
-    PlaneWaveExpansion{P <: PropagationType, S <: SphereSamplingStrategy, C} <: AntennaFieldRepresentation{P, C}
+    PlaneWaveExpansion{P,Y,C} <: AntennaFieldRepresentation{P,C}
 
 Collection of electromagnetic plane waves propagating into various directions.
 
 Behaves like an `AbstractVector{C}` with extra context.
-The sampling strategy stored by the type parameter `S` defines the propagation directions of the plane waves.
+
+# Type Parameters
+- `P <: PropagationType`
+- `Y <: SphereSamplingStrategy` : Defines the propagation directions of the  stored plane wave samples
+- `C <: Number`
 """
-struct PlaneWaveExpansion{P<:PropagationType,S<:SphereSamplingStrategy,C} <:
+struct PlaneWaveExpansion{P<:PropagationType,Y<:SphereSamplingStrategy,C} <:
        AntennaFieldRepresentation{P,C}
-    samplingstrategy::S
-    EθEϕ::Matrix{C}
+    samplingstrategy::Y
+    EθEϕ::Array{C}
     wavenumber::Number
 end
 
 """
-    PlaneWaveExpansion(Type{P}, samplingstrategy::S, Eθ::Matrix{C}, Eϕ::Matrix{C}, wavenumber::Number)
+    PlaneWaveExpansion(Type{P}, samplingstrategy, Eθ, Eϕ, wavenumber)
 
 Returns a collection of electromagnetic plane waves propagating into various directions.
 
 # Arguments:
 - `Type{P}`: PropagationType
-- `samplingstrategy::SphereSamplingStrategy`: sampling strategy which defines the propagation directions of the plane wave samples
+- `samplingstrategy<:SphereSamplingStrategy`: sampling strategy which defines the propagation directions of the plane wave samples
 - `Eθ::Matrix{C}`: θ-component amplitudes of the plane waves
 - `Eϕ::Matrix{C}`: ϕ-component amplitudes of the plane waves
 - `wavenumber`: wavenumber
@@ -33,15 +37,28 @@ function PlaneWaveExpansion(
     Eϕ::Matrix{C},
     wavenumber::Number,
 ) where {S<:SphereSamplingStrategy,C}
-    return PlaneWaveExpansion{P,S,C}(samplingstrategy, [Eθ Eϕ], wavenumber)
+    a, b = size(Eθ)
+    a_, b_ = size(Eϕ)
+    !(a == a_ && b == b_) && error("Dimensions of Eθ and Eϕ must be equal")
+    Eθϕ = Array{C}(undef, a, b, 2)
+    Eθϕ[:, :, 1] .= Eθ
+    Eθϕ[:, :, 2] .= Eϕ
+    return PlaneWaveExpansion{P,S,C}(samplingstrategy, Eθϕ, wavenumber)
 end
+# function _eθ(p::PlaneWaveExpansion)
+#     _, s2 = _count_samples(p.samplingstrategy)
+#     return view(p.EθEϕ, :, 1:s2)
+# end
 function _eθ(p::PlaneWaveExpansion)
-    _, s2 = _count_samples(p.samplingstrategy)
-    return view(p.EθEϕ, :, 1:s2)
+
+    return view(p.EθEϕ, :, :, 1)
 end
+# function _eϕ(p::PlaneWaveExpansion)
+#     _, s2 = _count_samples(p.samplingstrategy)
+#     return view(p.EθEϕ, :, (s2+1):2*s2)
+# end
 function _eϕ(p::PlaneWaveExpansion)
-    _, s2 = _count_samples(p.samplingstrategy)
-    return view(p.EθEϕ, :, (s2+1):2*s2)
+    return view(p.EθEϕ, :, :, 2)
 end
 function asvector(p::PlaneWaveExpansion)
     return vec(p.EθEϕ)
@@ -225,4 +242,10 @@ end
 function _mul_or_reset!(factor::Number, storage::PlaneWaveExpansion; reset::Bool = false)
     _mul_or_reset!(storage, factor, reset = reset)
     return storage
+end
+
+function equivalentorder(pwe::PlaneWaveExpansion; ϵ = 1e-7)
+    a, b, c = size(pwe.EθEϕ)
+    L = minimum([a - 1, (b - 1) ÷ 2])
+    return L
 end

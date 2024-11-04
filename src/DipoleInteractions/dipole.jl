@@ -2,25 +2,30 @@
 
 
 """
-    DipoleArray{P <: PropagationType, E <: ElmagType, C <: Number, T} <: AntennaFieldRepresentation{P, C}
+    DipoleArray{P, E, T, C} <: AntennaFieldRepresentation{P, C}
 
 Array of multiple small dipoles.
 
 Behaves like an `AbstractVector{C}` with extra context.
-The type parameter `E` defines electric or magnetic dipoles.
+
+# Type Parameters
+- `P <: PropagationType`
+- `E <: ElmagType`
+- `T <: Number`
+- `C <: Number`
 """
-struct DipoleArray{P<:PropagationType,E<:ElmagType,C<:Number,T<:Number} <:
+struct DipoleArray{P<:PropagationType,E<:ElmagType,T<:Number,C<:Number} <:
        AntennaFieldRepresentation{P,C}
     positions::Vector{SVector{3,T}}
     orientations::Vector{SVector{3,C}}
     dipolemoments::Vector{C}
     wavenumber::Number
-    function DipoleArray{P,E,C,T}(
+    function DipoleArray{P,E,T,C}(
         positions::Vector{V1},
         orientations::Vector{V2},
         dipolemoments::Vector{C},
         wavenumber::Number,
-    ) where {P<:PropagationType,E<:ElmagType,C<:Number,T<:Number,V1,V2}
+    ) where {P<:PropagationType,E<:ElmagType,T<:Number,C<:Number,V1,V2}
 
         (length(orientations) != length(positions)) && throw(
             DimensionMismatch(
@@ -33,7 +38,7 @@ struct DipoleArray{P<:PropagationType,E<:ElmagType,C<:Number,T<:Number} <:
             ),
         )
 
-        return new{P,E,C,T}(
+        return new{P,E,T,C}(
             SVector{3,T}.(positions),
             SVector{3,C}.(orientations),
             dipolemoments,
@@ -47,36 +52,44 @@ function DipoleArray{P,E}(
     dipolemoments::Vector{C},
     wavenumber,
 ) where {P<:PropagationType,E<:ElmagType,C,V1<:AbstractVector,V2<:AbstractVector{C}}
-    return DipoleArray{P,E,C,eltype(V1)}(positions, orientations, dipolemoments, wavenumber)
+    return DipoleArray{P,E,eltype(V1),C}(positions, orientations, dipolemoments, wavenumber)
 end
 
 """
-    HertzArray{C, T}
+    HertzArray{T, C}
 
-Array of multiple small radiating electric dipoles. 
-Alias for `AntennaFieldRepresentation{C, Radiated, DipoleArray{Electric, C, T}}`
-    
+Alias for `DipoleArray{Radiated,Electric,T,C}`
+
+A `HertzArray` is used to represent an array of multiple small radiating electric dipoles.    
 Behaves like an `AbstractVector{C}` with extra context.
+
+# Type Parameters
+- `T <: Number`
+- `C <: Number`
 """
-HertzArray{C,T} = DipoleArray{Radiated,Electric,C,T}
+HertzArray{T,C} = DipoleArray{Radiated,Electric,T,C}
 function HertzArray(
     positions::Vector{V1},
     orientations::Vector{V2},
     dipolemoments::Vector{C},
     wavenumber,
 ) where {C,V1<:AbstractVector,V2<:AbstractVector{C}}
-    return HertzArray{C,eltype(V1)}(positions, orientations, dipolemoments, wavenumber)
+    return HertzArray{eltype(V1),C}(positions, orientations, dipolemoments, wavenumber)
 end
 
 """
-    FitzgeraldArray{C, T}
+    FitzgeraldArray{T, C}
 
-Array of multiple small radiating magnetic dipoles. 
-Alias for `AntennaFieldRepresentation{C, Radiated, DipoleArray{Magnetic, C, T}}`
-    
+Alias for `DipoleArray{Radiated,Magnetic,T,C}`
+
+A `FitzgeraldArray` is used to represent an array of multiple small radiating magnetic dipoles.    
 Behaves like an `AbstractVector{C}` with extra context.
+
+# Type Parameters
+- `T <: Number`
+- `C <: Number`
 """
-FitzgeraldArray{C,T} = DipoleArray{Radiated,Magnetic,C,T}
+FitzgeraldArray{T,C} = DipoleArray{Radiated,Magnetic,T,C}
 function asvector(dips::DipoleArray)
     return dips.dipolemoments
 end
@@ -86,28 +99,21 @@ function FitzgeraldArray(
     dipolemoments::Vector{C},
     wavenumber,
 ) where {C,T,V1<:AbstractVector{T},V2<:AbstractVector{C}}
-    return FitzgeraldArray{C,T}(positions, orientations, dipolemoments, wavenumber)
+    return FitzgeraldArray{T,C}(positions, orientations, dipolemoments, wavenumber)
 end
-function Base.similar(dips::DipoleArray{Radiated,E,C,T}) where {E,C,T}
-    return DipoleArray{Radiated,E,C,T}(
+function Base.similar(dips::DipoleArray{P,E,T,C}) where {P,E,T,C}
+    return DipoleArray{P,E,T,C}(
         deepcopy(dips.positions),
         deepcopy(dips.orientations),
         similar(dips.dipolemoments),
         dips.wavenumber,
     )
 end
-Base.size(dips::DipoleArray{Radiated,E,C,T}) where {E,C,T} = size(dips.dipolemoments)
-Base.getindex(dips::DipoleArray{Radiated,E,C,T}, i) where {E,C,T} =
-    getindex(dips.dipolemoments, i)
-Base.setindex!(dips::DipoleArray{Radiated,E,C,T}, v, i) where {E,C,T} =
-    (dips.dipolemoments, v, i)
-function setwavenumber!(dips::DipoleArray{Radiated,E,C,T}, val::T) where {E,C,T}
-    dips = DipoleArray{Radiated,E,C,T}(
-        dips.positions,
-        dips.orientations,
-        dips.dipolemoments,
-        val,
-    )
+Base.size(dips::DipoleArray) = size(dips.dipolemoments)
+Base.getindex(dips::DipoleArray, i) = getindex(dips.dipolemoments, i)
+Base.setindex!(dips::DipoleArray, v, i) = (dips.dipolemoments, v, i)
+function setwavenumber!(dips::DipoleArray{P,E,C,T}, val::T) where {P,E,C,T}
+    dips = DipoleArray{P,E,C,T}(dips.positions, dips.orientations, dips.dipolemoments, val)
     return dips
 end
 
@@ -197,7 +203,7 @@ function Greensrot(R, dipoledir, k₀, ::Incident)
 end
 
 function farfield(
-    dipoles::DipoleArray{Radiated,E,C,T},
+    dipoles::DipoleArray{Radiated,E,T,C},
     θϕ::Tuple{R,R},
 ) where {C,E<:ElmagType,T,R<:Real}
     θ, ϕ = θϕ
@@ -214,7 +220,7 @@ function farfield(
 end
 
 function _dipolefarfield!(
-    dipoles::DipoleArray{Radiated,E,C,T},
+    dipoles::DipoleArray{Radiated,E,T,C},
     eᵣ::SArray{Tuple{3},T,1,3},
     eθ::SArray{Tuple{3},T,1,3},
     eϕ::SArray{Tuple{3},T,1,3},
@@ -317,7 +323,7 @@ end
 
 function efield!(
     storage,
-    dipoles::DipoleArray{P,E,C,T},
+    dipoles::DipoleArray{P,E,T,C},
     R;
     reset = true,
 ) where {P<:PropagationType,C,E<:ElmagType,T}
@@ -335,7 +341,7 @@ function efield!(
 end
 function hfield!(
     storage,
-    dipoles::DipoleArray{P,E,C,T},
+    dipoles::DipoleArray{P,E,T,C},
     R;
     reset = true,
 ) where {P<:PropagationType,C,E<:ElmagType,T}
@@ -353,8 +359,8 @@ function hfield!(
 end
 
 function rotate!(
-    rotated_dipoles::DipoleArray{P,E,C,T},
-    dipoles::DipoleArray{P,E,C,T},
+    rotated_dipoles::DipoleArray{P,E,T,C},
+    dipoles::DipoleArray{P,E,T,C},
     χ,
     θ,
     ϕ,
@@ -370,8 +376,8 @@ function rotate!(
 end
 
 function spatialshift!(
-    shifted_dipoles::DipoleArray{P,E,C,T},
-    dipoles::DipoleArray{P,E,C,T},
+    shifted_dipoles::DipoleArray{P,E,T,C},
+    dipoles::DipoleArray{P,E,T,C},
     R,
 ) where {P<:PropagationType,C,E<:ElmagType,T}
     for k in eachindex(shifted_dipoles.positions)
@@ -400,4 +406,23 @@ function _rmin(dipoles::DipoleArray)
         end
     end
     return rmin
+end
+function equivalentorder(dipoles::DipoleArray{P,E,T,C}; ϵ = 1e-7) where {P,E,T,C}
+    k0 = getwavenumber(dipoles)
+    rsph = (P() == Radiated()) ? (2 * _rmax(dipoles)) : (2 * _rmin(dipoles))
+    L = _modeorder(rsph, k0; ϵ = ϵ)
+    return L
+end
+
+function _modeorder(rmax::Real, wavenumber::Real; ϵ = 1e-7)
+    L = maximum([
+        3,
+        Int(
+            ceil(
+                wavenumber * rmax +
+                1.8 * (log10(1 / ϵ))^(2 / 3) * (wavenumber * rmax)^(1 / 3),
+            ),
+        ),
+    ])
+    return L
 end
