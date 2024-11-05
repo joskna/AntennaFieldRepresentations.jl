@@ -3,28 +3,28 @@ using LinearAlgebra
 using Serialization
 
 
-include("setup_functions.jl")
+# include("setup_functions.jl")
 
 Z₀ = 376.730313669
 f = 1.5e9
 λ = AntennaFieldRepresentations.c₀ / f
 k0 = 2 * pi / λ
 
-dipoles = rotate(
-    generate_AUTdips(
-        collect(-0.25λ:λ/4:0.25λ),
-        collect(-0.25λ:λ/4:0λ),
-        collect(-0.5λ:λ/4:0.5λ),
-        k0,
-    ),
-    0.7,
-    0.9,
-    1.3,
-)
+# dipoles = rotate(
+#     generate_AUTdips(
+#         collect(-0.25λ:λ/4:0.25λ),
+#         collect(-0.25λ:λ/4:0λ),
+#         collect(-0.5λ:λ/4:0.5λ),
+#         k0,
+#     ),
+#     0.7,
+#     0.9,
+#     1.3,
+# )
 
 filenameswe = joinpath("testdata", "swe.afr")
-swe = changerepresentation(SphericalWaveExpansion{Radiated}, dipoles)
-serialize(filenameswe, swe)
+# swe = changerepresentation(SphericalWaveExpansion{Radiated}, dipoles)
+# serialize(filenameswe, swe)
 swe = deserialize(filenameswe)
 
 sphcoeffs = deepcopy(swe.coefficients)

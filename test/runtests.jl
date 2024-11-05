@@ -66,20 +66,24 @@ using Test
     #     end
     # end
 
-    # @testset verbose=true "Conversions of Field Representations" begin
+    @testset verbose = true "Conversions of Field Representations" begin
 
-    #     @testset "Conversions Dipole -> Spherical" begin 
-    #         include(joinpath("test_Conversions", "test_spherical_dipole_conversion.jl"))
-    #     end
+        @testset "ConvertRepresentationMaps" begin
+            include(joinpath("test_Conversions", "test_convertrepresentationmaps.jl"))
+        end
 
-    #     @testset "Conversions Dipole -> PlaneWave" begin
-    #         include(joinpath("test_Conversions", "test_planewave_dipole_conversion.jl"))
-    #     end
+        # @testset "Conversions Dipole -> Spherical" begin 
+        #     include(joinpath("test_Conversions", "test_spherical_dipole_conversion.jl"))
+        # end
 
-    #     @testset "Conversions Spherical <-> PlaneWave" begin
-    #         include(joinpath("test_Conversions", "test_planewave_spherical_conversion.jl"))
-    #     end
-    # end
+        # @testset "Conversions Dipole -> PlaneWave" begin
+        #     include(joinpath("test_Conversions", "test_planewave_dipole_conversion.jl"))
+        # end
+
+        # @testset "Conversions Spherical <-> PlaneWave" begin
+        #     include(joinpath("test_Conversions", "test_planewave_spherical_conversion.jl"))
+        # end
+    end
 
 
     # @testset verbose=true "Interaction Between Field Representations" begin
@@ -105,7 +109,7 @@ using Test
     #     include(joinpath("test_MLFMM", "test_dipoles_mlfmm_forward.jl"))
     #     include(joinpath("test_MLFMM", "test_dipoles_mlfmm_matrix.jl"))
     # end
-    # @testset "Formatting" begin
-    #     include("test_formatting.jl")
-    # end
+    @testset "Formatting" begin
+        include("test_formatting.jl")
+    end
 end

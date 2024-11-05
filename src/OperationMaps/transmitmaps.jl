@@ -263,11 +263,6 @@ function InverseSphericalTransmitMap(
     )
 end
 
-
-function inverse(stm::SphericalTransmitMap)
-    return InverseSphericalTransmitMap(stm.swe, stm.fs)
-end
-
 function fastsphericalforward!(
     stm::SphericalTransmitMap{
         SphericalWaveExpansion{Radiated,H,C},
@@ -513,4 +508,12 @@ function LinearMaps._unsafe_mul!(
     stm.fs.S21values .= reshape(conj.(x), size(stm.fs.S21values))
     y .= conj.(βtoα!(y, fastsphericalforward_ad!(stm)) ./ 4) # division by 4 because βtoα! is 4 times the adjoint of αtoβ! .
     return y
+end
+
+function inverse(stm::SphericalTransmitMap)
+    return InverseSphericalTransmitMap(stm.swe, stm.fs)
+end
+
+function inverse(istm::InverseSphericalTransmitMap)
+    return SphericalTransmitMap(istm.swe, istm.fs)
 end

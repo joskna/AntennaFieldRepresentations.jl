@@ -65,9 +65,9 @@ function asvector(p::PlaneWaveExpansion)
 end
 Base.size(p::PlaneWaveExpansion) = size(asvector(p))
 Base.getindex(p::PlaneWaveExpansion, i) = Base.getindex(asvector(p), i)
-Base.setindex!(p::PlaneWaveExpansion, i, v) = Base.setindex(asvector(p), i, v)
+Base.setindex!(p::PlaneWaveExpansion, i, v) = Base.setindex!(asvector(p), i, v)
 function Base.similar(p::PlaneWaveExpansion{P,S,C}) where {P,S,C}
-    return PlaneWaveExpansion{P,S,C}(p.samplingstrategy, similar(p.EθEϕ), E.wavenumber)
+    return PlaneWaveExpansion{P,S,C}(p.samplingstrategy, similar(p.EθEϕ), p.wavenumber)
 end
 function setwavenumber!(p::PlaneWaveExpansion{P,S,C}, val) where {P,C,S}
     swe = PlaneWaveExpansion{P,C,S}(p.samplingstrategy, p.EθEϕ, val)
