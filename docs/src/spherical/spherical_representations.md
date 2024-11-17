@@ -13,7 +13,9 @@ The type parameters have the following meaning
 
 
 
-`SphericalWaveExpansion`s are particularly efficient when combined with `RegularSphericalFieldSampling`s or `FarFieldSampling`s.
+!!! note
+    Very efficient algorithms - e.g., for the [transmission](@ref transmission) - arise when a[`SphericalWaveExpansion`](@ref) is paired with a [`SphericalFieldSampling`](@ref).
+---
 
 ## Constructors for a `SphericalWaveExpansion`
 To generate a `SphericalWaveExpansion`, use one of the following constructors:
@@ -37,13 +39,40 @@ In the numerical implementation, the coefficients ``\alpha_{s \ell m}`` are stor
 ``s \ell m`` is mapped to a single consecutively running index ``j`` by the function [`sℓm_to_j(s,ℓ,m)`](@ref). The inverse map from a single index to the triple index ``s \ell m`` is implemented in the function [`j_to_sℓm(j)`](@ref). 
 This behaviour is implemented in implementations of the abstract type `AbstractSphericalCoefficients{C}`.
 Instances of an `AbstractSphericalCoefficients{C}` can be accessed like an AbstractVector{C} with a single index `j` or with a triple index `(s,ℓ,m)`, where `j = 2 * (ℓ * (ℓ + 1) + m - 1) + s` as in the following example
-```julia
-values=ComplexF64.(collect(1:16))
-sph_coefficients= SphericalCoefficients(values)
-println(sph_coefficients[9]) # Here the coefficient vector is accessed with a single index
-println(sph_coefficients[1, 2, -1]) # Here the same element is accessed with a triple index
-sph_coefficients[1, 2, -1] = 111.0im # setindex!() is also defined
-println(sph_coefficients[9])
+
+Example:            
+```jldoctest sphericalcoefficients
+julia> using AntennaFieldRepresentations
+
+julia> sph_coefficients= SphericalCoefficients(ComplexF64.(collect(1:16)))
+16-element SphericalCoefficients{ComplexF64}:
+  1.0 + 0.0im
+  2.0 + 0.0im
+  3.0 + 0.0im
+  4.0 + 0.0im
+  5.0 + 0.0im
+  6.0 + 0.0im
+  7.0 + 0.0im
+  8.0 + 0.0im
+  9.0 + 0.0im
+ 10.0 + 0.0im
+ 11.0 + 0.0im
+ 12.0 + 0.0im
+ 13.0 + 0.0im
+ 14.0 + 0.0im
+ 15.0 + 0.0im
+ 16.0 + 0.0im
+
+julia> println(sph_coefficients[9]) # Here the coefficient vector is accessed with a single index
+9.0 + 0.0im
+
+julia> println(sph_coefficients[1, 2, -1]) # Here the same element is accessed with a triple index
+9.0 + 0.0im
+
+julia> sph_coefficients[1, 2, -1] = 111.0im; # setindex!() is also defined
+
+julia> println(sph_coefficients[9])
+0.0 + 111.0im
 ```
 
 Besides the general `SphericalCoefficients{C}`, also the type `FirstOrderSphericalExpansion{C}` exists in `AntennaFieldRepresentations.jl`. A `FirstOrderSphericalExpansion{C}` indicates that all spherical expansion coefficients ``\alpha_{s \ell m}`` with ``|m| \neq 1`` are equal to zero. First-order spherical expansions do play a special role in the development of fast algorithms for spherical wave expansions and, thus, have their own representation in `AntennaFieldRepresentations.jl`. When a `FirstOrderSphericalExpansion{C}` is generated from an `AbstractVector{C}`, all elements which do not correspond to a triple index with ``|m|=1`` are ignored. 
@@ -55,8 +84,35 @@ SphericalCoefficients(v::AbstractVector{C}) where{C <: Number}
 ```julia
 FirstOrderSphericalCoefficients(v::AbstractVector{C}) where{C <: Number}
 ```
-```julia
-FirstOrderSphericalCoefficients(sc::SphericalCoefficients{C}) where{C <: Number}
+
+!!! note
+    Since a vector of type `SphericalCoefficients` is itself a subtype of `AbstractVector`, we can easily convert a vector of `SphericalCoefficients` into a vector of first-order spherical coefficients via 
+    ```julia 
+    FirstorderSphericalCoefficients(x::SphericalCoefficients)
+    ``` 
+
+    Converting a an arbitrary `AbstractVector` into a `FirstOrderSphericalCoefficients`-vector drops all entries which correspond to non-first-order modes.    
+---
+
+```jldoctest sphericalcoefficients
+julia> fo_sph_coefficients= FirstOrderSphericalCoefficients(sph_coefficients)
+16-element FirstOrderSphericalCoefficients{ComplexF64}:
+  1.0 + 0.0im
+  2.0 + 0.0im
+  0.0 + 0.0im
+  0.0 + 0.0im
+  5.0 + 0.0im
+  6.0 + 0.0im
+  0.0 + 0.0im
+  0.0 + 0.0im
+  0.0 + 111.0im
+ 10.0 + 0.0im
+  0.0 + 0.0im
+  0.0 + 0.0im
+ 13.0 + 0.0im
+ 14.0 + 0.0im
+  0.0 + 0.0im
+  0.0 + 0.0im
 ```
 
 ## Spherical Expansion Examples 

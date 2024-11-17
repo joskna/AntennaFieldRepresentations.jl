@@ -20,7 +20,7 @@ A comprehensive list of all operation maps provided by `AntennaFieldRepresentati
 | `ChangeRepresentationMap`     | `changerepresentation`    | Conversion operator from one type of `AntennaFieldrepresentation` into another|
 | `InterpolateMap`              | `interpolate`             | Interpolation operator of a `PlaneWaveExpansion` into a `PlaneWaveExpansion` with a different `SphereSamplingStrategy`|
 
-## Operation Maps as Linear Operators
+## [Operation Maps as Linear Operators](@id operationmaps_linmap)
 The abstract type `OperationMap{C, A} <: LinearMaps.LinearMap{C}` is a subtype of [`LinearMaps.LinearMap`](https://julialinearalgebra.github.io/LinearMaps.jl/stable/generated/custom/) which means that the operations represented by an `OperationMap{C, A}` are strictly linear operations.
 The usual way to evaluate an `OperationMap` is to use it as a function on an `AntennaFieldRepresentation`. 
 

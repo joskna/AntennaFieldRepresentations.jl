@@ -19,7 +19,6 @@ makedocs(;
             "General Field Sampling Interface"=>"sampling/fieldsamplings.md",
             "Irregularly Distributed Field Samplings"=>"sampling/irregularsampling.md",
             "Spherical Field Samplings"=>"sampling/sphericalsampling.md",
-            "Far Field Samplings"=>"sampling/farfieldsampling.md",
         ],
         "Operations" => Any[
             "OperationMaps"=>"operations/operationmaps.md",

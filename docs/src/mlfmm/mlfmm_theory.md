@@ -44,7 +44,7 @@ The far-field pattern of the antenna under test is thereafter translated into a 
 
 Finally in the disaggregation step, the sampling rate of the ``k``-space representation of the far-field patterns of the antenna under test and the probe antennas is reduced in an anterpolation step before the integrals are evaluated at the low sampling density efficiently. Without the anterpolation step, all integrals would have to be evaluated with a huge sampling rate in the ``k``-space.
 
-## Aggregation of Far-Field Patterns
+## [Aggregation of Far-Field Patterns](@id mlfmm_aggregation)
 One of the key points for the performance of the algorithm is the fact that the far-field pattern of a large antenna can be composed from the individual far-field patterns of disjunct subsets of its equivalent current representations. The geometric situation of this so-called aggregation step is depicted in the figure below.
 ```@raw html
 <figure>

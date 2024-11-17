@@ -386,6 +386,13 @@ function changerepresentation end
 Return the estimated spherical mode order L which is needed forin a spherical mode expansion to approximate the `aut_field` to the desired accuracy `ϵ`.
 """
 function equivalentorder end
+
+"""
+    inverse(opmap::OperationMap)
+
+Return inverse linear map of `opmap`.
+"""
+function inverse end
 #
 #
 # End of definition of AntennaFieldRepresentation Interface

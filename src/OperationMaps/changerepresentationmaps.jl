@@ -177,3 +177,66 @@ function inverse(crm::M) where {M<:ChangeRepresentationMap}
     T = _inversetype(M)
     return T(crm.targetrepresentation, crm.originalrepresentation, inverse(crm.lmap))
 end
+
+###################################################################
+# function changerepresentation(
+#     T::Type{W},
+#     swe::SphericalWaveExpansion{P,H,C},
+# ) where {W<:PlaneWaveExpansion, P<:PropagationType,C<:Number,H<:AbstractSphericalCoefficients}
+# map= ChangeRepresentationMap(
+#     T,
+#     swe
+# )
+
+# map.targetrepresentation .= map * deepcopy(asvector(swe))
+
+# return map.targetrepresentation
+# end
+function changerepresentation(
+    T::Type{A},
+    originalrepresentation::A2,
+) where {A<:AntennaFieldRepresentation, A2<:AntennaFieldRepresentation}
+map= ChangeRepresentationMap(
+    T,
+    originalrepresentation
+)
+
+map.targetrepresentation .= map * deepcopy(asvector(originalrepresentation))
+
+return map.targetrepresentation
+end
+
+# function changerepresentation(
+#     ::Type{PlaneWaveExpansion},
+#     swe::SphericalWaveExpansion{P,H,C},
+# ) where {P<:PropagationType,C<:Number,H<:AbstractSphericalCoefficients}
+
+# L = equivalentorder(swe)
+# samplingstrategy = GaussLegendreθRegularϕSampling(L+1, 2L+2)
+# _,__, θs, ϕs = weightsandsamples(samplingstrategy)
+# EθEϕ = zeros(C, length(θs), length(ϕs), 2)
+# for (kθ, θ) in enumerate(θs) 
+#     for (kϕ, ϕ) in enumerate(ϕs) 
+#         EθEϕ[kθ, kϕ, 1], EθEϕ[kθ, kϕ, 2] = farfield(swe, (θ, ϕ))
+#     end
+# end
+# return PlaneWaveExpansion{P,GaussLegendreθRegularϕSampling,C}(samplingstrategy, EθEϕ, getwavenumber(swe))
+# end
+
+function changerepresentation(
+    ::Type{PlaneWaveExpansion},
+    dipoles::DipoleArray{Pdip,E,T,C};
+    ϵ = 1e-7
+) where {C,Pdip,E,T}
+L = equivalentorder(dipoles; ϵ = ϵ)
+samplingstrategy = GaussLegendreθRegularϕSampling(L+1, 2L+2)
+_,__, θs, ϕs = weightsandsamples(samplingstrategy)
+EθEϕ = zeros(C, length(θs), length(ϕs), 2)
+for (kθ, θ) in enumerate(θs) 
+    for (kϕ, ϕ) in enumerate(ϕs) 
+        EθEϕ[kθ, kϕ, 1], EθEϕ[kθ, kϕ, 2] = farfield(dipoles, (θ, ϕ))
+    end
+end
+return PlaneWaveExpansion{Pdip,GaussLegendreθRegularϕSampling,C}(samplingstrategy, EθEϕ, getwavenumber(dipoles))
+
+end 

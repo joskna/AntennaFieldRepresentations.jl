@@ -211,6 +211,48 @@ function F_sℓm_spherical_rzero(
     return Fr, Fϑ, Fφ
 end
 
+function _F2m1cartesian_at_origin(C::Type{<:Complex} = ComplexF64)
+    F2m11 = SVector{3}(C(√(3 / pi) / 6), C(-1im * √(3 / pi) / 6), C(0.0))
+    F201 = SVector{3}(C(0.0), C(0.0), C(√(6 / pi) / 6))
+    F211 = SVector{3}(C(-√(3 / pi) / 6), C(-1im * √(3 / pi) / 6), C(0.0))
+    return F2m11, F201, F211
+end
+
+"""
+    F_sℓm_cartesian_array_rzero(Jmaxx, P::PropagationType) -> [Fx;Fy;Fz]
+
+Return normalized vector spherical wave function at coordinate origin in cartesian coordinates 
+"""
+function F_sℓm_cartesian_array_rzero(
+    Jmaxx::Integer,
+    P::Incident,
+)
+Fcartesian = zeros(ComplexF64, Jmaxx, 3)
+
+F2m11, F201, F211 = _F2m1cartesian_at_origin(ComplexF64)
+
+Fcartesian[sℓm_to_j(2,1,-1), :] .= F2m11
+Fcartesian[sℓm_to_j(2,1,0), :] .= F201
+Fcartesian[sℓm_to_j(2,1,1), :] .= F211
+return Fcartesian[:,1], Fcartesian[:,2], Fcartesian[:,3]
+end
+function F_sℓm_cartesian_array_rzero(
+    Jmaxx::Integer,
+    P::Radiated,
+)
+Fx, Fy, Fz = F_sℓm_cartesian_array_rzero(Jmaxx,Incident())
+
+return Fx .+ ComplexF64(0.0, Inf), Fy .+ ComplexF64(0.0, Inf), Fz .+ ComplexF64(0.0, Inf)
+end
+function F_sℓm_cartesian_array_rzero(
+    Jmaxx::Integer,
+    P::Absorbed,
+)
+Fx, Fy, Fz = F_sℓm_cartesian_array_rzero(Jmaxx,Incident())
+
+return Fx .+ ComplexF64(0.0, -Inf), Fy .+ ComplexF64(0.0, -Inf), Fz .+ ComplexF64(0.0, -Inf)
+end
+
 
 """
     F_sℓm_spherical(s,ℓ, m,r,ϑ,φ) -> [Fr;Fϑ;Fφ]
@@ -270,9 +312,9 @@ function F_sℓm_cartesian_array(
     if k0 * r > 100 * eps()
         φ = (mod(atan(R[2], R[1]), 2pi))
         ϑ = abs(mod(atan(sqrt(R[1]^2 + R[2]^2), R[3]) + pi, 2pi) - pi)
-        # if ϑ > pi
-        #     ϑ=(2*pi-ϑ)
-        # end 
+
+    else 
+        return F_sℓm_cartesian_array_rzero(Jmaxx,P)
     end
     Fr, Fϑ, Fφ = F_sℓm_spherical_array(Jmaxx, P, r, ϑ, φ, k0)
     sint, cost = sincos(ϑ)

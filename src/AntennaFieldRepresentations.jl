@@ -161,6 +161,7 @@ export getwavenumber, equivalentorder
 export changerepresentation, transmit
 export ChangeRepresentationMap, TransmitMap
 export SphericalFieldSampling, SphericalTransmitMap
+export inverse
 
 
 end

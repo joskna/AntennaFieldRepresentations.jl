@@ -249,3 +249,4 @@ function equivalentorder(pwe::PlaneWaveExpansion; ϵ = 1e-7)
     L = minimum([a - 1, (b - 1) ÷ 2])
     return L
 end
+

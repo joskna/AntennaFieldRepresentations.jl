@@ -362,14 +362,6 @@ function ehfield!(
     return storage_efield, storage_hfield
 end
 
-
-function _F2m1cartesian_at_origin(C::Type{<:Complex} = ComplexF64)
-    F2m11 = SVector{3}(C(√(3 / pi) / 6), C(-1im * √(3 / pi) / 6), C(0.0))
-    F201 = SVector{3}(C(0.0), C(0.0), C(√(6 / pi) / 6))
-    F211 = SVector{3}(C(-√(3 / pi) / 6), C(-1im * √(3 / pi) / 6), C(0.0))
-    return F2m11, F201, F211
-end
-
 function _H_at_origin(
     aut_field::SphericalWaveExpansion{Incident,H,C},
 ) where {C<:Number,H<:AbstractSphericalCoefficients{C}}
@@ -387,7 +379,7 @@ function _H_at_origin(
 ) where {C<:Number,H<:AbstractSphericalCoefficients{C}}
     return _H_at_origin(
         SphericalWaveExpansion{Incident,H,C}(aut_field.coefficients, aut_field.wavenumber),
-    ) .+ C(0.0, Inf)
+    ) .+ C(0.0, -Inf)
 end
 function _H_at_origin(
     aut_field::SphericalWaveExpansion{Radiated,H,C},
@@ -416,7 +408,7 @@ function _E_at_origin(
 ) where {C<:Number,H<:AbstractSphericalCoefficients{C}}
     return _E_at_origin(
         SphericalWaveExpansion{Incident,H,C}(aut_field.coefficients, aut_field.wavenumber),
-    ) .+ C(0.0, Inf)
+    ) .+ C(0.0, -Inf)
 end
 function _E_at_origin(
     aut_field::SphericalWaveExpansion{Radiated,H,C},
@@ -523,13 +515,14 @@ function _outputmode_dipo2sph(Psph::PropagationType, Pdip::PropagationType)
 end
 function changerepresentation(
     Tnew::Type{SphericalWaveExpansion{Psph,H,C}},
-    dipoles::DipoleArray{Pdip,E,T,C},
+    dipoles::DipoleArray{Pdip,E,T,C};
+    ϵ= 1e-7
 ) where {Psph,C,H,Pdip,E,T}
     # Pdual= _dualtype(P)
     Ptmp = _outputmode_dipo2sph(Psph(), Pdip())
     k0 = getwavenumber(dipoles)
     # rsph = (Psph() == Radiated()) ? (2 * _rmax(dipoles)) : (2 * _rmin(dipoles))
-    L = equivalentorder(dipoles; ϵ = 1e-7)
+    L = equivalentorder(dipoles; ϵ = ϵ)
     Jmax = sℓm_to_j(2, L, L)
     tempcoeffs = _dipole_spherical_innerprod(dipoles, Jmax, Ptmp, k0)
     coefficients = zeros(C, Jmax)
@@ -541,11 +534,13 @@ function changerepresentation(
 end
 function changerepresentation(
     Tnew::Type{SphericalWaveExpansion{Psph}},
-    dipoles::DipoleArray{Pdip,E,T,C},
+    dipoles::DipoleArray{Pdip,E,T,C};
+    ϵ =1e-7
 ) where {Psph,C,Pdip,E,T}
     return changerepresentation(
         SphericalWaveExpansion{Psph,SphericalCoefficients{C},C},
         dipoles,
+        ϵ= ϵ
     )
 end
 
@@ -605,7 +600,7 @@ function αinc_planewave(L::Integer)
 end
 
 """
-αinc_dipole(z::Real, L::Integer)
+αinc_dipole(z::Real, L::Integer, , wavenumber::Real)
 
 
 Return incident spherical mode coefficients up to mode order L
@@ -615,7 +610,7 @@ Compare Hansen: "Spherical Near-Field Measurements" Appendix A1.6
 function αinc_dipole(z::Real, L::Integer, wavenumber::Real)
     αin = FirstOrderSphericalCoefficients(zeros(ComplexF64, sℓm_to_j(2, L, L)))
 
-    hℓ, dhℓ = R_dependencies_array(Radiated(), K, wavenumber * z)
+    hℓ, dhℓ = R_dependencies_array(Radiated(), L, wavenumber * z)
     for ℓ = 1:L
         sqrtfac = sqrt((2 * ℓ + 1) / pi)
 
@@ -632,7 +627,7 @@ function equivalentorder(coefficients::AbstractSphericalCoefficients; ϵ = 1e-7)
     _, L, __ = j_to_sℓm(length(coefficients))
     return L
 end
-function equivalentorder(swe::SphericalWaveExpansion)
-    return equivalentorder(swe.coefficients)
+function equivalentorder(swe::SphericalWaveExpansion; ϵ = 1e-7)
+    return equivalentorder(swe.coefficients, ϵ = ϵ)
 end
 

@@ -17,7 +17,7 @@ Very efficient post-processing algorithms exist for measurements of the ``S_{12}
 <br/>
 ```
 
-## Fast Evaluation of ``S_{12}``-Parameters in Spherical Measurement Setups 
+## [Fast Evaluation of ``S_{12}``-Parameters in Spherical Measurement Setups](@id fastsphericalS12) 
 
 The  ``S_{12}``-parameter can be calculated by (cf. [1, eq. (4.40)])
 
@@ -92,7 +92,7 @@ The incident field at the coordinate origin of a Hertzian dipole, oriented in ``
 where ``h_\ell^{(2)}(kr)`` are the spherical Hankel functions of second kind.
 All incident field coefficients with ``|m|\neq 1`` are equal to zero. 
 
-### Regularly Sampled Far Field of AUT
+### [Regularly Sampled Far Field of AUT](@id farfieldcoefficients)
 The far field pattern of the AUT can be calculated by determining the received signal of a plane wave illumination traveling into the desired propagation directions. To determine the correctly normalized far-field pattern (with unit V), we utilize the spherical expansion of a ``x``-polarized plane wave traveling into negativ ``z``-direction with the coefficients
 
 ```math

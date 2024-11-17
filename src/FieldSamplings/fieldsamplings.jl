@@ -210,43 +210,43 @@ function HfieldSampling(positions::Vector{V}) where {V}
     return IrregularFieldSampling(pos, eulerangles, probeIDs, probes)
 end
 
-"""
-    RegularSphericalFieldSampling{Y, H, C}
+# """
+#     RegularSphericalFieldSampling{Y, H, C}
     
-Field sampling on spherical measurement surface with measurement positions distributed according to a `SphereSamplingStrategy`.
+# Field sampling on spherical measurement surface with measurement positions distributed according to a `SphereSamplingStrategy`.
 
-# Type Parameters
-- `Y <: SphereSamplingStrategy`
-- `H <: AbstractSphericalCoefficients`
-- `C <: Complex`
-"""
-struct RegularSphericalFieldSampling{
-    Y<:SphereSamplingStrategy,
-    H<:AbstractSphericalCoefficients,
-    C<:Complex,
-} <: FieldSampling{C}
-    samplingstrategy::Y
-    incidentcoefficients::H
-    S21values::Array{C,3}
-end
-Base.size(fs::RegularSphericalFieldSampling) = length(fs.S21values)
-Base.getindex(fs::RegularSphericalFieldSampling, i) = getindex(fs.S21values, i)
-Base.setindex!(fs::RegularSphericalFieldSampling, i, v) = setindex!(fs.S21values, i, v)
-function Base.similar(fs::RegularSphericalFieldSampling)
-    return RegularSphericalFieldSampling(
-        fs.samplingstrategy,
-        fs.incidentcoefficients,
-        similar(fs.S21values),
-    )
-end
-function asvector(fs::RegularSphericalFieldSampling)
-    return vec(fs.S21values)
-end
+# # Type Parameters
+# - `Y <: SphereSamplingStrategy`
+# - `H <: AbstractSphericalCoefficients`
+# - `C <: Complex`
+# """
+# struct RegularSphericalFieldSampling{
+#     Y<:SphereSamplingStrategy,
+#     H<:AbstractSphericalCoefficients,
+#     C<:Complex,
+# } <: FieldSampling{C}
+#     samplingstrategy::Y
+#     incidentcoefficients::H
+#     S21values::Array{C,3}
+# end
+# Base.size(fs::RegularSphericalFieldSampling) = length(fs.S21values)
+# Base.getindex(fs::RegularSphericalFieldSampling, i) = getindex(fs.S21values, i)
+# Base.setindex!(fs::RegularSphericalFieldSampling, i, v) = setindex!(fs.S21values, i, v)
+# function Base.similar(fs::RegularSphericalFieldSampling)
+#     return RegularSphericalFieldSampling(
+#         fs.samplingstrategy,
+#         fs.incidentcoefficients,
+#         similar(fs.S21values),
+#     )
+# end
+# function asvector(fs::RegularSphericalFieldSampling)
+#     return vec(fs.S21values)
+# end
 
 """
     SphericalFieldSampling{Y,H,C} <: FieldSampling{C}
 
-Field sampling on regularly distributed measurement positions on a spherical surface
+Field sampling on spherical measurement surface with measurement positions distributed according to a `SphereSamplingStrategy`.
 
 # Type Parameters
 - `Y <: SphereSamplingStrategy`
