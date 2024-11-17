@@ -212,7 +212,7 @@ end
 
 # """
 #     RegularSphericalFieldSampling{Y, H, C}
-    
+
 # Field sampling on spherical measurement surface with measurement positions distributed according to a `SphereSamplingStrategy`.
 
 # # Type Parameters

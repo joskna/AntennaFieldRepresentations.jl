@@ -516,7 +516,7 @@ end
 function changerepresentation(
     Tnew::Type{SphericalWaveExpansion{Psph,H,C}},
     dipoles::DipoleArray{Pdip,E,T,C};
-    ϵ= 1e-7
+    ϵ = 1e-7,
 ) where {Psph,C,H,Pdip,E,T}
     # Pdual= _dualtype(P)
     Ptmp = _outputmode_dipo2sph(Psph(), Pdip())
@@ -535,12 +535,12 @@ end
 function changerepresentation(
     Tnew::Type{SphericalWaveExpansion{Psph}},
     dipoles::DipoleArray{Pdip,E,T,C};
-    ϵ =1e-7
+    ϵ = 1e-7,
 ) where {Psph,C,Pdip,E,T}
     return changerepresentation(
         SphericalWaveExpansion{Psph,SphericalCoefficients{C},C},
         dipoles,
-        ϵ= ϵ
+        ϵ = ϵ,
     )
 end
 

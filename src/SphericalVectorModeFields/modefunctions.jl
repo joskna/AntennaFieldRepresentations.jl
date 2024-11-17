@@ -223,34 +223,29 @@ end
 
 Return normalized vector spherical wave function at coordinate origin in cartesian coordinates 
 """
-function F_sℓm_cartesian_array_rzero(
-    Jmaxx::Integer,
-    P::Incident,
-)
-Fcartesian = zeros(ComplexF64, Jmaxx, 3)
+function F_sℓm_cartesian_array_rzero(Jmaxx::Integer, P::Incident)
+    Fcartesian = zeros(ComplexF64, Jmaxx, 3)
 
-F2m11, F201, F211 = _F2m1cartesian_at_origin(ComplexF64)
+    F2m11, F201, F211 = _F2m1cartesian_at_origin(ComplexF64)
 
-Fcartesian[sℓm_to_j(2,1,-1), :] .= F2m11
-Fcartesian[sℓm_to_j(2,1,0), :] .= F201
-Fcartesian[sℓm_to_j(2,1,1), :] .= F211
-return Fcartesian[:,1], Fcartesian[:,2], Fcartesian[:,3]
+    Fcartesian[sℓm_to_j(2, 1, -1), :] .= F2m11
+    Fcartesian[sℓm_to_j(2, 1, 0), :] .= F201
+    Fcartesian[sℓm_to_j(2, 1, 1), :] .= F211
+    return Fcartesian[:, 1], Fcartesian[:, 2], Fcartesian[:, 3]
 end
-function F_sℓm_cartesian_array_rzero(
-    Jmaxx::Integer,
-    P::Radiated,
-)
-Fx, Fy, Fz = F_sℓm_cartesian_array_rzero(Jmaxx,Incident())
+function F_sℓm_cartesian_array_rzero(Jmaxx::Integer, P::Radiated)
+    Fx, Fy, Fz = F_sℓm_cartesian_array_rzero(Jmaxx, Incident())
 
-return Fx .+ ComplexF64(0.0, Inf), Fy .+ ComplexF64(0.0, Inf), Fz .+ ComplexF64(0.0, Inf)
+    return Fx .+ ComplexF64(0.0, Inf),
+    Fy .+ ComplexF64(0.0, Inf),
+    Fz .+ ComplexF64(0.0, Inf)
 end
-function F_sℓm_cartesian_array_rzero(
-    Jmaxx::Integer,
-    P::Absorbed,
-)
-Fx, Fy, Fz = F_sℓm_cartesian_array_rzero(Jmaxx,Incident())
+function F_sℓm_cartesian_array_rzero(Jmaxx::Integer, P::Absorbed)
+    Fx, Fy, Fz = F_sℓm_cartesian_array_rzero(Jmaxx, Incident())
 
-return Fx .+ ComplexF64(0.0, -Inf), Fy .+ ComplexF64(0.0, -Inf), Fz .+ ComplexF64(0.0, -Inf)
+    return Fx .+ ComplexF64(0.0, -Inf),
+    Fy .+ ComplexF64(0.0, -Inf),
+    Fz .+ ComplexF64(0.0, -Inf)
 end
 
 
@@ -313,8 +308,8 @@ function F_sℓm_cartesian_array(
         φ = (mod(atan(R[2], R[1]), 2pi))
         ϑ = abs(mod(atan(sqrt(R[1]^2 + R[2]^2), R[3]) + pi, 2pi) - pi)
 
-    else 
-        return F_sℓm_cartesian_array_rzero(Jmaxx,P)
+    else
+        return F_sℓm_cartesian_array_rzero(Jmaxx, P)
     end
     Fr, Fϑ, Fφ = F_sℓm_spherical_array(Jmaxx, P, r, ϑ, φ, k0)
     sint, cost = sincos(ϑ)
