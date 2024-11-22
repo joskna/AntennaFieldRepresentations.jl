@@ -147,7 +147,8 @@ export PropagationType, Radiated, Absorbed, Incident
 export AntennaFieldRepresentation
 export ElmagType, Electric, Magnetic
 export asvector, efield, efield!, hfield, hfield!, ehfield, ehfield!, farfield
-export getwavenumber, setwavenumber!, rotate, rotate!, spatialshift, spatialshift!
+export getwavenumber, setwavenumber!
+export rotate, rotate!, spatialshift, spatialshift!
 export DipoleArray, HertzArray, FitzgeraldArray
 export SphericalWaveExpansion,
     AbstractSphericalCoefficients, SphericalCoefficients, FirstOrderSphericalCoefficients
@@ -162,6 +163,7 @@ export changerepresentation, transmit
 export ChangeRepresentationMap, TransmitMap
 export SphericalFieldSampling, SphericalTransmitMap
 export inverse
+export weightsandsamples
 
 
 end

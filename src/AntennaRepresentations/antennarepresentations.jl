@@ -71,10 +71,11 @@ end
 Sampling strategy on the sphere with regular sampling along ϕ and Gauß-Legendre-Sampling along θ.
 
 ϕ ∈ {0, Δϕ, …, 2π - Δϕ} with Δϕ= 2π / (2L + 2). 
-θ ∈ {acos(xᵢ)} where xᵢ are the (L+1)-point Gauß-Legendre quadrature points.
+θ ∈ {acos(xᵢ)} where xᵢ are the Nθ-point Gauß-Legendre quadrature points.
 
 # Fields 
-- `expansionorderL::Integer`
+- `Nθ::Integer`
+- `Jϕ::Integer`
 """
 struct GaussLegendreθRegularϕSampling <: SphereSamplingStrategy
     Nθ::Integer
@@ -125,6 +126,29 @@ function weightsandsamples(samplingstrategy::GaussLegendreθRegularϕSampling)
     ϕweights = fill!(Vector{Float64}(undef, nphi), dϕ)
 
     return θweights, ϕweights, θs, ϕs
+end
+"""
+    weightsandsamples(samplingstrategy::SphereSamplingStrategy) -> ( θweights::Array{Float64,1}, ϕweights::Array{Float64,1}, θs::Array{Float64,1}, ϕs::Array{Float64,1} )
+
+Return integration weights `θweights, ϕweights` and sampling points `θs, ϕs` for the `samplingstrategy`.
+"""
+function samples(samplingstrategy::RegularθRegularϕSampling)
+    nθ, nϕ = _countsamples(samplingstrategy)
+    dϕ = 2 * pi / (samplingstrategy.Jϕ)
+    dθ = 2 * pi / (samplingstrategy.Jθ)
+    ϕs = dϕ * collect(0:(nϕ-1))
+    θs = dθ * collect(0:(nθ-1))
+
+    return θs, ϕs
+end
+function samples(samplingstrategy::GaussLegendreθRegularϕSampling)
+    xs::Vector{Float64}, θweights::Vector{Float64} = gausslegendre(samplingstrategy.Nθ)
+    θs = acos.(-xs)
+    nphi = samplingstrategy.Jϕ
+    dϕ = 2 * pi / (nphi)
+    ϕs = dϕ * collect(0:(nphi-1))
+
+    return θs, ϕs
 end
 
 #

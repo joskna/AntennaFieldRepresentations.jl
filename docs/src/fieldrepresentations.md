@@ -25,10 +25,10 @@ Any subtype of `AntennaFieldrepresentation` implements the following methods[^1]
 | Method name               | Optional | Fallback method      | Short Description                                                     |
 | :------------------------ |:-------- | :------------------- | :-------------------------------------------------------------------- |
 | `Base.size`               | No       |                      | See interface of [`Base.AbstractVector`](https://docs.julialang.org/en/v1/manual/interfaces/#man-interface-array)|
-| `Base.getindex!`          | No       |                      | See interface of [`Base.AbstractVector`](https://docs.julialang.org/en/v1/manual/interfaces/#man-interface-array)|
-| `Base.setindex`           | No       |                      | See interface of [`Base.AbstractVector`](https://docs.julialang.org/en/v1/manual/interfaces/#man-interface-array)|
+| `Base.getindex`           | No       |                      | See interface of [`Base.AbstractVector`](https://docs.julialang.org/en/v1/manual/interfaces/#man-interface-array)|
+| `Base.setindex!`          | No       |                      | See interface of [`Base.AbstractVector`](https://docs.julialang.org/en/v1/manual/interfaces/#man-interface-array)|
 | `Base.similar`            | No       |                      | See interface of [`Base.AbstractVector`](https://docs.julialang.org/en/v1/manual/interfaces/#man-interface-array)|
-| [`asvector`](@ref)                | No       |                      | Return the coefficients as a vector                                   |
+| [`asvector`](@ref)        | No       |                      | Return the coefficients as a vector                                   |
 |                           |          |                      |                                                                       |
 | [`efield`](@ref)          | Yes      | `efield!`            | Return the E-field vector at given location                           |
 | [`efield!`](@ref)         | No       |                      | In-place version of `efield`                                          |

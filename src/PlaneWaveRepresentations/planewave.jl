@@ -14,29 +14,29 @@ Behaves like an `AbstractVector{C}` with extra context.
 struct PlaneWaveExpansion{P<:PropagationType,Y<:SphereSamplingStrategy,C} <:
        AntennaFieldRepresentation{P,C}
     samplingstrategy::Y
-    EθEϕ::Array{C}
+    EθEϕ::Array{C,3}
     wavenumber::Number
 end
 
 """
-    PlaneWaveExpansion(Type{P}, samplingstrategy, Eθ, Eϕ, wavenumber)
+    PlaneWaveExpansion(P, samplingstrategy, Eθ, Eϕ, wavenumber)
 
 Returns a collection of electromagnetic plane waves propagating into various directions.
 
 # Arguments:
-- `Type{P}`: PropagationType
+- `P::PropagationType`: Radiated(), Incident(), or Absorbed()
 - `samplingstrategy<:SphereSamplingStrategy`: sampling strategy which defines the propagation directions of the plane wave samples
 - `Eθ::Matrix{C}`: θ-component amplitudes of the plane waves
 - `Eϕ::Matrix{C}`: ϕ-component amplitudes of the plane waves
 - `wavenumber`: wavenumber
 """
 function PlaneWaveExpansion(
-    P::PropagationType,
+    propagation::P,
     samplingstrategy::S,
     Eθ::Matrix{C},
     Eϕ::Matrix{C},
     wavenumber::Number,
-) where {S<:SphereSamplingStrategy,C}
+) where {P<:PropagationType,S<:SphereSamplingStrategy,C}
     a, b = size(Eθ)
     a_, b_ = size(Eϕ)
     !(a == a_ && b == b_) && error("Dimensions of Eθ and Eϕ must be equal")
@@ -49,7 +49,7 @@ end
 #     _, s2 = _count_samples(p.samplingstrategy)
 #     return view(p.EθEϕ, :, 1:s2)
 # end
-function _eθ(p::PlaneWaveExpansion)
+function _eθ(p::PlaneWaveExpansion{P,Y,C}) where {P,Y,C}
 
     return view(p.EθEϕ, :, :, 1)
 end
@@ -250,3 +250,63 @@ function equivalentorder(pwe::PlaneWaveExpansion; ϵ = 1e-7)
     return L
 end
 
+include("interpolation.jl")
+
+function rotate!(
+    rotated_pattern::W,
+    pattern::W,
+    χ::T,
+    θ::T,
+    ϕ::T;
+    orderθ::Integer = 12,
+    orderϕ::Integer = 12,
+) where {W<:PlaneWaveExpansion,T<:Number}
+    R = rot_mat_zyz(-ϕ, -θ, -χ) # rotate sampling points in reverse direction to rotate sampled pattern
+    _, __, θvec, ϕvec = weightsandsamples(pattern.samplingstrategy)
+
+    for kϕ in eachindex(ϕvec)
+        sinp, cosp = sincos(ϕvec[kϕ])
+        for kθ in eachindex(θvec)
+            sint, cost = sincos(θvec[kθ])
+
+            # calculate unit vectors at sample position
+            eᵣ = SVector{3}([cosp * sint; sinp * sint; cost])
+            eθ = SVector{3}([cosp * cost; sinp * cost; -sint])
+            eϕ = SVector{3}([-sinp; cosp; 0])
+
+
+            # rotate unit vectors
+            eᵣ_rot = R * eᵣ
+            eθ_rot = R * eθ
+            eϕ_rot = R * eϕ
+
+            # calculate theta and phi angle of rotated sample position
+            θ_rot = atan(sqrt(eᵣ_rot[1]^2 + eᵣ_rot[2]^2), eᵣ_rot[3])# result is always positive
+            ϕ_rot = mod2pi(atan(eᵣ_rot[2], eᵣ_rot[1]))
+
+            sinpr, cospr = sincos(ϕ_rot)
+            sintr, costr = sincos(θ_rot)
+
+            # calculate unit vectors at rotated sample position
+            eθ_i = [cospr * costr, sinpr * costr, -sintr]
+            eϕ_i = [-sinpr, cospr, 0]
+
+            Eθ, Eϕ = interpolate_single_planewave(
+                (θ_rot, ϕ_rot),
+                pattern,
+                LocalθLocalΦInterpolation{
+                    typeof(pattern.samplingstrategy),
+                    typeof(rotated_pattern.samplingstrategy),
+                    orderθ,
+                    orderϕ,
+                    T,
+                };
+                θvecϕvec = (θvec, ϕvec),
+            )
+
+            rotated_pattern.EθEϕ[kθ, kϕ, 1] = (eθ_rot ⋅ eϕ_i) * Eϕ + (eθ_rot ⋅ eθ_i) * Eθ
+            rotated_pattern.EθEϕ[kθ, kϕ, 2] = (eϕ_rot ⋅ eϕ_i) * Eϕ + (eϕ_rot ⋅ eθ_i) * Eθ
+        end
+    end
+    return rotated_pattern
+end

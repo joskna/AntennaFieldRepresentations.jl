@@ -28,6 +28,11 @@ function setprobesize!(p::ProbeAntenna, probesize::Real)
     return p
 end
 
+"""
+    FieldSampling{C}
+
+Abstract type for various field samplings.
+"""
 abstract type FieldSampling{C} end
 Base.length(fs::FieldSampling) = prod(size(fs))
 
