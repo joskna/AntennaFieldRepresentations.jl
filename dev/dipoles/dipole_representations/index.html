@@ -11,8 +11,8 @@ dipolemoments= [ComplexF64(1.0), ComplexF64(1.0), ComplexF64(1.0)];
 
 dipoles = HertzArray(positions, orientations, dipolemoments, k0);</code></pre><p>The resulting set of dipoles might be visualized as follows:</p><figure>
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="../assets/dipoles_dark.png" width="500">
-  <source media="(prefers-color-scheme: light)" srcset="../assets/dipoles_light.png" width="500" >
+  <source media="(prefers-color-scheme: dark)" srcset="../assets/dipoles_dark.png" width="750">
+  <source media="(prefers-color-scheme: light)" srcset="../assets/dipoles_light.png" width="750" >
   <img alt="" src="" width="200">
 </picture>
 
@@ -20,17 +20,35 @@ dipoles = HertzArray(positions, orientations, dipolemoments, k0);</code></pre><p
     The dipoles are visualized as arrows in this example.
   </figcaption>
 </figure>
-<br/><p>We might be interested in the electromagnetic field - maybe its <span>$E_x$</span> component - which is radiated by these dipoles, let&#39;s say in a plane <span>$z=5\lambda$</span>. Thus, we can define an array of observation points and evaluate the electric field at these observation points as follows:</p><pre><code class="language-julia hljs">Rs= [[x , y, 5λ] for x in -10λ:λ/4:10λ , y in -10λ:λ/4:10λ] # Define observation points
+<br/><p>We might be interested in the electromagnetic field - maybe its <span>$E_x$</span> component - which is radiated by these dipoles, let&#39;s say in a plane <span>$z=5\lambda$</span>. Thus, we can define an array of observation points and evaluate the electric field at these observation points as follows (the <code>Ref()</code> command ensures that this input is treated as a constant for Julia&#39;s broadcasting operator &quot;<code>.</code>&quot;):</p><pre><code class="language-julia hljs">Rs= [[x , y, 5λ] for x in -10λ:λ/4:10λ , y in -10λ:λ/4:10λ] # Define observation points
 
-E = efield.(Ref(dipoles), Rs) # Evaluate field at observation points</code></pre><p>The resulting field (stored as an ordinary matrix) can then be visualized, e.g., with <code>Makie.jl</code> or <code>Plots.jl</code></p><figure>
+E = efield.(Ref(dipoles), Rs) # Evaluate E-field at observation points
+Ex=[e[1] for e in E] # Extract x-component of E-field</code></pre><p>The resulting field (stored as an ordinary matrix) can then be visualized, e.g., with <code>Makie.jl</code> or <code>Plots.jl</code></p><figure>
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="../assets/field_dipoles_dark.png" width="500">
-  <source media="(prefers-color-scheme: light)" srcset="../assets/field_dipoles_light.png" width="500">
-  <img alt="" src="" width="200">
+  <source media="(prefers-color-scheme: dark)" srcset="../assets/field_dipoles_dark.png" width="750">
+  <source media="(prefers-color-scheme: light)" srcset="../assets/field_dipoles_light.png" width="750" >
+  <img alt="" src="" width="750">
 </picture>
 
   <figcaption>
     Magnitude of the Eₓ-component of the radiated field in a plane at z=5λ.
   </figcaption>
 </figure>
-<br/><section class="footnotes is-size-7"><ul><li class="footnote" id="footnote-1"><a class="tag is-link" href="#citeref-1">1</a>Replacing a <code>Radiated</code> type <code>AntennaFieldRepresentation</code> by an <code>Absorbed</code> one, the electromagnetic fields of the two representations are not exactly &quot;reversed&quot; in time, as also the sign of the magnetic field changes. To be technically correct, both types of field representations should be considered as separate solutions of Maxwell&#39;s equations with different asymptotic boundary conditions at infinity. The fields of <code>DipoleArray</code>s of <code>Absorbed</code> type are derived from the scalar Green&#39;s function <span>$\mathrm{e}^{\, \mathrm{j} k r} / (4 \pi r)$</span> (as opposed to <span>$\mathrm{e}^{- \mathrm{j} k r} / (4 \pi r)$</span> for <code>Radiated</code> representations).</li><li class="footnote" id="footnote-2"><a class="tag is-link" href="#citeref-2">2</a>Formally the fields of <code>DipoleArray</code>s of <code>Incident</code> type are derived from the scalar &quot;Green&#39;s function&quot; (more of a <em>pseudo</em> <em>Green&#39;s</em> <em>function</em>) <span>$\mathrm{sin}({\mathrm{j} k r}) / (4 \pi r)$</span>. You can see that <code>Incident</code> fields are nothing but a superposition of <code>Absorbed</code> and <code>Radiated</code> fields.</li></ul></section></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../../fieldrepresentations/">« General Field Representation Interface</a><a class="docs-footer-nextpage" href="../../spherical/spherical_representations/">Spherical Mode Representations »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.8.0 on <span class="colophon-date" title="Friday 22 November 2024 06:40">Friday 22 November 2024</span>. Using Julia version 1.11.1.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+<br/><p>Furthermore, we might be interested in the far fields radiated by the dipole collection.  Thus, we define pairs <code>(θ, ϕ)</code> of angles for the directions in which we want to evaluate the far fields and calculate the far field via the <code>farfield</code> command </p><pre><code class="language-julia hljs">θs= LinRange(0.0, π, 40)
+ϕs= LinRange(0.0, 2π, 80)
+
+directions= [(θ, ϕ) for θ in θs, ϕ in ϕs]
+
+farfields= farfield.(Ref(dipoles), directions)</code></pre><p>The output is a pair <code>(Fθ, Fϕ)</code> for each input in the <code>directions</code> array. We can retrieve the individual components via</p><pre><code class="language-julia hljs">Fθ= [ff[1] for ff in farfields]
+Fϕ= [ff[2] for ff in farfields]</code></pre><p>The resulting  far field can then be visualized, e.g., with <code>Makie.jl</code> or <code>Plots.jl</code></p><figure>
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="../assets/farfield_dipoles_dark.png" width="750">
+  <source media="(prefers-color-scheme: light)" srcset="../assets/farfield_dipoles_light.png" width="750" >
+  <img alt="" src="" width="750">
+</picture>
+
+  <figcaption>
+    Magnitude of  of the radiated far field in dB-scale.
+  </figcaption>
+</figure>
+<br/><p>As it turns out, the radiated far-field is rather omni-directional. With deeper thought, this might not be too surprising because each field component is equally well excited by the three dipoles in <span>$x-$</span>, <span>$y-$</span>, and <span>$z-$</span> direction.</p><section class="footnotes is-size-7"><ul><li class="footnote" id="footnote-1"><a class="tag is-link" href="#citeref-1">1</a>Replacing a <code>Radiated</code> type <code>AntennaFieldRepresentation</code> by an <code>Absorbed</code> one, the electromagnetic fields of the two representations are not exactly &quot;reversed&quot; in time, as also the sign of the magnetic field changes. To be technically correct, both types of field representations should be considered as separate solutions of Maxwell&#39;s equations with different asymptotic boundary conditions at infinity. The fields of <code>DipoleArray</code>s of <code>Absorbed</code> type are derived from the scalar Green&#39;s function <span>$\mathrm{e}^{\, \mathrm{j} k r} / (4 \pi r)$</span> (as opposed to <span>$\mathrm{e}^{- \mathrm{j} k r} / (4 \pi r)$</span> for <code>Radiated</code> representations).</li><li class="footnote" id="footnote-2"><a class="tag is-link" href="#citeref-2">2</a>Formally the fields of <code>DipoleArray</code>s of <code>Incident</code> type are derived from the scalar &quot;Green&#39;s function&quot; (more of a <em>pseudo</em> <em>Green&#39;s</em> <em>function</em>) <span>$\mathrm{sin}({\mathrm{j} k r}) / (4 \pi r)$</span>. You can see that <code>Incident</code> fields are nothing but a superposition of <code>Absorbed</code> and <code>Radiated</code> fields.</li></ul></section></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../../fieldrepresentations/">« General Field Representation Interface</a><a class="docs-footer-nextpage" href="../../spherical/spherical_representations/">Spherical Mode Representations »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.8.0 on <span class="colophon-date" title="Tuesday 26 November 2024 05:08">Tuesday 26 November 2024</span>. Using Julia version 1.11.1.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
