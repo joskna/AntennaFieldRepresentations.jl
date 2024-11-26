@@ -503,47 +503,6 @@ function _negpow1(m::Integer)
     end
 end
 
-
-
-function _outputmode_dipo2sph(Psph::PropagationType, Pdip::PropagationType)
-    if Pdip == Radiated()
-        return _dualtype(Psph)
-    elseif Psph == Incident() && Pdip == Incident()
-        return Incident()
-    end
-    throw(ErrorException("Cannot perform conversion with given PropagationTypes."))
-end
-function changerepresentation(
-    Tnew::Type{SphericalWaveExpansion{Psph,H,C}},
-    dipoles::DipoleArray{Pdip,E,T,C};
-    ϵ = 1e-7,
-) where {Psph,C,H,Pdip,E,T}
-    # Pdual= _dualtype(P)
-    Ptmp = _outputmode_dipo2sph(Psph(), Pdip())
-    k0 = getwavenumber(dipoles)
-    # rsph = (Psph() == Radiated()) ? (2 * _rmax(dipoles)) : (2 * _rmin(dipoles))
-    L = equivalentorder(dipoles; ϵ = ϵ)
-    Jmax = sℓm_to_j(2, L, L)
-    tempcoeffs = _dipole_spherical_innerprod(dipoles, Jmax, Ptmp, k0)
-    coefficients = zeros(C, Jmax)
-    for (j, val) in enumerate(tempcoeffs)
-        s, ℓ, m = j_to_sℓm(j)
-        coefficients[sℓm_to_j(s, ℓ, -m)] = (-1)^(m + 1) * val
-    end
-    return Tnew(SphericalCoefficients(coefficients), k0)
-end
-function changerepresentation(
-    Tnew::Type{SphericalWaveExpansion{Psph}},
-    dipoles::DipoleArray{Pdip,E,T,C};
-    ϵ = 1e-7,
-) where {Psph,C,Pdip,E,T}
-    return changerepresentation(
-        SphericalWaveExpansion{Psph,SphericalCoefficients{C},C},
-        dipoles,
-        ϵ = ϵ,
-    )
-end
-
 function _dipole_spherical_innerprod(
     dipoles::HertzArray{T,C},
     Jmax::Integer,

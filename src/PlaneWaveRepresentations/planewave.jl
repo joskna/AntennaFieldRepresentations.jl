@@ -262,7 +262,7 @@ function rotate!(
     orderϕ::Integer = 12,
 ) where {W<:PlaneWaveExpansion,T<:Number}
     R = rot_mat_zyz(-ϕ, -θ, -χ) # rotate sampling points in reverse direction to rotate sampled pattern
-    _, __, θvec, ϕvec = weightsandsamples(pattern.samplingstrategy)
+    θvec, ϕvec = samples(pattern.samplingstrategy)
 
     for kϕ in eachindex(ϕvec)
         sinp, cosp = sincos(ϕvec[kϕ])
@@ -294,9 +294,8 @@ function rotate!(
             Eθ, Eϕ = interpolate_single_planewave(
                 (θ_rot, ϕ_rot),
                 pattern,
-                LocalθLocalΦInterpolation{
+                LocalθLocalΦInterpolateMap{
                     typeof(pattern.samplingstrategy),
-                    typeof(rotated_pattern.samplingstrategy),
                     orderθ,
                     orderϕ,
                     T,

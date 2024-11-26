@@ -179,6 +179,59 @@ function inverse(crm::M) where {M<:ChangeRepresentationMap}
 end
 
 ###################################################################
+
+function _outputmode_dipo2sph(Psph::PropagationType, Pdip::PropagationType)
+    if Pdip == Radiated()
+        return _dualtype(Psph)
+    elseif Psph == Incident() && Pdip == Incident()
+        return Incident()
+    end
+    throw(ErrorException("Cannot perform conversion with given PropagationTypes."))
+end
+function changerepresentation(
+    Tnew::Type{SphericalWaveExpansion{Psph,H,C}},
+    dipoles::DipoleArray{Pdip,E,T,C};
+    ϵ = 1e-7,
+) where {Psph,C,H,Pdip,E,T}
+    # Pdual= _dualtype(P)
+    Ptmp = _outputmode_dipo2sph(Psph(), Pdip())
+    k0 = getwavenumber(dipoles)
+    # rsph = (Psph() == Radiated() || Psph() == Absorbed()) ? (2 * _rmax(dipoles)) : ( 0.5_rmin(dipoles))
+    # L = _modeorder(rsph, getwavenumber(dipoles); ϵ = ϵ)
+    L = (Psph() == Radiated() || Psph() == Absorbed()) ? (_modeorder( _rmax(dipoles), k0; ϵ = ϵ)) : convert(Int64, floor(k0*_rmin(dipoles)))
+    L = 
+    Jmax = sℓm_to_j(2, L, L)
+    tempcoeffs = _dipole_spherical_innerprod(dipoles, Jmax, Ptmp, k0)
+    coefficients = zeros(C, Jmax)
+    for (j, val) in enumerate(tempcoeffs)
+        s, ℓ, m = j_to_sℓm(j)
+        coefficients[sℓm_to_j(s, ℓ, -m)] = (-1)^(m + 1) * val
+    end
+    return Tnew(SphericalCoefficients(coefficients), k0)
+end
+function changerepresentation(
+    Tnew::Type{SphericalWaveExpansion{Psph}},
+    dipoles::DipoleArray{Pdip,E,T,C};
+    ϵ = 1e-7,
+) where {Psph,C,Pdip,E,T}
+    return changerepresentation(
+        SphericalWaveExpansion{Psph,SphericalCoefficients{C},C},
+        dipoles,
+        ϵ = ϵ,
+    )
+end
+function changerepresentation(
+    Tnew::Type{SphericalWaveExpansion},
+    dipoles::DipoleArray{Pdip,E,T,C};
+    ϵ = 1e-7,
+) where {C,Pdip,E,T}
+    return changerepresentation(
+        SphericalWaveExpansion{Pdip,SphericalCoefficients{C},C},
+        dipoles,
+        ϵ = ϵ,
+    )
+end
+
 # function changerepresentation(
 #     T::Type{W},
 #     swe::SphericalWaveExpansion{P,H,C},

@@ -117,6 +117,17 @@ julia> fo_sph_coefficients= FirstOrderSphericalCoefficients(sph_coefficients)
 
 ## Spherical Expansion Examples 
 
-!!! todo
-    Coming soon ...
----
+```@raw html
+<figure>
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="../assets/spherical_expansion_dark.png" width="750">
+  <source media="(prefers-color-scheme: light)" srcset="../assets/spherical_expansion_light.png" width="750" >
+  <img alt="" src="" width="200">
+</picture>
+
+  <figcaption>
+    The dipoles are visualized as arrows in this example.
+  </figcaption>
+</figure>
+<br/>
+```

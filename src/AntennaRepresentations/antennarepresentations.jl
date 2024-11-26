@@ -128,9 +128,9 @@ function weightsandsamples(samplingstrategy::GaussLegendreθRegularϕSampling)
     return θweights, ϕweights, θs, ϕs
 end
 """
-    weightsandsamples(samplingstrategy::SphereSamplingStrategy) -> ( θweights::Array{Float64,1}, ϕweights::Array{Float64,1}, θs::Array{Float64,1}, ϕs::Array{Float64,1} )
+    samples(samplingstrategy::SphereSamplingStrategy) -> ( θs::Array{Float64,1}, ϕs::Array{Float64,1} )
 
-Return integration weights `θweights, ϕweights` and sampling points `θs, ϕs` for the `samplingstrategy`.
+Return sampling points `θs, ϕs` for the `samplingstrategy`.
 """
 function samples(samplingstrategy::RegularθRegularϕSampling)
     nθ, nϕ = _countsamples(samplingstrategy)

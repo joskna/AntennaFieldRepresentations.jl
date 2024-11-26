@@ -6,7 +6,7 @@
 
 [![Docs-dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://joskna.github.io/AntennaFieldRepresentations.jl/dev/)
 
-# AntennaFieldTransformations
+# AntennaFieldRepresentations
 
 ## Introduction
 This package contains various representations of the electromagnetic fields radiated by antennas.

@@ -1,13 +1,87 @@
-abstract type AbstractSphereInterpolation end
+abstract type InterpolateMap{Y<: SphereSamplingStrategy, T<:Real} <: LinearMaps.LinearMap{T} end
 
-struct LocalθLocalΦInterpolation{Y1,Y2,orderθ,orderϕ,T} <:
-       AbstractSphereInterpolation where {
-    orderθ<:Integer,
-    orderϕ<:Integer,
+struct LocalθLocalΦInterpolateMap{
+    Y<:SphereSamplingStrategy,
+    orderθ,
+    orderϕ,
+    T<:Real,
+} <: InterpolateMap{Y, T} 
+    originalsamplingstrategy::Y
+    θweights::Vector{SVector{orderθ,T}}
+    θindices::Vector{SVector{orderθ,Int}}
+    ϕweights::Vector{SVector{orderϕ,T}}
+    ϕindices::Vector{SVector{orderϕ,Int}}
+    ϕindicesopposite::Vector{SVector{orderϕ,Int}}
+    posθranges::Vector{UnitRange{Int}}
+    negθranges::Vector{UnitRange{Int}}
+    intermediatestorage::Vector{Complex{T}}
+    directions::Vector{Tuple{T,T}}
+end
+function Base.size(im::LocalθLocalΦInterpolateMap)
+    θs, ϕs = samples(im.originalsamplingstrategy)
+    return 2*length(im.directions), 2 * length(θs) * length(ϕs)
+end
+function LocalθLocalΦInterpolateMap(
+    originalsamplingstrategy::Y,
+    directions::Vector{Tuple{T,T}};
+    orderθ = 12,
+    orderϕ = 12,
+) where {Y<:SphereSamplingStrategy, T<:Real}
+    return LocalθLocalΦInterpolateMap{Float64}(
+        originalsamplingstrategy;
+        directions,
+        orderθ = orderθ,
+        orderϕ = orderϕ,
+    )
+end
+function LocalθLocalΦInterpolateMap{T}(
+    originalsamplingstrategy::Y,
+    directions::Vector{Tuple{T,T}};
+    orderθ = 12,
+    orderϕ = 12,
+) where {T<:Real,Y<:SphereSamplingStrategy}
+    oldθs, oldϕs = samples(originalsamplingstrategy)
+    newθs = [direction[1] for direction in directions]
+    newϕs = [direction[2] for direction in directions] 
+
+
+    intermediatestorage = zeros(Complex{T}, orderθ)
+    # finalstorage = zeros(Complex{T}, length(directions))
+
+    θweights, θindices, posθranges, negθranges =
+        _planθweightsandindices(newθs, oldθs, orderθ, T)
+
+    ϕweights, ϕindices = _planϕweightsandindices(newϕs, oldϕs, orderϕ, T)
+    ϕindicesopposite::Vector{Svector{orderϕ,Int}}(undef, length(ϕindices))
+    Nϕ=length(oldϕs)
+    for (k, iϕrange) in enumerate(ϕindices)
+        ϕindicesopposite[k]= SVector{orderϕ}(map_ϕrange!(iϕrange .+ (Nϕ ÷ 2), Nϕ))
+    end
+
+    return LocalθLocalΦInterpolateMap{Y,orderθ,orderϕ,T}(
+        originalsamplingstrategy,
+        targetsamplingstrategy,
+        θweights,
+        θindices,
+        ϕweights,
+        ϕindices,
+        ϕindicesopposite,
+        posθranges,
+        negθranges,
+        intermediatestorage,
+        directions,
+    )
+end
+
+abstract type ResampleMap{Y1<:SphereSamplingStrategy, Y2<:SphereSamplingStrategy, T<:Real} <: LinearMaps.LinearMap{T} end
+
+struct LocalθLocalΦResampleMap{
     Y1<:SphereSamplingStrategy,
     Y2<:SphereSamplingStrategy,
+    orderθ,
+    orderϕ,
     T<:Real,
-}
+        } <: ResampleMap{Y1,Y2,T} 
     originalsamplingstrategy::Y1
     targetsamplingstrategy::Y2
     θweights::Vector{SVector{orderθ,T}}
@@ -19,27 +93,32 @@ struct LocalθLocalΦInterpolation{Y1,Y2,orderθ,orderϕ,T} <:
     intermediatestorage::Matrix{Complex{T}}
     finalstorage::Matrix{Complex{T}}
 end
-function LocalθLocalΦInterpolation(
+function Base.size(rsm::LocalθLocalΦResampleMap)
+    θsold, ϕsold = samples(rsm.originalsamplingstrategy)
+    θsnew, ϕsnew = samples(rsm.targetsamplingstrategy)
+    return 2 * length(θsnew) * length(ϕsnew), 2 * length(θsold) * length(ϕsold)
+end
+function LocalθLocalΦResampleMap(
     targetsamplingstrategy::Y2,
     originalsamplingstrategy::Y1;
     orderθ = 12,
     orderϕ = 12,
 ) where {Y1<:SphereSamplingStrategy,Y2<:SphereSamplingStrategy}
-    return LocalθLocalΦInterpolation{Float64}(
+    return LocalθLocalΦResampleMap{Float64}(
         targetsamplingstrategy,
         originalsamplingstrategy;
         orderθ = orderθ,
         orderϕ = orderϕ,
     )
 end
-function LocalθLocalΦInterpolation{T}(
+function LocalθLocalΦResampleMap{T}(
     targetsamplingstrategy::Y2,
     originalsamplingstrategy::Y1;
     orderθ = 12,
     orderϕ = 12,
 ) where {T<:Real,Y1<:SphereSamplingStrategy,Y2<:SphereSamplingStrategy}
-    _, __, oldθs, oldϕs = weightsandsamples(originalsamplingstrategy)
-    _, __, newθs, newϕs = weightsandsamples(targetsamplingstrategy)
+    oldθs, oldϕs = samples(originalsamplingstrategy)
+    newθs, newϕs = samples(targetsamplingstrategy)
 
 
     intermediatestorage = zeros(Complex{T}, length(oldθs), length(newϕs))
@@ -50,7 +129,7 @@ function LocalθLocalΦInterpolation{T}(
 
     ϕweights, ϕindices = _planϕweightsandindices(newϕs, oldϕs, orderϕ, T)
 
-    return LocalθLocalΦInterpolation{Y1,Y2,orderθ,orderϕ,T}(
+    return LocalθLocalΦResampleMap{Y1,Y2,orderθ,orderϕ,T}(
         originalsamplingstrategy,
         targetsamplingstrategy,
         θweights,
@@ -287,6 +366,25 @@ function find_next_smaller_ϕind(Δϕ::Real, ϕnew::Real)
     return convert(Int64, floor(ϕnew / Δϕ))
 end
 
+function extract_single_entry!(storage, Ematr, iθrange, posθrange, negθrange, wθ, iϕrange, ϕindicesopposite, wϕ)
+
+    θinds_pos = view(iθrange, posθrange)
+    θinds_neg = view(iθrange, negθrange)
+
+    wθ_pos = view(wθ, posθrange)
+    wθ_neg = view(wθ, negθrange)
+
+    @inbounds mul!(storage, transpose(wθ_pos), view(Ematr, θinds_pos, iϕrange))
+    @inbounds mul!(
+        storage,
+        transpose(wθ_neg),
+        view(Ematr, θinds_neg, ϕindicesopposite),
+        1,
+        1,
+    )
+    return udot(wϕ, storage)
+end
+
 """
     extract_single_planewave(Eθmatr::AbstractMatrix{<:Complex}, Eϕmatr::AbstractMatrix{<:Complex}, iθrange, wθ, iϕrange, wϕ ) -> Eθ, Eϕ
 
@@ -356,7 +454,7 @@ end
 # end
 
 
-function _extract_single_θ!(storage, Ematr, iθrange, posθrange, negθrange, wθ)# where {C<:Complex}
+function _extract_single_θ!(storage::AbstractMatrix, Ematr::AbstractMatrix, iθrange, posθrange, negθrange, wθ)# where {C<:Complex}
 
     Nϕ = size(Ematr, 2)
     Nϕhalf = Nϕ ÷ 2
@@ -478,13 +576,13 @@ function _adjoint_local_interpolate_ϕ!(Enew, E_old, newϕlength, ϕindices, ϕw
     return E_old
 end
 
-function _interpolatematrix!(oldmatrix, interpolator::AbstractSphereInterpolation)
-    return _interpolatematrix!(interpolator.finalstorage, oldmatrix, interpolator)
+function _resamplematrix!(oldmatrix, interpolator::ResampleMap)
+    return _resamplematrix!(interpolator.finalstorage, oldmatrix, interpolator)
 end
-function _interpolatematrix!(
+function _resamplematrix!(
     storage,
     oldmatrix,
-    interpolator::LocalθLocalΦInterpolation{Y1,Y2,orderθ,orderϕ,T},
+    interpolator::LocalθLocalΦResampleMap{Y1,Y2,orderθ,orderϕ,T},
 ) where {Y1<:SphereSamplingStrategy,Y2<:SphereSamplingStrategy,orderθ,orderϕ,T}
     newθlength, newϕlength = size(interpolator.finalstorage)
     _local_interpolate_θ!(
@@ -505,10 +603,10 @@ function _interpolatematrix!(
     )
     return storage
 end
-function _adjoint_interpolatematrix!(
+function _adjoint_resamplematrix!(
     storage,
     oldmatrix,
-    interpolator::LocalθLocalΦInterpolation{Y1,Y2,orderθ,orderϕ,T};
+    interpolator::LocalθLocalΦResampleMap{Y1,Y2,orderθ,orderϕ,T};
     reset::Bool = true,
 ) where {Y1<:SphereSamplingStrategy,Y2<:SphereSamplingStrategy,orderθ,orderϕ,T}
     newθlength, newϕlength = size(interpolator.finalstorage)
@@ -532,8 +630,8 @@ function _adjoint_interpolatematrix!(
 end
 
 #Assume that interpolation coefficients are real valued
-function _transpose_interpolatematrix!(storage, oldmatrix, interpolator; reset = true)
-    _adjoint_interpolatematrix!(storage, oldmatrix, interpolator; reset = reset)
+function _transpose_resamplematrix!(storage, oldmatrix, interpolator; reset = true)
+    _adjoint_resamplematrix!(storage, oldmatrix, interpolator; reset = reset)
 end
 
 """
@@ -544,9 +642,9 @@ Interpolate single plane wave into direction `θnew`, `ϕnew` from given `PlaneW
 function interpolate_single_planewave(
     θnewϕnew::Tuple{T,T},
     pattern::PlaneWaveExpansion,
-    ::Type{LocalθLocalΦInterpolation{Y1,Y2,orderθ,orderϕ,T}};
+    ::Type{LocalθLocalΦInterpolateMap{Y, orderθ,orderϕ,T}};
     θvecϕvec = samples(pattern.samplingstrategy),
-) where {Y1,Y2,orderθ,orderϕ,T}
+) where {Y, orderθ,orderϕ,T}
     θnew, ϕnew = θnewϕnew
     θvec, ϕvec = θvecϕvec
 
@@ -563,4 +661,31 @@ function interpolate_single_planewave(
 
     return extract_single_planewave(_eθ(pattern), _eϕ(pattern), iθrange, wθ, iϕrange, wϕ)
 
+end
+
+function interpolate_planewaves(
+    directions::AbstractVector{Tuple{T,T}},
+    pattern::PlaneWaveExpansion,
+    ::Type{LocalθLocalΦInterpolateMap}; 
+    orderθ=12,
+    orderϕ=12) where{T}
+    im = InterpolateMap(θϕs,pattern, orderθ=orderθ, orderϕ = orderϕ)
+    FθFϕs = Matrix{eltype{pattern.EθEϕ}}(undef, length(directions), 2)
+    FθFϕs .= interpolate_planewaves!(FθFϕs, im, pattern.EθEϕ)
+    return [(FθFϕs[k,1], FθFϕs[k,2]) for k in eachindex(directions)]
+end
+function interpolate_planewaves!(FθFϕs, im::LocalθLocalΦInterpolateMap, EθEϕ::AbstractArray{C,3}) where{C}
+    for k in eachindex(im.directions)
+        FθFϕs[k,1]= extract_single_entry!(im.intermediatestorage,view(EθEϕ,:,:,1),im.θindices[k], im.posθranges[k],im.negθranges[k],θweights[k],im.ϕindices[k],im.ϕindicesopposite[k],ϕweights[k])
+        FθFϕs[k,2]= extract_single_entry!(im.intermediatestorage,view(EθEϕ,:,:,2),im.θindices[k], im.posθranges[k],im.negθranges[k],θweights[k],im.ϕindices[k],im.ϕindicesopposite[k],ϕweights[k])
+    end
+    return FθFϕs
+end
+
+function LinearMaps._unsafe_mul!(y, im::LocalθLocalΦInterpolateMap, x::AbstractVector)
+    θs, ϕs = samples(im.originalsamplingstrategy)
+    mat = reshape(x, length(θs), length(ϕs), 2)
+    FθFϕs = reshape(y, length(im.directions), 2)
+    FθFϕs .= interpolate_planewaves!(FθFϕs, im, mat)
+    return y
 end
