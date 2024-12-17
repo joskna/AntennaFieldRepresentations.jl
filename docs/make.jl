@@ -25,6 +25,7 @@ makedocs(;
             "Coordinate Transformations"=>"operations/coordinate_trafos.md",
             "Conversion into Other Field Representations"=>"operations/conversions.md",
             "Transmission"=>"operations/transmission.md",
+            "Interpolation"=>"operations/interpolation.md",
         ],
         "Examples" => "examples.md",
         "Electromagnetic Theory" => Any[
