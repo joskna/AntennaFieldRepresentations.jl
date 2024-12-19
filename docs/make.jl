@@ -20,6 +20,7 @@ makedocs(;
             "Irregularly Distributed Field Samplings"=>"sampling/irregularsampling.md",
             "Spherical Field Samplings"=>"sampling/sphericalsampling.md",
         ],
+        "Spherically Sampled Data Structures" => "sampleddata.md",
         "Operations" => Any[
             "OperationMaps"=>"operations/operationmaps.md",
             "Coordinate Transformations"=>"operations/coordinate_trafos.md",

@@ -33,7 +33,7 @@ end
 
 Abstract type for various field samplings.
 """
-abstract type FieldSampling{C} end
+abstract type FieldSampling{C} <: AbstractVector{C} end
 Base.length(fs::FieldSampling) = prod(size(fs))
 
 """

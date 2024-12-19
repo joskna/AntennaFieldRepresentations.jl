@@ -10,7 +10,7 @@ In particular, if the function ``\bm{f}(\vartheta, \varphi)`` is sampled accordi
 [^1]: The function ``\bm{f}(\vartheta, \varphi)`` is displayed with a bold ``\bm{f}`` to indicate its vector character. All spherically sampled data structures to be interpolated in `AntennaFieldRepresentations.jl` have two components representing two independent polarizations of the electromagnetic field.
 
 ## Interpolating Spherically Sampled Data at Arbitrary Sampling Points 
-We can interpolate spherically sampled data at arbitrary sampling points by using the [`interpolate`](@ref) method or an [`InterpolateMap`](@ref). 
+We can interpolate spherically sampled data at arbitrary sampling points by using the `interpolate` method or an `InterpolateMap`. 
 
 The basic usage of the `interpolate` method is simple (expand "Setup Code") to see how the original spherically sampled data is generated:
 

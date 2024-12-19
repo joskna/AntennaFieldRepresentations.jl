@@ -1,0 +1,119 @@
+%!TEX program = lualatex
+\documentclass[ font=libertinus,]{standalone}
+\def\rmdefault{LinuxLibertineT-LF}
+\RequirePackage{amsthm}
+\RequirePackage[ISO,mathsfit]{libertinust1math}
+\RequirePackage[no-math]{fontspec}
+\setmainfont[Mapping=tex-text, Ligatures={TeX,Required, Contextual, Common, Rare, Discretionary}]{Linux Libertine O}
+\setsansfont[Ligatures={TeX,Required, Contextual, Common, Rare, Discretionary}]{Libertinus Sans}
+\RequirePackage[cal=cm, bb=ams, calscaled=.95,
+bbscaled=.95]{mathalfa}
+
+%Legacy
+\newcommand{\bm}{\mathbfit}
+\newcommand{\mathbfsf}{\mathsfbf}
+%\usepackage{../knappdoktor}
+\usepackage{tikz,tikz-3dplot}
+\usepackage{tikz-3dplot-circleofsphere}
+%% >> MINIMALIST CIRCLE OF SHPERE DRAWING CODE _______________________________________________________________________
+\newcommand\scircle[4]{%
+	\tdplotsetrotatedcoords{#2}{#3}{0} % Rotate coordinate system
+	\let\a\tdplotalpha % alpha (rotated coord. system)
+	\let\b\tdplotbeta % beta (rotated coord. system)
+	\let\p\tdplotmainphi % phi (main coord. system)
+	\let\t\tdplotmaintheta % theta (main coord. system)
+	\pgfmathsetmacro\azx{cos(\a)*cos(\b)*sin(\p)*sin(\t) - sin(\b)*cos(\t) - cos(\b)*cos(\p)*sin(\a)*sin(\t)}
+	\pgfmathsetmacro\azy{-cos(\a)*cos(\p)*sin(\t) - sin(\a)*sin(\p)*sin(\t)}
+	\pgfmathsetmacro\azz{cos(\b)*cos(\t) + cos(\a)*sin(\b)*sin(\p)*sin(\t) - cos(\p)*sin(\a)*sin(\b)*sin(\t)}
+	\pgfmathsetmacro\re {#1*cos(#4)} % Radius of circle
+	\pgfmathsetmacro\ze {#1*sin(#4)} % z-coordinate of drawing plane
+	\pgfmathsetmacro\coX{\ze*cos(#2)*sin(#3)} % x-coordinate offset for ze
+	\pgfmathsetmacro\coY{\ze*sin(#2)*sin(#3)} % y-coordinate offset for ze
+	\pgfmathsetmacro\coZ{\ze*cos(#3)} % z-coordinate offset for ze
+	\coordinate (coffs) at (\coX,\coY,\coZ); % Offset as coordinate value
+	\tdplotsetrotatedcoordsorigin{(coffs)} % Offset coordinate system
+	\begin{scope}[tdplot_rotated_coords] % Drawing scope >>
+		\pgfmathsetmacro\tanEps{tan(#4)} % Tangent of elevation angle
+		\pgfmathsetmacro\bOneside{((\tanEps)^2)>=(((\azx)^2+(\azy)^2)/(\azz)^2)} % Circle entirely on one side?
+		\ifthenelse{\bOneside=1}{% % Circle on one side of sphere >>
+			\pgfmathsetmacro\bFrontside{(\azx*\re+\azz*\ze)>=0} % Circle entirely on front side?
+			\ifthenelse{\bFrontside=1} % |
+			{\draw (0,0) circle (\re);} % Draw on front side
+			{\draw[dashed] (0,0) circle (\re);} % Draw on back side
+		}{% % << Circle on both sides >>
+			\pgfmathsetmacro\u{\azy} % Substitution u=...
+			\pgfmathsetmacro\v{sqrt( (\azx)^2 + (\azy)^2 - (\azz)^2*(\tanEps)^2 )} % Substitution v=...
+			\pgfmathsetmacro\w{\azx - \azz*\tanEps} % Substitution w=...
+			\pgfmathsetmacro\phiBf{2*atan2(\u-\v,\w)} % Back->front crossing angle
+			\pgfmathsetmacro\phiFb{2*atan2(\u+\v,\w)} % Front->back crossing angle
+			\pgfmathsetmacro\bUnwrapA{(\phiFb-\phiBf)>360} % Unwrap front->back angle #1?
+			\pgfmathsetmacro\bUnwrapB{\phiBf>\phiFb} % Unwrap front->back angle #2?
+			\ifthenelse{\bUnwrapA=1}{\pgfmathsetmacro\phiBf{\phiBf+360}}{} % Unwrap front->back angle #1
+			\ifthenelse{\bUnwrapB=1}{\pgfmathsetmacro\phiBf{\phiBf-360}}{} % Unwrap front->back angle #2
+			\draw[dashed] (\phiFb:\re) arc (\phiFb:{\phiBf+360}:\re); % Draw back side arc
+			\draw (\phiBf:\re) arc (\phiBf:\phiFb:\re); % Draw back side arc
+		} % <<
+	\end{scope} % << (Drawing scope)
+}
+%% <<
+
+\newcommand{\sphToCart}[3]
+{
+	\def\rpar{#1}
+	\def\thetapar{#2}
+	\def\phipar{#3}
+	
+	\pgfmathsetmacro{\x}{\rpar*sin(\phipar)*cos(\thetapar)}
+	\pgfmathsetmacro{\y}{\rpar*sin(\phipar)*sin(\thetapar)}
+	\pgfmathsetmacro{\z}{\rpar*cos(\phipar)}
+}
+
+\definecolor{TUMBlue}{RGB}{0,101,189}
+
+\definecolor{ownA}{RGB}{57,106,177}
+
+\definecolor{ownB}{RGB}{218,124,48}
+
+\definecolor{ownC}{RGB}{62,150,81}
+
+\definecolor{ownD}{RGB}{204,37,41}
+
+\definecolor{ownE}{RGB}{83,81,84}
+
+\definecolor{ownF}{RGB}{107,76,154}
+
+\definecolor{ownG}{RGB}{146,36,40}
+
+\definecolor{ownH}{RGB}{148,139,61}
+
+\definecolor{ownBlue}{RGB}{55,126,184}
+
+\definecolor{ownOrange}{RGB}{255,127,0}
+
+\definecolor{ownGreen}{RGB}{77,175,74}
+
+\definecolor{ownRed}{RGB}{228,26,28}
+
+\definecolor{ownGray}{RGB}{83,81,84}
+
+\definecolor{ownPurple}{RGB}{152,78,163}
+
+\definecolor{ownWineRed}{RGB}{146,36,40}
+
+\definecolor{ownOlive}{RGB}{148,139,61}
+
+%\makeatletter
+%\tikzoption{canvas is plane}[]{\@setOxy#1}
+%\def\@setOxy O(#1,#2,#3)x(#4,#5,#6)y(#7,#8,#9)%
+%{\def\tikz@plane@origin{\pgfpointxyz{#1}{#2}{#3}}%
+	%	\def\tikz@plane@x{\pgfpointxyz{#4}{#5}{#6}}%
+	%	\def\tikz@plane@y{\pgfpointxyz{#7}{#8}{#9}}%
+	%	\tikz@canvas@is@plane
+	%}
+%\makeatother  
+\usetikzlibrary{arrows,calc, math}\tikzset{>=latex}
+% ________________________________________________________________________________________________________________
+\begin{document}
+\includegraphics[scale=3]{sampling_regular_darkmode}
+\includegraphics[scale=3]{sampling_lagrange_darkmode}
+\end{document}
