@@ -29,7 +29,7 @@ makedocs(;
             "Interpolation"=>"operations/interpolation.md",
         ],
         "Examples" => "examples.md",
-        "Electromagnetic Theory" => Any[
+        "(Electromagnetic) Theory" => Any[
             "Dipoles"=>"dipoles/dipole_theory.md",
             "Spherical Vector Wave Expansion"=>"spherical/spherical_theory.md",
             "Plane Wave Expansion"=>"planewaves/planewave_theory.md",
@@ -38,6 +38,7 @@ makedocs(;
                 "Spherical Wacker Algorithm" => "spherical/spherical_fast.md"
                 "Multilevel Fast Multipole Method" => "mlfmm/mlfmm_theory.md"
             ],
+            "Interpolation of Spherically Sampled Data"=>"operations/interpolation_theory.md",
         ],
         "API" => "api.md",
     ],

@@ -198,8 +198,10 @@ function changerepresentation(
     k0 = getwavenumber(dipoles)
     # rsph = (Psph() == Radiated() || Psph() == Absorbed()) ? (2 * _rmax(dipoles)) : ( 0.5_rmin(dipoles))
     # L = _modeorder(rsph, getwavenumber(dipoles); ϵ = ϵ)
-    L = (Psph() == Radiated() || Psph() == Absorbed()) ? (_modeorder( _rmax(dipoles), k0; ϵ = ϵ)) : convert(Int64, floor(k0*_rmin(dipoles)))
-    L = 
+    L =
+        (Psph() == Radiated() || Psph() == Absorbed()) ?
+        (_modeorder(2 * _rmax(dipoles), k0; ϵ = ϵ)) :
+        convert(Int64, floor(k0 * _rmin(dipoles)))
     Jmax = sℓm_to_j(2, L, L)
     tempcoeffs = _dipole_spherical_innerprod(dipoles, Jmax, Ptmp, k0)
     coefficients = zeros(C, Jmax)

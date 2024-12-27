@@ -66,9 +66,13 @@ shifted_hdipole =
     HertzArray([[0.0, 0.0, 0.0] + dR], [complex.([0.0, 0.0, 1.0])], [complex(1.0)], k0)
 shifted_hspherical = changerepresentation(SphericalWaveExpansion{Radiated}, shifted_hdipole)
 
-# ff = shiftrepresentation(convertrepresentation(FarfieldPattern{ComplexF64}, hspherical, k0), -dR, k0)
+# ff = shiftrepresentation(
+#     convertrepresentation(FarfieldPattern{ComplexF64}, hspherical, k0),
+#     -dR,
+#     k0,
+# )
 
-# shifted_hspherical2=convertrepresentation(RadiatingSphericalExpansion{ComplexF64}, ff, k0)
+# shifted_hspherical2 = convertrepresentation(RadiatingSphericalExpansion{ComplexF64}, ff, k0)
 
 # @test shifted_hspherical.coefficients ≈ shifted_hspherical2.coefficients
 @test efield(shifted_hspherical, R + dR) ≈

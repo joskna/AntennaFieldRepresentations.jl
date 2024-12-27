@@ -2,19 +2,23 @@
 
 In `AntennaFieldRepresentations.jl`, several data structures represent functions ``\bm{f}(\vartheta, \varphi)`` which are sampled on a sphere at certain sampling points ``(\vartheta_i, \varphi_i)``. Examples for spherically sampled data structures are [`PlaneWaveExpansion`](@ref)s or [`SphericalFieldSampling`](@ref)s. 
 
-Internally, the data is stored in a matrix[^1], where the ``m``th row corresponds the angle ``\vartheta_m`` and the ``n``th coloumn corresponds to the angle ``\varphi_n``. The ``m, n``- entry of the matrix therefore corresponds to the function value ``\bm{f}(\vartheta_m, \varphi_n)``.
+A natural choice for the sampling points ``(\vartheta_i, \varphi_i)`` is to choose a tensor product of 1D samplings along ``\vartheta`` and ``\varphi``, resepectively, i.e., by defining ``N_\vartheta`` sampling points ``\vartheta_m`` along ``\vartheta`` and ``N_\varphi`` sampling points ``\varphi_n`` along ``\varphi``, we end up with ``N_\vartheta \times N_\varphi`` pairs ``(\vartheta_m, \varphi_n)`` which define the sampling points on the sphere.
+
+Internally, the data can be stored in a matrix[^1], where the ``m``th row corresponds the angle ``\vartheta_m`` and the ``n``th coloumn corresponds to the angle ``\varphi_n``. The ``m, n``- entry of the matrix therefore corresponds to the function value ``\bm{f}(\vartheta_m, \varphi_n)``.
 
 Different choices for the distribution of sampling locations may have application specific benefits or drawbacks. To enable the users to use the most suitable choice for their problem at hand, several different sampling distributions are implemented in `AntennaFieldRepresentations.jl`.
 The values of the sampling angles are defined by a [`SphereSamplingStrategy`](@ref) object. 
 
-Each spherically sampled data structure contains a `SphereSamplingStrategy` object such that we can resolve, which sampling locations ``(\vartheta_m, \varphi_n)`` correspond to the matrix entries.
+Each spherically sampled data structure contains a `SphereSamplingStrategy` object such that we know which sampling locations ``(\vartheta_m, \varphi_n)`` correspond to the matrix entries.
 
 The following `SphereSamplingStrategy`s are implemented in `AntennaFieldRepresentations.jl`:
 
 ## [`RegularθRegularϕSampling`](@id regularspheresampling)
 Objects with a `RegularθRegularϕSampling` are sampled along ``\varphi`` with ``N_\varphi`` equally distributed samples  in ``0\leq \varphi < 2\pi`` and along ``\vartheta`` with ``N_\vartheta`` equally distributed samples  in ``0\leq \varphi \leq \pi``.
 
-We have ``\vartheta_m = (m-1)\, \Delta\vartheta`` with ``m=1,\ldots,N_\vartheta`` and ``\varphi_m = (n-1)\, \Delta\varphi`` with ``n=1,\ldots,N_\varphi``
+We have 
+- ``\vartheta_m = (m-1)\, \Delta\vartheta`` with ``m=1,\ldots,N_\vartheta`` 
+- ``\varphi_n = (n-1)\, \Delta\varphi`` with ``n=1,\ldots,N_\varphi``
 
 The sampling steps ``\Delta\vartheta = 2\pi / J_\vartheta`` and ``\Delta\varphi = 2\pi / J_\varphi`` must be whole-number fractions of ``2\pi`` to guarantee that the sampling step between the two samples at the end of a ``\varphi``-ring or a ``\vartheta``
 ring is the same as everywhere else.
@@ -36,11 +40,10 @@ RegularθRegularϕSampling(Jθ::Integer, Jϕ::Integer)
 While local and even global interpolation is easy and efficient with a `RegularθRegularϕSampling`, the drawback is that evaluating spherical integrals is more costly as compared to a `GaussLegendreθRegularϕSampling`.
 
 ## [`GaussLegendreθRegularϕSampling`](@id gausslegendresampling)
-Objects with a `GaussLegendreθRegularϕSampling` are sampled along ``\varphi`` with ``N_\varphi`` equally distributed samples  in ``0\leq \varphi < 2\pi`` and ``N_\vartheta`` ``\vartheta``-samples on a Gauß-Legendre based grid with ``0< \vartheta < \pi``, according to 
-```math
-\vartheta_k=\text{arccos}(-x_k)
-```
-where ``x_k`` are the roots of the ``N_\vartheta``th Legendre polynomial. 
+Objects with a `GaussLegendreθRegularϕSampling` are sampled along ``\varphi`` with ``N_\varphi`` equally distributed samples  in ``0\leq \varphi < 2\pi`` and ``N_\vartheta`` ``\vartheta``-samples on a Gauß-Legendre based grid with ``0< \vartheta < \pi``, according to
+- ``\vartheta_k=\text{arccos}(-x_k)``
+where ``x_k`` are the roots of the ``N_\vartheta``th Legendre polynomial
+- ``\varphi_n = (n-1)\, \Delta\varphi`` with ``n=1,\ldots,N_\varphi``
 
 The sampling choice naturally leads to an accurate integration rule over the complete Ewald sphere 
 ```math
@@ -73,11 +76,12 @@ The two different `SphereSamplingStrategy`s are illustrated below for reference.
 
   <figcaption>
     Illustration of different SphereSamplingStrategys. Grid points are marked by orange dots and the blue lines correspond to a RegularθRegularϕSampling for reference.  <br/>  <br/>  
-    Left: RegularθRegularϕSampling with Jϕ = Jθ = 16, Right: GaussLegendreθRegularϕSampling with Nϕ = 16 and Jθ=8. 
+    Left: RegularθRegularϕSampling with Jϕ = Jθ = 16, Right: GaussLegendreθRegularϕSampling with Nϕ = 16 and Nθ=8. 
   </figcaption>
 </figure>
 <br/>
 ```
+
 
 [^1]: or multiple matrices, if the function ``\bm{f}(\vartheta, \varphi)`` is a vector function containing e.g., data for two polarizations
 
