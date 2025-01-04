@@ -101,19 +101,7 @@ function LocalθLocalΦResampleMap(
     orderθ = 12,
     orderϕ = 12,
 ) where {Y1<:SphereSamplingStrategy,Y2<:SphereSamplingStrategy}
-    return LocalθLocalΦResampleMap{Float64}(
-        targetsamplingstrategy,
-        originalsamplingstrategy;
-        orderθ = orderθ,
-        orderϕ = orderϕ,
-    )
-end
-function LocalθLocalΦResampleMap{T}(
-    targetsamplingstrategy::Y2,
-    originalsamplingstrategy::Y1;
-    orderθ = 12,
-    orderϕ = 12,
-) where {T<:Real,Y1<:SphereSamplingStrategy,Y2<:SphereSamplingStrategy}
+    T = Float64
     oldθs, oldϕs = samples(originalsamplingstrategy)
     newθs, newϕs = samples(targetsamplingstrategy)
 
