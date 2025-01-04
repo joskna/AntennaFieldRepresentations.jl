@@ -346,6 +346,73 @@ function lagrange_barycentric_weights(X)
 end
 
 """
+    trigonometric_interpolation_weights(X::Array{::Number,1},t::Number) -> w::Array{Flota64}
+
+Return interpolation weights wᵢ for the calculation f(t)= ∑ᴺᵢ₌₁ wᵢ⋅ f(xᵢ) using all available samples on a closed circle.
+X must be a vector of odd length.
+
+# Extended help 
+The implemented method is only valid for odd numbers of interpolation points.
+
+See Salzer, Herbert E. "Coefficients for facilitating trigonometric interpolation." Journal of Mathematics and Physics 27.1-4 (1948): 274-278
+and Berrut, Jean -Paul. "Baryzentrische Formeln zur trigonometrischen Interpolation (I)." Zeitschrift für angewandte Mathematik und Physik ZAMP 35 (1984): 91-105
+"""
+function trigonometric_interpolation_weights(X, t::T) where {T<:Number}
+    b = trigonometric_barycentric_weights(X)
+    return trigonometric_interpolation_weights_from_barycentric(X, t, b)
+end
+function trigonometric_interpolation_weights_from_barycentric(
+    X,
+    t::T,
+    barycentric_weights::Vector{<:Number},
+) where {T<:Number}
+    w = zeros(T, length(barycentric_weights))
+    if isodd(length(X))
+        for (k, b) in enumerate(barycentric_weights)
+            if t ≈ X[k]
+                w = zeros(T, length(barycentric_weights))
+                w[k] = 1
+                return w
+            end
+            w[k] = b / sin(T(0.5) * (t - X[k]))
+        end
+    else
+        error("Trigonometric interpolation only valid for odd number of sampling points")
+    end
+    return w / sum(w)
+end
+"""
+    trigonometric_barycentric_weights(X::Array{<:Number,1}) -> w::Array{<:Number,1}
+
+Return barycentric weights for calculating trigonometric interpolation weights
+
+# Extended help 
+The barycentric weights are needed to evaluate the "second (true) form of the barycentric formula" for the trigonometric interpolation.
+See Salzer, Herbert E. "Coefficients for facilitating trigonometric interpolation." Journal of Mathematics and Physics 27.1-4 (1948): 274-278
+and Berrut, Jean -Paul. "Baryzentrische Formeln zur trigonometrischen Interpolation (I)." Zeitschrift für angewandte Mathematik und Physik ZAMP 35 (1984): 91-105
+"""
+function trigonometric_barycentric_weights(X)
+    T = eltype(X)
+    b = zeros(T, length(X))
+    # for j in eachindex(X)
+    #     b[j]=1
+    #     for k in eachindex(X)
+    #         if k ≠ j
+    #             b[j] *= sin(T(0.5)*(X[k] - X[j]))
+    #         end 
+    #     end
+    # end
+    b[1] = 1
+    for j = 2:length(X)
+        for k = 1:(j-1)
+            b[k] = sin(T(0.5) * (X[k] - X[j])) * b[k]
+        end
+        b[j] = prod(sin(T(0.5) * (X[j] - X[k])) for k = 1:(j-1))
+    end
+    return 1 ./ b
+end
+
+"""
     find_next_smaller_θind(θvec::Array{<:Real,1}, θnew<:Real) -> i::Integer
 
 Return index of largest entry in ascendingly ordered θvec which is still smaller than θnew
