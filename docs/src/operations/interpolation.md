@@ -12,7 +12,7 @@ In particular, if the function ``\bm{f}(\vartheta, \varphi)`` is sampled accordi
 ## Interpolating Spherically Sampled Data at Arbitrary Sampling Points 
 We can interpolate spherically sampled data at arbitrary sampling points by using the `interpolate` method or an `InterpolateMap`. 
 
-The basic usage of the `interpolate` method is simple (expand "Setup Code") to see how the original input data is generated:
+The basic usage of the `interpolate` method is simple (expand "Setup Code" to see how the input data is generated):
 
 ```@raw html
 <details closed><summary>Setup Code</summary>
