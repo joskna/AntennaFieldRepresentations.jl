@@ -104,6 +104,7 @@ While global polynomial interpolation fits a polynomial to the entire data on th
   </figcaption>
 </figure>
 <br/
+```
 
 We have [^4]
 ```math
