@@ -170,7 +170,10 @@ end
 
 Equivalent representation of the electromagnetic fields of an antenna (in a certain region of space where the representation converges).
 
-Behaves like an `AbstractVector{C}` with extra context.
+Each instance of `AntennaFieldRepresentation` is a discretized version of the antenna fields, i.e., a collection of coefficients from which the antenna fields can be (approximately) calculated.
+The coefficents of the field representation can be accessed via the interface of `AbstractVector{C}`.
+In addition to the field coefficients, each instance of `AntennaFieldRepresentation` stores additional information which allows to calculate the electromagnetic fields from the coefficient vector.
+In particular, the wavenumber of the radiation frequency of the antenna field is stored.
 """
 abstract type AntennaFieldRepresentation{P,C} <: AbstractVector{C} end
 

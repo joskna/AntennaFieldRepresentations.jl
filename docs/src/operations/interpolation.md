@@ -1,18 +1,18 @@
 # Interpolation of `PlaneWaveExpansion`s and `SphericalFieldSampling`s
 
-A very useful operation on a spherically sampled data structure (i.e., a [`PlaneWaveExpansion`](@ref) or a [`SphericalFieldSampling`](@ref)) is interpolation. For any function ``\bm{f}(\vartheta, \varphi)`` on the sphere[^1], sampled at finitely many sampling points ``(\vartheta_i, \varphi_i)``, we want to be able to find the function value at any point ``(\vartheta, \varphi)`` which does not necessarily coincide with a point from the set of previously sampled points. 
+A very useful operation on a [spherically sampled data structure](@ref spheresampling) (i.e., a [`PlaneWaveExpansion`](@ref) or a [`SphericalFieldSampling`](@ref)) is interpolation (have a look at [the theory section](@ref interpolation_theory) for background information on how the interpolation works internally). For any function ``\bm{f}(\vartheta, \varphi)`` on the sphere[^1], sampled at finitely many sampling points ``(\vartheta_i, \varphi_i)``, we want to be able to find the function value at any point ``(\vartheta, \varphi)`` which does not necessarily coincide with a point from the set of previously sampled points. 
 
-In particular, if the function ``\bm{f}(\vartheta, \varphi)`` is sampled according to a certain [`SphereSamplingStrategy`](@ref), we want to be able to resample the function according to a different `SphereSamplingStrategy`. This resampling step is often referred to as *interpolation* in other works, but in the context of `AntennaFieldRepresentations.jl`, 
+In particular, if the function ``\bm{f}(\vartheta, \varphi)`` is sampled according to a certain [`SphereSamplingStrategy`](@ref), we want to be able to resample the function according to a different `SphereSamplingStrategy`. This resampling step is often referred to as *interpolation* in other works, but in the context of `AntennaFieldRepresentations.jl`, we are a bit more careful with our wording. In `AntennafieldRepresentations.jl` 
 - the term *interpolation* means to evaluate a function ``\bm{f}(\vartheta, \varphi)`` on the sphere, sampled according to some `SphereSamplingStrategy`, at arbitrary other sampling points ``(\vartheta, \varphi)``
-- the term *resampling* means to find the values ``\bm{f}(\vartheta_i, \varphi_i)`` of a function on the sphere, sampled according to a certain `SphereSamplingStrategy` *B*, from the values ``\bm{f}(\vartheta_k, \varphi_k)`` of the same function, sampled to another `SphereSamplingStrategy` *A* - i.e., after the resampling process, the spherical function ``\bm{f}(\vartheta, \varphi)`` which was sampled according to `SphereSamplingStrategy` *A*, is now sampled according to `SphereSamplingStrategy` *B*.
+- the term *resampling* means to find the values ``\bm{f}(\vartheta_i, \varphi_i)`` of a function on the sphere, sampled according to a certain `SphereSamplingStrategy` *B*, from the values ``\bm{f}(\vartheta_k, \varphi_k)`` of the same function, sampled according to another `SphereSamplingStrategy` *A* - i.e., after the resampling process, the spherical function ``\bm{f}(\vartheta, \varphi)`` which was sampled according to `SphereSamplingStrategy` *A*, is now sampled according to `SphereSamplingStrategy` *B*.
 
 
 [^1]: The function ``\bm{f}(\vartheta, \varphi)`` is displayed with a bold ``\bm{f}`` to indicate its vector character. All spherically sampled data structures to be interpolated in `AntennaFieldRepresentations.jl` have two components representing two independent polarizations of the electromagnetic field.
 
 ## Interpolating Spherically Sampled Data at Arbitrary Sampling Points 
-We can interpolate spherically sampled data at arbitrary sampling points by using the [`interpolate`](@ref) method or an [`InterpolateMap`](@ref). 
+We can interpolate spherically sampled data at arbitrary sampling points by using the `interpolate` method or an `InterpolateMap`. 
 
-The basic usage of the `interpolate` method is simple (expand "Setup Code") to see how the original spherically sampled data is generated:
+The basic usage of the `interpolate` method is simple (expand "Setup Code") to see how the original input data is generated:
 
 ```@raw html
 <details closed><summary>Setup Code</summary>
@@ -34,7 +34,7 @@ k0 = 2 * pi / λ;                        # wavenumber
 sph_coefficients= SphericalCoefficients(ComplexF64.(collect(1:16)))
 swe= SphericalWaveExpansion(Radiated(),sph_coefficients, k0)
 
-# Convert to PlaneWaveExpansion
+# Convert to PlaneWaveExpansion, by default sampled according to GaussLegendreθRegularϕSampling
 pwe = changerepresentation(PlaneWaveExpansion, swe)
 
 
@@ -45,9 +45,8 @@ Jθ= 2*Lmax + 1;
 Jϕ= 2*Lmax + 1;
 samplingstrategy= RegularθRegularϕSampling(Jθ, Jϕ) 
 
-# generate spherical field sampling
+# initialize empty spherical field sampling
 fieldsampling = SphericalFieldSampling(samplingstrategy, αinc);
-transmit(swe, fieldsampling)
 # fill fieldsampling with values
 fieldsampling .= transmit(swe, fieldsampling)
 ###########################################
@@ -86,17 +85,5 @@ fieldsampling .= transmit(swe, fieldsampling)
 </details>
 ```
 
-```jldoctest interpolateexamples ; output=false
-# Arbitrary position
-θ=pi/10
-ϕ= pi/7.8
-
-# Interpolation of the value of pwe::PlaneWaveExpansion at arbitrary position (θ,ϕ)
-newEθ, newEϕ = interpolate(pwe, (θ,ϕ)) 
-
-# output
-
-(63.48599397819408 - 33.19050276019574im, -33.21123035291768 - 69.65260299440347im)
-``` 
-
-## Resampling Spherically Sampled Data
+## Resampling Spherically Sampled Data According to a New `SphereSamplingStrategy`
+We can resample spherically sampled data to a new `SphereSamplingStrategy` using the `resample` method or an `ResampleMap`. 

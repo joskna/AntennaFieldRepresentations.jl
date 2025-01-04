@@ -2,7 +2,7 @@
 
 The electromagnetic fields of an antenna can be represented in various ways. Some of the most important field representations known from literature are implemented in `AntennaFieldRepresentations.jl`. 
 
-The core of `AntennaFieldRepresentations.jl` revolves around implemantations of the abstract type `AntennaFieldRepresentation`. Implementations of the type [`AntennaFieldRepresentation`] provide equivalent representations of the electromagnetic fields of an antenna (in a certain region of space where the representation converges). Each instance of `AntennaFieldRepresentation` is a discretized version of the antenna fields, i.e., a collection of coefficients from which the antenna fields can be (approximately) calculated. One of the imperatives behind `AntennaFieldRepresentations.jl` is that an `AntennaFieldRepresentation` behaves like an `AbstractVector{C}` with extra context. In particular, the wavenumber of the radiation frequency of the antenna field is stored in the `AntennaFieldRepresentation`.
+The core of `AntennaFieldRepresentations.jl` revolves around implemantations of the abstract type `AntennaFieldRepresentation`. Implementations of the type [`AntennaFieldRepresentation`](@ref) provide equivalent representations of the electromagnetic fields of an antenna (in a certain region of space where the representation converges). Each instance of `AntennaFieldRepresentation` is a discretized version of the antenna fields, i.e., a collection of coefficients from which the antenna fields can be (approximately) calculated. One of the imperatives behind `AntennaFieldRepresentations.jl` is that an `AntennaFieldRepresentation` behaves like an `AbstractVector{C}` with extra context. In particular, the wavenumber of the radiation frequency of the antenna field is stored in the `AntennaFieldRepresentation`.
 
 !!! tip
     Implementations of the type `AntennaFieldrepresentation` support the interface of `Base.AbstractVector`. In particular the methods `Base.getindex` and `Base.setindex!` are supported which allow to access the coefficient vector by indexing the struct representing the fields directly by square brackets `[]`.
@@ -10,7 +10,8 @@ The core of `AntennaFieldRepresentations.jl` revolves around implemantations of 
 
 ## Three Different Propagation Types of `AntennaFieldRepresentation`
 
-`AntennaFieldRepresentation`s come in up to three different propagation types. An `AntennaFieldRepresentation` can be one of the singleton-types 
+`AntennaFieldRepresentation`s come in up to three different propagation types.
+For indicating the propagation type of a concrete `AntennaFieldRepresentation`-type, we use the singleton-types 
 - `Radiated`,
 - `Absorbed`,
 - or `Incident`,

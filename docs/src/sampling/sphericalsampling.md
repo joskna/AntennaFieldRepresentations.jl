@@ -42,70 +42,9 @@ Using the latter constructor, the incident probe field coefficients are calculat
 
 ## [Spherical Sampling Strategies](@id sphericalsamplingstrategy)
 
-At the moment, `AntennaFieldRepresentations.jl` supports two different kinds of `SpheresamplingStrategy`s: 
+At the moment, `AntennaFieldRepresentations.jl` supports two different kinds of [`SpheresamplingStrategy`](@ref spheresampling)s: 
 - [`RegularθRegularϕSampling`](@ref)
 - [`GaussLegendreθRegularϕSampling`](@ref)
-
-### [`RegularθRegularϕSampling`](@id regularspheresamplingstrategy)
-A `RegularθRegularϕSampling` has  ``N_\varphi`` equally distributed samples samples along ``\varphi`` with  ``0\leq \varphi < 2\pi`` and ``N_\vartheta`` equally distributed samples along ``vartheta`` with  ``0\leq \varphi \leq 2\pi``.
-
-The sampling steps ``\Delta\vartheta = 2\pi / J_\vartheta`` and ``\Delta\varphi = 2\pi / J_\varphi`` are whole-number fractions of ``2\pi`` to guarantee that the sampling step between the two samples at the end of a ``\varphi``-ring or a ``\vartheta``
-ring is the same as everywhere else.
-This is enforced during the construction of a `RegularθRegularϕSampling` as the whole-number divisors ``J_\vartheta`` and ``J_\varphi`` are the input arguments for the constructor.
-
-To generate a `RegularθRegularϕSampling` struct, use the following constructor
-```julia
-RegularθRegularϕSampling(Jθ::Integer, Jϕ::Integer)
-```
-
-!!! note
-    A `RegularθRegularϕSampling` always contains ``N_\varphi`` samples at the North Pole.    
----
-
-### [`GaussLegendreθRegularϕSampling`](@id gausslegendresamplingstrategy)
-A `GaussLegendreθRegularϕSampling` is sampled along ``\varphi`` with ``N_\varphi`` equally distributed samples  in ``0\leq \varphi < 2\pi`` and ``N_\vartheta`` ``\vartheta``-samples on a Gauß-Legendre based grid with ``0< \vartheta < \pi``, according to 
-```math
-\vartheta_k=\text{arccos}(-x_k)
-```
-where ``x_k`` are the roots of the ``N_\vartheta``th Legendre polynomial. 
-
-To generate a `GaussLegendreθRegularϕSampling` struct, use the following constructor
-```julia
-GaussLegendreθRegularϕSampling(Nθ::Integer, Nϕ::Integer)
-```
-where `Nθ` corresponds to the stored number of samples in ``\vartheta``-direction and `Nϕ` corresponds to the number of samples in ``\varphi``
-direction.
-
-The figures below compare the regular sampling points in a `RegularθRegularϕSampling` and the Lagrange sampling points utilized by a `GaussLegendreθRegularϕSampling`. 
-
-
-```@raw html
-<figure>
-<picture>
-  <source  srcset="../assets/sampling_regular.svg" width="200">
-  <img alt="" src="" width="200">
-</picture>
-
-  <figcaption>
-    This is a regularly sampled sphere.
-  </figcaption>
-</figure>
-<br/>
-```
-```@raw html
-<figure>
-<picture>
-  <source  srcset="../assets/sampling_lagrange.svg" width="200">
-  <img alt="" src="" width="200">
-</picture>
-
-  <figcaption>
-    This sphere is sampled according to a Gauß-Legendre sampling rule.
-  </figcaption>
-</figure>
-<br/>
-```
-
 
 ## Spherical Coefficients of the Incident Probe Field
 The incident probe field coefficients are represented by a vector of [`AbstractSphericalCoefficients`](@ref abstractsphericalcoeficients) type. The user must identify the spherical coefficients of the incident probe field (relative to an AUT-centered coordinate system) in a pre-processing step.

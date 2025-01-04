@@ -232,7 +232,12 @@ end
 
 Returns true if an MLFMM transfer is planned between `tree(node)` and `tree(testnode)`.
 """
-function istransferring(tree::MLFMMTree, node::Integer, testnode::Integer, bufferboxes::Integer)
+function istransferring(
+    tree::MLFMMTree,
+    node::Integer,
+    testnode::Integer,
+    bufferboxes::Integer,
+)
     MLFMMTrees.level(tree, node) < 3 && return false
 
     if isnear(center(tree, node), center(tree, testnode), halfsize(tree, node), bufferboxes)
@@ -270,7 +275,7 @@ function istransferring(
             return false
         end
     elseif MLFMMTrees.level(sourcetree, sourcenode) > 1 &&
-        MLFMMTrees.level(receivetree, receivenode) > 1
+           MLFMMTrees.level(receivetree, receivenode) > 1
         sourcenodeparent = parent(sourcetree, sourcenode)
         receivenodeparent = parent(receivetree, receivenode)
 

@@ -1,4 +1,4 @@
-struct MLFMMSource{R<:ResampleMap, Y<: SphereSamplingStrategy, R<:Real}
+struct MLFMMSource{R<:ResampleMap,Y<:SphereSamplingStrategy,R<:Real}
     tree::MLFMMTree
     expectedaccuracy::R
     wavenumber::R
@@ -14,7 +14,7 @@ struct MLFMMSource{R<:ResampleMap, Y<: SphereSamplingStrategy, R<:Real}
     tmpmatrix::Matrix{Complex{R}}
 end
 
-struct MLFMMReceive{R<:ResampleMap, Y<: SphereSamplingStrategy, R<:Real}
+struct MLFMMReceive{R<:ResampleMap,Y<:SphereSamplingStrategy,R<:Real}
     tree::MLFMMtree
     # expectedaccuracy::R
     # wavenumber::R
