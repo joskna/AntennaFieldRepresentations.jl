@@ -310,4 +310,21 @@ function rotate!(
     return rotated_pattern
 end
 
+
+function interpolate(
+    pattern::PlaneWaveExpansion,
+    θϕ::Tuple{T,T};
+    orderθ = 12,
+    orderϕ = 12,
+) where {T}
+    θvec, ϕvec = samples(pattern.samplingstrategy)
+    Eθ, Eϕ = interpolate_single_planewave(
+        θϕ,
+        pattern,
+        LocalθLocalΦInterpolateMap{typeof(pattern.samplingstrategy),orderθ,orderϕ,T};
+        θvecϕvec = (θvec, ϕvec),
+    )
+    return Eθ, Eϕ
+end
+
 include("transfer.jl")

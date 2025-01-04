@@ -51,7 +51,7 @@ function SphericalToPlaneWaveMap(
         fieldsampling.S21values,
         getwavenumber(swe),
     )
-    stm = SphericalTransmitMap(swe, fieldsampling)
+    stm = SphericalTransmitMap(deepcopy(swe), fieldsampling)
     return SphericalToPlaneWaveMap{typeof(swe),typeof(pwe),C}(swe, pwe, stm)
 end
 function SphericalToPlaneWaveMap(

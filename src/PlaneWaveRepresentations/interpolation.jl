@@ -678,7 +678,7 @@ function interpolate_single_planewave(
 end
 
 function interpolate_planewaves(
-    directions::AbstractVector{Tuple{T,T}},
+    θϕs::AbstractVector{Tuple{T,T}},
     pattern::PlaneWaveExpansion,
     ::Type{LocalθLocalΦInterpolateMap};
     orderθ = 12,
