@@ -317,13 +317,7 @@ function interpolate(
     orderθ = 12,
     orderϕ = 12,
 ) where {T}
-    θvec, ϕvec = samples(pattern.samplingstrategy)
-    Eθ, Eϕ = interpolate_single_planewave(
-        θϕ,
-        pattern,
-        LocalθLocalΦInterpolateMap{typeof(pattern.samplingstrategy),orderθ,orderϕ,T};
-        θvecϕvec = (θvec, ϕvec),
-    )
+    Eθ, Eϕ = interpolate_single_planewave(θϕ, pattern, orderθ = orderθ, orderϕ = orderϕ)
     return Eθ, Eϕ
 end
 
