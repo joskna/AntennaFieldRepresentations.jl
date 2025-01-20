@@ -18,7 +18,7 @@ WignerD = "87c4ff3e-34df-11e9-37a7-516cea4e0402"
 [compat]
 BEAST = "2"
 ClusterTrees = "0.2"
-CompScienceMeshes = "0.6"
+CompScienceMeshes = "0.6,0.7, 0.8"
 FFTW = "1"
 FastGaussQuadrature = "0.5.1, 1"
 JuliaFormatter = "1"

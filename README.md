@@ -5,6 +5,7 @@
 </picture>
 
 [![Docs-dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://joskna.github.io/AntennaFieldRepresentations.jl/dev/)
+[![Build Status](https://github.com/joskna/AntennFieldRepresentations.jl/actions/workflows/CI.yml/badge.svg?branch=main)](https://github.com/joskna/AntennaFieldRepresentations.jl/actions/workflows/CI.yml?query=branch%3Amain)
 
 # AntennaFieldRepresentations
 
