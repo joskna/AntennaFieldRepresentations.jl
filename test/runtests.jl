@@ -112,4 +112,8 @@ using Test
     @testset "Formatting" begin
         include("test_formatting.jl")
     end
+
+    @testset "Doctests" begin
+        include("test_doctests.jl")
+    end
 end
