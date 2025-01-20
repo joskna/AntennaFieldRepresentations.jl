@@ -1,3 +1,13 @@
+
+"""
+    InterpolateMap{Y, T} <: LinearMaps.LinearMap{T}
+
+Abstract supertype for linear maps which performs an interpolation of predefined sampling points from spherically sampled data.
+
+# Type parameters:
+ - `Y :: SphereSamplingStrategy` : Defines the sampling points of the spherically sampled original data.
+ - `T <: Real` : Defines the number type to represent interpolation parameters, e.g. `Float64` or `Float32`.
+"""
 abstract type InterpolateMap{Y<:SphereSamplingStrategy,T<:Real} <: LinearMaps.LinearMap{T} end
 function InterpolateMap(
     θϕs::AbstractVector{Tuple{T,T}},
@@ -13,7 +23,17 @@ function InterpolateMap(
     )
 end
 
+"""
+    LocalθLocalϕInterpolateMap{Y,orderθ,orderϕ,T} <: InterpolateMap{Y,T}
+    
+Linear map which performs a local interpolation of predefined sampling points from spherically sampled data.
 
+# Type parameters
+- `Y :: SphereSamplingStrategy` : Defines the sampling points of the spherically sampled original data.
+- `orderθ` : Integer which defines the interpolation order along  θ.
+- `orderϕ` : Integer which defines the interpolation order along  ϕ.
+- `T <: Real` : Defines the number type to represent interpolation parameters, e.g. `Float64` or `Float32`.
+"""
 struct LocalθLocalϕInterpolateMap{Y<:SphereSamplingStrategy,orderθ,orderϕ,T<:Real} <:
        InterpolateMap{Y,T}
     originalsamplingstrategy::Y

@@ -420,6 +420,17 @@ function equivalentorder end
 Return inverse linear map of `opmap`.
 """
 function inverse end
+
+"""
+    interpolate(data::Union{PlaneWaveExpansion, FieldSampling}, θϕ::Tuple{T,T}) where{T<:Real}
+
+Returns the two polarizations of spherically sampled `data` at the new location defined by the tuple `θϕ`.
+
+# See also:
+- `InterPolateMap`
+- `LocalθLocalϕInterpolateMap`
+"""
+function interpolate end
 #
 #
 # End of definition of AntennaFieldRepresentation Interface

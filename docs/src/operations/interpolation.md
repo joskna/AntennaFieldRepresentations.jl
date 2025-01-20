@@ -31,7 +31,9 @@ f= 1.5e9;                               # frequency
 k0 = 2 * pi / λ;                        # wavenumber
 
 # setup arbitrary AUT field
-sph_coefficients= SphericalCoefficients(ComplexF64.(collect(1:16)))
+coeffs = zeros(ComplexF64, 30) # coefficients up to order ℓ=3
+coeffs[1:16] = ComplexF64.(collect(1:16)) # populate coefficients up to order ℓ=2
+sph_coefficients= SphericalCoefficients(coeffs)
 swe= SphericalWaveExpansion(Radiated(),sph_coefficients, k0)
 
 # Convert to PlaneWaveExpansion, by default sampled according to GaussLegendreθRegularϕSampling
@@ -57,33 +59,61 @@ fieldsampling .= transmit(swe, fieldsampling)
 
 # output
 
-30-element SphericalFieldSampling{RegularθRegularϕSampling, FirstOrderSphericalCoefficients{ComplexF64}, ComplexF64}:
+56-element SphericalFieldSampling{RegularθRegularϕSampling, FirstOrderSphericalCoefficients{ComplexF64}, ComplexF64}:
   -7.690947962703429 - 54.94328713011183im
-  1.3224258014382286 - 2.603964695950758im
-  -10.54097920620858 + 65.05011052267075im
- -60.343431601604024 - 4.843622334459157im
-    36.6993918093313 + 10.483447973278812im
- -63.922433955021425 - 84.9789082601688im
- -29.603343764892355 + 51.94976389874797im
-  115.75180538835582 + 44.2762296080817im
-   50.80372394960887 - 91.33525673100621im
-   42.04755897425326 + 36.950342131417585im
+  1.2347590807670814 - 17.5499019503607im
+ -1.9610812432357951 + 24.29339569026047im
+  -13.06566259783586 + 72.77747054328808im
+ -52.447776992281035 - 24.280980030520702im
+ -14.529244227596982 + 22.5046204404282im
+  -18.28493184608163 - 35.612772659114924im
+  -91.07165819770962 - 17.517272478613442im
+  -57.71036020699327 + 24.66540027378141im
+  57.071696514735784 + 68.5696952617538im
                      ⋮
-  53.830129346425075 + 21.972387418512863im
-   43.14366425476033 - 118.9949490354876im
-  -90.70255751675808 - 57.17109771237522im
-  44.788877769173325 - 42.61732035658832im
-   59.17365937020349 + 68.38837423258568im
-  -62.38029468630413 + 10.396681123456286im
-  -26.14908056711137 - 48.311339908327234im
-  17.055919698335316 + 13.23904623595748im
-  -40.46301331669027 - 56.42703455873686im
+  -66.09585421141233 - 15.910787033134408im
+   6.064508461892855 - 56.40494894306287im
+   65.87172180937227 + 27.58085861292713im
+  -36.86962542825946 + 77.90488798849583im
+  -62.17698010887305 - 40.24280874862705im
+  -44.01466528296982 - 35.001116747823716im
+  12.040081792091042 - 27.076420036483743im
+ -14.750689156141837 - 25.30689436288148im
+   18.88086132920546 - 69.67016128115739im
 ``` 
 
 
 ```@raw html
 </details>
 ```
+
+```jldoctest interpolateexamples ; output=false
+# pwe is a PlaneWaveExpansion{Radiated}
+
+# Arbitrary position
+θ=pi/10
+ϕ= pi/7.8
+
+# interpolate pwe at new position
+newEθ, newEϕ = interpolate(pwe, (θ,ϕ))
+
+# output
+
+(-59.69534781530726 + 58.0104411499745im, 67.66508448725467 + 75.84043627625316im)
+```
+
+The default interpolation method uses (approximate) local interpolation with an interpolation order of `orderθ = 12` along θ and `orderϕ = 12` along ϕ. 
+For better interpolation accuracy, we can specify the keyword arguments `orderθ` and `orderϕ`
+
+```jldoctest interpolateexamples ; output=false
+# interpolate pwe at new position with better accuracy
+newEθ, newEϕ = interpolate(pwe, (θ,ϕ), orderθ = 16, orderϕ = 16)
+
+# output
+
+(-59.499201522984926 + 58.30468604464194im, 67.95006956855589 + 75.65761813128141im)
+```
+
 
 ## Resampling Spherically Sampled Data According to a New `SphereSamplingStrategy`
 We can resample spherically sampled data to a new `SphereSamplingStrategy` using the `resample` method or an `ResampleMap`. 

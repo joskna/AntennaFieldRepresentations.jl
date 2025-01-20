@@ -163,7 +163,8 @@ export changerepresentation, transmit
 export ChangeRepresentationMap, TransmitMap
 export SphericalFieldSampling, SphericalTransmitMap
 export inverse
-export weightsandsamples
+export weightsandsamples, samples
+export interpolate, InterpolateMap, LocalθLocalϕInterpolateMap
 
 
 end
