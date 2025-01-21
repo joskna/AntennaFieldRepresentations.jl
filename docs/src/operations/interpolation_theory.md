@@ -74,7 +74,11 @@ w_k=
 \dfrac{1}{\prod \limits_{i\neq k} \sin\left(\frac{1}{2} (\vartheta_k -\vartheta_i )\right)};
   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~i =1, \ldots, N_\vartheta\,.
 ```
-This interpolation formula is also valid for non-equidistantly spaced sampling points ``\vartheta_k``.
+This interpolation formula is also valid for non-equidistantly spaced sampling points ``\vartheta_k``. 
+
+!!! warning
+    This interpolation formula is only valid for odd ``J_\vartheta``. If we have an even number of irregularly spaced sampling points ``J_\vartheta``, it is recommended to discard one of the sampling points.
+---
 
 !!! note
     Note that the barycentric trigonometrc interpolation formula takes the form ``f(\vartheta) = \sum_{k=1}^{J_\vartheta} \alpha_k\, f(\vartheta_k)``. With predefined interpolation weights ``\alpha_k`` the computational cost of evaluating the global interpolation is ``\mathcal{O}(J_\vartheta)``, i.e., the computational cost depends on the size of the input data.
@@ -104,6 +108,7 @@ While global polynomial interpolation fits a polynomial to the entire data on th
   </figcaption>
 </figure>
 <br/
+```
 
 We have [^4]
 ```math

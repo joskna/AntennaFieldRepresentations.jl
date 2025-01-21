@@ -35,7 +35,7 @@ The samples should be chosen such that
 - the conversion  ``\bm{F}(\hat{\bm{k}}) \rightarrow \bm{F}(-\hat{\bm{k}})`` has small computational cost (ideally should not rely on interpolation)
 - redundancy in the representation is kept minimal
 
-By default, any far-field pattern or plane-wave spectrum with a corresponding spherical mode order of ``L`` is sampled according to a [][`GaussLegendreθRegularϕSampling`](@ref gausslegendresampling)
+By default, any far-field pattern or plane-wave spectrum with a corresponding spherical mode order of ``L`` is sampled according to a [`GaussLegendreθRegularϕSampling`](@ref gausslegendresampling)
 with
 ```math
 N_\vartheta=L+1
@@ -44,43 +44,12 @@ and
 ```math
 N_\varphi=2L+2 \,.
 ```
-However, in principle, all `PlaneWaveExpansion`s can be sampled according to any arbitrary [`SphereSamplingStrategy`](@ref spheresampling).
-
-
 Although the ``\varphi``-sampling is slightly redundant (``2L+1`` samples would suffice) the even number of  ``\varphi``-samples ensures that for every sampling point there is another sampling point exactly in the oppsoite direction. This has obvious benefits for the conversion  ``\bm{F}(\hat{\bm{k}}) \rightarrow \bm{F}(-\hat{\bm{k}})`` as well as for pattern interpolation, when the interpolation scheme requires samples at either side of the coordinate poles at ``\vartheta\in \{0,\pi\}``.
 
+!!! tip
+    `PlaneWaveExpansion`s can be sampled according to any arbitrary [`SphereSamplingStrategy`](@ref spheresampling).
+ ---
 
-
-
-The figures below compare the regular sampling points in a `RegularθRegularϕSampling` and the Lagrange sampling points utilized by a `GaussLegendreθRegularϕSampling`. 
-
-
-```@raw html
-<figure>
-<picture>
-  <source  srcset="../assets/sampling_regular.svg" width="200">
-  <img alt="" src="" width="200">
-</picture>
-
-  <figcaption>
-    This is a regularly sampled sphere.
-  </figcaption>
-</figure>
-<br/>
-```
-```@raw html
-<figure>
-<picture>
-  <source  srcset="../assets/sampling_lagrange.svg" width="200">
-  <img alt="" src="" width="200">
-</picture>
-
-  <figcaption>
-    This sphere is sampled according to a Gauß-Legendre sampling rule.
-  </figcaption>
-</figure>
-<br/>
-```
 
 ## Methods Special to `PlaneWaveExpansion`s
 In addition to the methods defined in the interface of `AntennaFieldRepresentation`, a `PlaneWaveExpansion` supports the following methods:
