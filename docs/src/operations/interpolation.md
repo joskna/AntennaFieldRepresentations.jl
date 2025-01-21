@@ -94,12 +94,19 @@ fieldsampling .= transmit(swe, fieldsampling)
 θ=pi/10
 ϕ= pi/7.8
 
+# Actual values at this position
+Eθ, Eϕ = -59.44801130097685 + 58.38482519439182im, 68.0278816964276 + 75.60985071712197im
+
 # interpolate pwe at new position
 newEθ, newEϕ = interpolate(pwe, (θ,ϕ))
 
+
+abs(Eθ - newEθ) / abs(Eθ) < 0.0055 # true
+abs(Eϕ - newEϕ) / abs(Eϕ) < 0.0044  # true
+
 # output
 
-(-59.69534781530726 + 58.0104411499745im, 67.66508448725467 + 75.84043627625316im)
+true
 ```
 
 The default interpolation method uses (approximate) local interpolation with an interpolation order of `orderθ = 12` along θ and `orderϕ = 12` along ϕ. 
@@ -107,11 +114,14 @@ For better interpolation accuracy, we can specify the keyword arguments `orderθ
 
 ```jldoctest interpolateexamples ; output=false
 # interpolate pwe at new position with better accuracy
-newEθ, newEϕ = interpolate(pwe, (θ,ϕ), orderθ = 16, orderϕ = 16)
+newEθ, newEϕ = interpolate(pwe, (θ,ϕ), orderθ = 18, orderϕ = 18)
+
+abs(Eθ - newEθ) / abs(Eθ) < 0.00055 # true
+abs(Eϕ - newEϕ) / abs(Eϕ) < 0.00044  # true
 
 # output
 
-(-59.499201522984926 + 58.30468604464194im, 67.95006956855589 + 75.65761813128141im)
+true
 ```
 
 
