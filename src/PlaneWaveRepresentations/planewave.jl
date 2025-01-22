@@ -310,7 +310,6 @@ function rotate!(
     return rotated_pattern
 end
 
-
 function interpolate(
     pattern::PlaneWaveExpansion,
     θϕ::Tuple{T,T};
@@ -320,5 +319,7 @@ function interpolate(
     Eθ, Eϕ = interpolate_single_planewave(θϕ, pattern, orderθ = orderθ, orderϕ = orderϕ)
     return Eθ, Eϕ
 end
+
+include("resampling.jl")
 
 include("transfer.jl")

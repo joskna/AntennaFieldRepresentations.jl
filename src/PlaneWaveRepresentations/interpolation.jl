@@ -104,107 +104,6 @@ function LocalθLocalϕInterpolateMap(
 end
 
 
-abstract type ResampleMap{Y1<:SphereSamplingStrategy,Y2<:SphereSamplingStrategy,T<:Real} <:
-              LinearMaps.LinearMap{T} end
-
-struct LocalθResampleMap{
-    Y1<:SphereSamplingStrategy,
-    Y2<:SphereSamplingStrategy,
-    orderθ,
-    T<:Real,
-} <: ResampleMap{Y1,Y2,T}
-    originalsamplingstrategy::Y1
-    targetsamplingstrategy::Y2
-    θweights::Vector{SVector{orderθ,T}}
-    θindices::Vector{SVector{orderθ,Int}}
-    posθranges::Vector{UnitRange{Int}}
-    negθranges::Vector{UnitRange{Int}}
-    storage::Matrix{Complex{T}}
-end
-function LocalθResampleMap(
-    targetsamplingstrategy::Y2,
-    originalsamplingstrategy::Y1;
-    orderθ = 12,
-) where {Y1<:SphereSamplingStrategy,Y2<:SphereSamplingStrategy}
-    T = Float64
-    oldθs, oldϕs = samples(originalsamplingstrategy)
-    newθs, newϕs = samples(targetsamplingstrategy)
-
-    @assert norm(oldϕs - newϕs) < 1e-3
-
-    storage = zeros(Complex{T}, length(newθs), length(newϕs))
-    θweights, θindices, posθranges, negθranges =
-        _planθweightsandindices(newθs, oldθs, orderθ, T)
-
-    return LocalθResampleMap{Y1,Y2,orderθ,T}(
-        originalsamplingstrategy,
-        targetsamplingstrategy,
-        θweights,
-        θindices,
-        posθranges,
-        negθranges,
-        storage,
-    )
-end
-
-struct LocalϕResampleMap{
-    Y1<:SphereSamplingStrategy,
-    Y2<:SphereSamplingStrategy,
-    orderϕ,
-    T<:Real,
-} <: ResampleMap{Y1,Y2,T}
-    originalsamplingstrategy::Y1
-    targetsamplingstrategy::Y2
-    ϕweights::Vector{SVector{orderϕ,T}}
-    ϕindices::Vector{SVector{orderϕ,Int}}
-    storage::Matrix{Complex{T}}
-end
-function LocalϕResampleMap(
-    targetsamplingstrategy::Y2,
-    originalsamplingstrategy::Y1;
-    orderϕ = 12,
-) where {Y1<:SphereSamplingStrategy,Y2<:SphereSamplingStrategy}
-    T = Float64
-    oldθs, oldϕs = samples(originalsamplingstrategy)
-    newθs, newϕs = samples(targetsamplingstrategy)
-
-    @assert norm(oldθs - newθs) < 1e-3
-
-    storage = zeros(Complex{T}, length(newθs), length(newϕs))
-    ϕweights, ϕindices = _planϕweightsandindices(newϕs, oldϕs, orderϕ, T)
-
-    return LocalϕResampleMap{Y1,Y2,orderϕ,T}(
-        originalsamplingstrategy,
-        targetsamplingstrategy,
-        ϕweights,
-        ϕindices,
-        storage,
-    )
-end
-
-struct θϕResampleMap{
-    R1<:ResampleMap,
-    R2<:ResampleMap,
-    Y1<:SphereSamplingStrategy,
-    Y2<:SphereSamplingStrategy,
-    orderθ,
-    orderϕ,
-    T<:Real,
-} <: ResampleMap{Y1,Y2,T}
-    originalsamplingstrategy::Y1
-    targetsamplingstrategy::Y2
-    θresamplemap::R1
-    ϕresamplemap::R2
-end
-
-LocalθLocalϕResampleMap{Y1,Y2,orderθ,orderϕ,T} =
-    θϕResampleMap{LocalθResampleMap,LocalϕResampleMap,Y1,Y2,orderθ,orderϕ,T}
-
-function Base.size(rsm::ResampleMap)
-    θsold, ϕsold = samples(rsm.originalsamplingstrategy)
-    θsnew, ϕsnew = samples(rsm.targetsamplingstrategy)
-    return 2 * length(θsnew) * length(ϕsnew), 2 * length(θsold) * length(ϕsold)
-end
 # function LocalθLocalϕResampleMap(
 #     targetsamplingstrategy::Y2,
 #     originalsamplingstrategy::Y1;
@@ -237,84 +136,6 @@ end
 #         finalstorage,
 #     )
 # end
-
-function _planϕweightsandindices(newϕs, oldϕs, orderϕ, T)
-    ϕweights = Vector{SVector{orderϕ,T}}(undef, length(newϕs))
-    ϕindices = Vector{SVector{orderϕ,Int64}}(undef, length(newϕs))
-    Δϕ = oldϕs[2] - oldϕs[1]
-    bϕ = lagrange_barycentric_weights((collect(1:orderϕ) .- 1) * Δϕ)
-    for (k, newϕ) in enumerate(newϕs)
-        iϕ₀ = find_next_smaller_ϕind(Δϕ, newϕ)
-        iϕrange = ((iϕ₀-orderϕ+1):iϕ₀) .+ div(orderϕ, 2)
-
-        ϕweights[k] = SVector{orderϕ}(
-            T.(
-                lagrange_interpolation_weights_from_barycentric(
-                    (collect(iϕrange) .- 1) * Δϕ,
-                    newϕ,
-                    bϕ,
-                )
-            ),
-        )
-        ϕindices[k] = SVector{orderϕ}(map_ϕrange!(iϕrange, length(oldϕs)))
-
-    end
-    return ϕweights, ϕindices
-end
-
-function _planθweightsandindices(θvec_new, θvec_old, orderθ, T)
-    newθlength = length(θvec_new)
-    nθ_old = length(θvec_old)
-    θweights = Vector{SVector{orderθ,T}}(undef, newθlength)
-    θindices = Vector{MVector{orderθ,Int64}}(undef, newθlength)
-    wθ_pos = Vector{SVector}(undef, newθlength)
-    wθ_neg = Vector{SVector}(undef, newθlength)
-    θinds_pos = Vector{SVector}(undef, newθlength)
-    θinds_neg = Vector{SVector}(undef, newθlength)
-    indold = 0
-    maxindex = Int(ceil(length(θvec_new) / 2))
-    for kθ = 1:maxindex
-        startindex = maximum([indold, 1])
-        θnew = θvec_new[kθ]
-        indold = find_next_smaller_θind(θvec_old[startindex:end], θnew) + startindex
-        iθ₀ = indold + orderθ ÷ 2
-        # iθrange = map_θrange!(((iθ₀ - orderθ + 1):iθ₀), nθ_old)
-        # iθrange_mirrored = -(iθrange) .+ (nθ_old + 1)
-        iθrange = ((iθ₀-orderθ+1):iθ₀)
-        wθ = lagrange_interpolation_weights(θsequence(θvec_old, iθrange), θnew)
-        iθrange = map_θrange!(((iθ₀-orderθ+1):iθ₀), nθ_old)
-        iθrange_mirrored = -(iθrange) .+ (nθ_old + 1)
-        # wθ= _sign_θinterpolationweights!(wθ, iθrange, nθ_old)
-
-        θweights[kθ] = SVector{orderθ,T}(wθ)
-        θindices[kθ] = iθrange
-
-        θweights[end-kθ+1] = SVector{orderθ}(convert.(T, wθ))
-        θindices[end-kθ+1] = iθrange_mirrored
-
-    end
-    for kθ in eachindex(θvec_new)
-        wθ_pos_tmp, wθ_neg_tmp, θinds_pos_tmp, θinds_neg_tmp =
-            _split_θ_interpolationparams(θweights[kθ], θindices[kθ], nθ_old)
-        wθ_pos[kθ] = SVector{length(wθ_pos_tmp)}(wθ_pos_tmp)
-        wθ_neg[kθ] = SVector{length(wθ_neg_tmp)}(wθ_neg_tmp)
-        θinds_pos[kθ] = SVector{length(wθ_pos_tmp)}(θinds_pos_tmp)
-        θinds_neg[kθ] = SVector{length(wθ_neg_tmp)}(θinds_neg_tmp)
-    end
-
-    θweights = Vector{SVector{orderθ,T}}(undef, length(θvec_new))
-    θindices = Vector{SVector{orderθ,Int64}}(undef, length(θvec_new))
-    posθranges = Vector{UnitRange{Int}}(undef, length(θvec_new))
-    negθranges = Vector{UnitRange{Int}}(undef, length(θvec_new))
-    for k in eachindex(θindices)
-        posθranges[k] = 1:length(θinds_pos[k])
-        negθranges[k] = length(θinds_pos[k])+1:orderθ
-        θindices[k] = SVector{orderθ,Int64}([θinds_pos[k]; θinds_neg[k]])
-        θweights[k] = SVector{orderθ,T}([wθ_pos[k]; wθ_neg[k]])
-    end
-
-    return θweights, θindices, posθranges, negθranges
-end
 
 function _split_θ_interpolationparams(wθ, iθrange, Nθ)
     # Nθ, Nϕ = size(Ematr)
@@ -558,39 +379,63 @@ function extract_single_entry!(
     return udot(wϕ, storage)
 end
 
-"""
-    extract_single_planewave(Eθmatr::AbstractMatrix{<:Complex}, Eϕmatr::AbstractMatrix{<:Complex}, iθrange, wθ, iϕrange, wϕ ) -> Eθ, Eϕ
+function _planϕweightsandindices(newϕs, oldϕs, orderϕ, T)
+    ϕweights = Vector{SVector{orderϕ,T}}(undef, length(newϕs))
+    ϕindices = Vector{SVector{orderϕ,Int64}}(undef, length(newϕs))
+    Δϕ = oldϕs[2] - oldϕs[1]
+    bϕ = lagrange_barycentric_weights((collect(1:orderϕ) .- 1) * Δϕ)
+    for (k, newϕ) in enumerate(newϕs)
+        iϕ₀ = find_next_smaller_ϕind(Δϕ, newϕ)
+        iϕrange = ((iϕ₀-orderϕ+1):iϕ₀) .+ div(orderϕ, 2)
 
-Use interpolation weights `wθ`, `wϕ` and correctly mapped ranges 'iθrange', `iϕrange` to extract Eθ- and Eϕ- value for single plane wave from `PlaneWaveExpansion`.
-"""
-function extract_single_planewave(
-    Eθmatr::AbstractMatrix{C},
-    Eϕmatr::AbstractMatrix{C},
-    iθrange,
-    wθ::AbstractArray{T},
-    iϕrange,
-    wϕ::AbstractArray{T},
-) where {C<:Complex,T<:Real}
+        ϕweights[k] = SVector{orderϕ}(
+            T.(
+                lagrange_interpolation_weights_from_barycentric(
+                    (collect(iϕrange) .- 1) * Δϕ,
+                    newϕ,
+                    bϕ,
+                )
+            ),
+        )
+        ϕindices[k] = SVector{orderϕ}(map_ϕrange!(iϕrange, length(oldϕs)))
 
-    Nθ, Nϕ = size(Eθmatr)
-    iθrange = map_θrange!(iθrange, Nθ)
-    iϕrange = map_ϕrange!(iϕrange, Nϕ)
-
-    Eθvals = Vector{C}(undef, length(iθrange))
-    Eϕvals = Vector{C}(undef, length(iθrange))
-    iϕrange_new = map_ϕrange!(iϕrange .+ (Nϕ ÷ 2), Nϕ)
-
-    for (k, θind) in enumerate(iθrange)
-        if θind > 0
-            Eθvals[k] = udot(wϕ, view(Eθmatr, θind, iϕrange))
-            Eϕvals[k] = udot(wϕ, view(Eϕmatr, θind, iϕrange))
-        else
-            Eθvals[k] = -udot(wϕ, view(Eθmatr, -θind + 1, iϕrange_new))
-            Eϕvals[k] = -udot(wϕ, view(Eϕmatr, -θind + 1, iϕrange_new))
-        end
     end
-    return udot(wθ, Eθvals), udot(wθ, Eϕvals)
+    return ϕweights, ϕindices
 end
+
+# """
+#     extract_single_planewave(Eθmatr::AbstractMatrix{<:Complex}, Eϕmatr::AbstractMatrix{<:Complex}, iθrange, wθ, iϕrange, wϕ ) -> Eθ, Eϕ
+
+# Use interpolation weights `wθ`, `wϕ` and correctly mapped ranges 'iθrange', `iϕrange` to extract Eθ- and Eϕ- value for single plane wave from `PlaneWaveExpansion`.
+# """
+# function extract_single_planewave(
+#     Eθmatr::AbstractMatrix{C},
+#     Eϕmatr::AbstractMatrix{C},
+#     iθrange,
+#     wθ::AbstractArray{T},
+#     iϕrange,
+#     wϕ::AbstractArray{T},
+# ) where {C<:Complex,T<:Real}
+
+#     Nθ, Nϕ = size(Eθmatr)
+#     iθrange = map_θrange!(iθrange, Nθ)
+#     iϕrange = map_ϕrange!(iϕrange, Nϕ)
+
+#     Eθvals = Vector{C}(undef, length(iθrange))
+#     Eϕvals = Vector{C}(undef, length(iθrange))
+#     iϕrange_new = map_ϕrange!(iϕrange .+ (Nϕ ÷ 2), Nϕ)
+
+#     for (k, θind) in enumerate(iθrange)
+#         if θind > 0
+#             Eθvals[k] = udot(wϕ, view(Eθmatr, θind, iϕrange))
+#             Eϕvals[k] = udot(wϕ, view(Eϕmatr, θind, iϕrange))
+#         else
+#             Eθvals[k] = -udot(wϕ, view(Eθmatr, -θind + 1, iϕrange_new))
+#             Eϕvals[k] = -udot(wϕ, view(Eϕmatr, -θind + 1, iϕrange_new))
+#         end
+#     end
+#     return udot(wθ, Eθvals), udot(wθ, Eϕvals)
+# end
 
 # """
 #     _extract_θ_row!(storage, Ematr::AbstractMatrix{C}, iθrange, wθ::<:AbstractVector) where {C<:Complex}
@@ -626,192 +471,6 @@ end
 #     return Eθvals, Eϕvals
 # end
 
-
-function _extract_single_θ!(
-    storage::AbstractMatrix,
-    Ematr::AbstractMatrix,
-    iθrange,
-    posθrange,
-    negθrange,
-    wθ,
-)# where {C<:Complex}
-
-    Nϕ = size(Ematr, 2)
-    Nϕhalf = Nϕ ÷ 2
-
-    θinds_pos = view(iθrange, posθrange)
-    θinds_neg = view(iθrange, negθrange)
-
-    wθ_pos = view(wθ, posθrange)
-    wθ_neg = view(wθ, negθrange)
-
-    @inbounds mul!(storage, transpose(wθ_pos), view(Ematr, θinds_pos, 1:Nϕ))
-    @inbounds mul!(
-        view(storage, :, 1:Nϕhalf),
-        transpose(wθ_neg),
-        view(Ematr, θinds_neg, Nϕhalf+1:Nϕ),
-        1,
-        1,
-    )
-    @inbounds mul!(
-        view(storage, :, Nϕhalf+1:Nϕ),
-        transpose(wθ_neg),
-        view(Ematr, θinds_neg, 1:Nϕhalf),
-        1,
-        1,
-    )
-
-    return storage
-end
-function _adjoint_extract_single_θ!(storage, Ematr, iθrange, posθrange, negθrange, wθ)
-    Nϕ = size(Ematr, 2)
-    Nϕhalf = Nϕ ÷ 2
-
-    θinds_pos = view(iθrange, posθrange)
-    θinds_neg = view(iθrange, negθrange)
-
-    wθ_pos = view(wθ, posθrange)
-    wθ_neg = view(wθ, negθrange)
-
-    @inbounds for k in eachindex(θinds_pos), kk = 1:Nϕ
-        Ematr[θinds_pos[k], kk] += wθ_pos[k] * storage[kk]
-    end
-    @inbounds for k in eachindex(θinds_neg), kk = 1:Nϕhalf
-        Ematr[θinds_neg[k], kk] += wθ_neg[k] * storage[kk+Nϕhalf]
-        Ematr[θinds_neg[k], kk+Nϕhalf] += wθ_neg[k] * storage[kk]
-    end
-
-
-end
-
-function _extract_single_ϕ!(storage, Ematr, iϕrange, wϕ)
-    mul!(storage, view(Ematr, :, iϕrange), wϕ)
-
-    return storage
-end
-function _adjoint_extract_single_ϕ!(storage, Ematr, iϕrange, wϕ)
-    view(Ematr, :, iϕrange) .+= storage .* adjoint(wϕ)
-end
-
-function _local_interpolate_θ!(
-    Enew,
-    E_old,
-    newθlength,
-    θindices,
-    posθranges,
-    negθranges,
-    θweights,
-)
-
-    for k = 1:newθlength
-        _extract_single_θ!(
-            transpose(view(Enew, k, :)),
-            E_old,
-            θindices[k],
-            posθranges[k],
-            negθranges[k],
-            θweights[k],
-        )
-    end
-    return Enew
-end
-function _adjoint_local_interpolate_θ!(
-    Enew,
-    E_old,
-    newθlength,
-    θindices,
-    posθranges,
-    negθranges,
-    θweights;
-    reset::Bool = true,
-)
-    if reset
-        E_old .= zero(eltype(E_old))
-    end
-    for k = 1:newθlength
-        _adjoint_extract_single_θ!(
-            view(Enew, k, :),
-            E_old,
-            θindices[k],
-            posθranges[k],
-            negθranges[k],
-            θweights[k],
-        )
-    end
-    return E_old
-end
-
-function _local_interpolate_ϕ!(Enew, E_old, newϕlength, ϕindices, ϕweights)
-    for k = 1:newϕlength
-        _extract_single_ϕ!(view(Enew, :, k), E_old, ϕindices[k], ϕweights[k])
-    end
-    return Enew
-end
-function _adjoint_local_interpolate_ϕ!(Enew, E_old, newϕlength, ϕindices, ϕweights)
-    E_old .= zero(eltype(E_old))
-    for k = 1:newϕlength
-        _adjoint_extract_single_ϕ!(view(Enew, :, k), E_old, ϕindices[k], ϕweights[k])
-    end
-    return E_old
-end
-
-function _resamplematrix!(oldmatrix, interpolator::ResampleMap)
-    return _resamplematrix!(interpolator.finalstorage, oldmatrix, interpolator)
-end
-function _resamplematrix!(
-    storage,
-    oldmatrix,
-    interpolator::LocalθLocalϕResampleMap{Y1,Y2,orderθ,orderϕ,T},
-) where {Y1<:SphereSamplingStrategy,Y2<:SphereSamplingStrategy,orderθ,orderϕ,T}
-    newθlength, newϕlength = size(interpolator.finalstorage)
-    _local_interpolate_θ!(
-        interpolator.intermediatestorage,
-        oldmatrix,
-        newθlength,
-        interpolator.θindices,
-        interpolator.posθranges,
-        interpolator.negθranges,
-        interpolator.θweights,
-    )
-    _local_interpolate_ϕ!(
-        storage,
-        interpolator.intermediatestorage,
-        newϕlength,
-        interpolator.ϕindices,
-        interpolator.ϕweights,
-    )
-    return storage
-end
-function _adjoint_resamplematrix!(
-    storage,
-    oldmatrix,
-    interpolator::LocalθLocalϕResampleMap{Y1,Y2,orderθ,orderϕ,T};
-    reset::Bool = true,
-) where {Y1<:SphereSamplingStrategy,Y2<:SphereSamplingStrategy,orderθ,orderϕ,T}
-    newθlength, newϕlength = size(interpolator.finalstorage)
-    interpolator.intermediatestorage .= _adjoint_local_interpolate_ϕ!(
-        storage,
-        interpolator.intermediatestorage,
-        newθlength,
-        interpolator.ϕindices,
-        interpolator.ϕweights,
-    )
-    oldmatrix .= _adjoint_local_interpolate_θ!(
-        interpolator.intermediatestorage,
-        oldmatrix,
-        newϕlength,
-        interpolator.θindices,
-        interpolator.posθranges,
-        interpolator.negθranges,
-        interpolator.θweights,
-        reset = reset,
-    )
-end
-
-#Assume that interpolation coefficients are real valued
-function _transpose_resamplematrix!(storage, oldmatrix, interpolator; reset = true)
-    _adjoint_resamplematrix!(storage, oldmatrix, interpolator; reset = reset)
-end
 
 
 """
@@ -986,3 +645,4 @@ function LinearMaps._unsafe_mul!(y, im::LocalθLocalϕInterpolateMap, x::Abstrac
     end
     return y
 end
+
