@@ -18,7 +18,7 @@ struct LocalθResampleMap{
     outputbuffer::Vector{Complex{T}}
     inputbuffermat::Array{Complex{T},3}
     outputbuffermat::Array{Complex{T},3}
-    storage::SubArray{Complex{T},2}
+    storage::SubArray{ComplexF64, 2, Array{ComplexF64, 3}, Tuple{Base.Slice{Base.OneTo{Int64}}, Base.Slice{Base.OneTo{Int64}}, Int64}, true}
 end
 function LocalθResampleMap(
     targetsamplingstrategy::Y2,
@@ -68,7 +68,7 @@ struct LocalϕResampleMap{
     outputbuffer::Vector{Complex{T}}
     inputbuffermat::Array{Complex{T},3}
     outputbuffermat::Array{Complex{T},3}
-    storage::SubArray{Complex{T},2}
+    storage::SubArray{ComplexF64, 2, Array{ComplexF64, 3}, Tuple{Base.Slice{Base.OneTo{Int64}}, Base.Slice{Base.OneTo{Int64}}, Int64}, true}
 end
 function LocalϕResampleMap(
     targetsamplingstrategy::Y2,
@@ -120,8 +120,8 @@ struct θϕResampleMap{
     outputbuffermat::Array{Complex{T},3}
 end
 
-LocalθLocalϕResampleMap{Y1,Y2,orderθ,orderϕ,T} =
-    θϕResampleMap{LocalθResampleMap,LocalϕResampleMap,Y1,Y2,orderθ,orderϕ,T}
+# LocalθLocalϕResampleMap{Y1,Y2,orderθ,orderϕ,T} =
+#     θϕResampleMap{LocalθResampleMap,LocalϕResampleMap,Y1,Y2,orderθ,orderϕ,T}
 
 function Base.size(rsm::ResampleMap)
     return length(rsm.outputbuffer), length(rsm.inputbuffer)
@@ -157,7 +157,7 @@ function LocalθLocalϕResampleMap(
 
 
 
-    return LocalθLocalϕResampleMap{Y1,Y2,orderθ,orderϕ,T}(
+    return θϕResampleMap{typeof(θresamplemap),typeof(ϕresamplemap),Y1,Y2,orderθ,orderϕ,T}(
         originalsamplingstrategy,
         targetsamplingstrategy,
         θresamplemap,
@@ -266,21 +266,31 @@ function _extract_single_θ!(
     wθ_pos = view(wθ, posθrange)
     wθ_neg = view(wθ, negθrange)
 
-    @inbounds mul!(storage, transpose(wθ_pos), view(Ematr, θinds_pos, 1:Nϕ))
-    @inbounds mul!(
-        view(storage, :, 1:Nϕhalf),
-        transpose(wθ_neg),
-        view(Ematr, θinds_neg, Nϕhalf+1:Nϕ),
-        1,
-        1,
-    )
-    @inbounds mul!(
-        view(storage, :, Nϕhalf+1:Nϕ),
-        transpose(wθ_neg),
-        view(Ematr, θinds_neg, 1:Nϕhalf),
-        1,
-        1,
-    )
+    storage .= 0
+    @inbounds for i in eachindex(storage, 1:Nϕ), j in eachindex(wθ_pos, θinds_pos)        
+        storage[i] += wθ_pos[j] * Ematr[θinds_pos[j], i]
+    end
+
+    @inbounds for i in 1:Nϕhalf, j in eachindex(wθ_neg, θinds_neg)
+        storage[i] += wθ_neg[j] * Ematr[θinds_neg[j], Nϕhalf+i]
+        storage[Nϕhalf+i] += wθ_neg[j] * Ematr[θinds_neg[j], i]
+    end
+
+    # @inbounds mul!(storage, transpose(wθ_pos), view(Ematr, θinds_pos, 1:Nϕ))
+    # @inbounds mul!(
+    #     view(storage, :, 1:Nϕhalf),
+    #     transpose(wθ_neg),
+    #     view(Ematr, θinds_neg, Nϕhalf+1:Nϕ),
+    #     1,
+    #     1,
+    # )
+    # @inbounds mul!(
+    #     view(storage, :, Nϕhalf+1:Nϕ),
+    #     transpose(wθ_neg),
+    #     view(Ematr, θinds_neg, 1:Nϕhalf),
+    #     1,
+    #     1,
+    # )
 
     return storage
 end
@@ -294,7 +304,7 @@ function _adjoint_extract_single_θ!(storage, Ematr, iθrange, posθrange, negθ
     wθ_pos = view(wθ, posθrange)
     wθ_neg = view(wθ, negθrange)
 
-    @inbounds for k in eachindex(θinds_pos), kk = 1:Nϕ
+    @inbounds for k in eachindex(θinds_pos, wθ_pos), kk = 1:Nϕ
         Ematr[θinds_pos[k], kk] += wθ_pos[k] * storage[kk]
     end
     @inbounds for k in eachindex(θinds_neg), kk = 1:Nϕhalf
@@ -382,8 +392,8 @@ end
 function _resamplematrix!(
     storage,
     oldmatrix,
-    rsm::LocalθLocalϕResampleMap{Y1,Y2,orderθ,orderϕ,T},
-) where {Y1<:SphereSamplingStrategy,Y2<:SphereSamplingStrategy,orderθ,orderϕ,T}
+    rsm::θϕResampleMap{R1,R2,Y1,Y2,orderθ,orderϕ,T},
+) where {R1 <: LocalθResampleMap, R2<:LocalϕResampleMap, Y1<:SphereSamplingStrategy,Y2<:SphereSamplingStrategy,orderθ,orderϕ,T}
     newθlength, newϕlength = size(interpolator.finalstorage)
     _local_interpolate_θ!(
         rsm.θresamplemap.storage,
@@ -406,9 +416,9 @@ end
 function _adjoint_resamplematrix!(
     storage,
     oldmatrix,
-    rsm::LocalθLocalϕResampleMap{Y1,Y2,orderθ,orderϕ,T};
+    rsm::θϕResampleMap{R1,R2,Y1,Y2,orderθ,orderϕ,T};
     reset::Bool = true,
-) where {Y1<:SphereSamplingStrategy,Y2<:SphereSamplingStrategy,orderθ,orderϕ,T}
+) where {R1<:LocalθResampleMap, R2<: LocalϕResampleMap, Y1<:SphereSamplingStrategy,Y2<:SphereSamplingStrategy,orderθ,orderϕ,T}
     newθlength, newϕlength = size(rsm.finalstorage)
     rsm.θresamplemap.storage .= _adjoint_local_interpolate_ϕ!(
         storage,
@@ -514,9 +524,11 @@ function LinearMaps._unsafe_mul!(y, rsm::θϕResampleMap, x::AbstractVector)
 
     rsm.inputbuffer .= x
 
-    rsm.θresamplemap.outputbuffer .= rsm.θresamplemap * rsm.inputbuffer
+    mul!(rsm.θresamplemap.outputbuffer,  rsm.θresamplemap, rsm.inputbuffer)
+    # rsm.θresamplemap.outputbuffer .= rsm.θresamplemap * rsm.inputbuffer
 
-    rsm.outputbuffer .= rsm.ϕresamplemap * rsm.θresamplemap.outputbuffer
+    mul!(rsm.outputbuffer, rsm.ϕresamplemap, rsm.θresamplemap.outputbuffer)
+    # rsm.outputbuffer .= rsm.ϕresamplemap * rsm.θresamplemap.outputbuffer
 
     y .= rsm.outputbuffer
 

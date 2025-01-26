@@ -16,6 +16,7 @@ struct PlaneWaveExpansion{P<:PropagationType,Y<:SphereSamplingStrategy,C} <:
     samplingstrategy::Y
     EθEϕ::Array{C,3}
     wavenumber::Number
+    buffer::Vector{C}
 end
 
 """
@@ -43,7 +44,8 @@ function PlaneWaveExpansion(
     Eθϕ = Array{C}(undef, a, b, 2)
     Eθϕ[:, :, 1] .= Eθ
     Eθϕ[:, :, 2] .= Eϕ
-    return PlaneWaveExpansion{P,S,C}(samplingstrategy, Eθϕ, wavenumber)
+    buffer= reshape(Eθϕ, length(Eθϕ))
+    return PlaneWaveExpansion{P,S,C}(samplingstrategy, Eθϕ, wavenumber, buffer)
 end
 # function _eθ(p::PlaneWaveExpansion)
 #     _, s2 = _count_samples(p.samplingstrategy)
@@ -61,16 +63,17 @@ function _eϕ(p::PlaneWaveExpansion)
     return view(p.EθEϕ, :, :, 2)
 end
 function asvector(p::PlaneWaveExpansion)
-    return vec(p.EθEϕ)
+    return p.buffer
 end
 Base.size(p::PlaneWaveExpansion) = size(asvector(p))
 Base.getindex(p::PlaneWaveExpansion, i) = Base.getindex(asvector(p), i)
 Base.setindex!(p::PlaneWaveExpansion, i, v) = Base.setindex!(asvector(p), i, v)
 function Base.similar(p::PlaneWaveExpansion{P,S,C}) where {P,S,C}
-    return PlaneWaveExpansion{P,S,C}(p.samplingstrategy, similar(p.EθEϕ), p.wavenumber)
+    EθEϕ = similar(p.EθEϕ)
+    return PlaneWaveExpansion{P,S,C}(p.samplingstrategy, EθEϕ, p.wavenumber, reshape(EθEϕ, length(EθEϕ)))
 end
 function setwavenumber!(p::PlaneWaveExpansion{P,S,C}, val) where {P,C,S}
-    swe = PlaneWaveExpansion{P,C,S}(p.samplingstrategy, p.EθEϕ, val)
+    swe = PlaneWaveExpansion{P,C,S}(p.samplingstrategy, p.EθEϕ, val, p.buffer)
     return swe
 end
 
