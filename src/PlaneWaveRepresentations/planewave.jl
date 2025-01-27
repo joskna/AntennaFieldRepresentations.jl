@@ -44,7 +44,7 @@ function PlaneWaveExpansion(
     Eθϕ = Array{C}(undef, a, b, 2)
     Eθϕ[:, :, 1] .= Eθ
     Eθϕ[:, :, 2] .= Eϕ
-    buffer= reshape(Eθϕ, length(Eθϕ))
+    buffer = reshape(Eθϕ, length(Eθϕ))
     return PlaneWaveExpansion{P,S,C}(samplingstrategy, Eθϕ, wavenumber, buffer)
 end
 # function _eθ(p::PlaneWaveExpansion)
@@ -70,7 +70,12 @@ Base.getindex(p::PlaneWaveExpansion, i) = Base.getindex(asvector(p), i)
 Base.setindex!(p::PlaneWaveExpansion, i, v) = Base.setindex!(asvector(p), i, v)
 function Base.similar(p::PlaneWaveExpansion{P,S,C}) where {P,S,C}
     EθEϕ = similar(p.EθEϕ)
-    return PlaneWaveExpansion{P,S,C}(p.samplingstrategy, EθEϕ, p.wavenumber, reshape(EθEϕ, length(EθEϕ)))
+    return PlaneWaveExpansion{P,S,C}(
+        p.samplingstrategy,
+        EθEϕ,
+        p.wavenumber,
+        reshape(EθEϕ, length(EθEϕ)),
+    )
 end
 function setwavenumber!(p::PlaneWaveExpansion{P,S,C}, val) where {P,C,S}
     swe = PlaneWaveExpansion{P,C,S}(p.samplingstrategy, p.EθEϕ, val, p.buffer)
@@ -324,5 +329,13 @@ function interpolate(
 end
 
 include("resampling.jl")
+function resample(newsamplingstrategy::Y1, pwe::PlaneWaveExpansion{P, Y2, C}) where{Y1<:SphereSamplingStrategy, Y2<:SphereSamplingStrategy, P<:PropagationType}
+    rsm = ResampleMap(Y1, pwe.samplingstrategy)
+    y = rsm * pwe
+
+    θs, ϕs = samples(pwe.samplingstrategy)
+    EθEϕ = reshape(y, length(θs), length(ϕs), 2) 
+    return PlaneWaveExpansion{P, Y1, C}(newsamplingstrategy,EθEϕ,pwe.wavenumber, y)
+end
 
 include("transfer.jl")

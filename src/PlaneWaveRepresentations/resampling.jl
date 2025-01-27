@@ -18,7 +18,13 @@ struct LocalθResampleMap{
     outputbuffer::Vector{Complex{T}}
     inputbuffermat::Array{Complex{T},3}
     outputbuffermat::Array{Complex{T},3}
-    storage::SubArray{ComplexF64, 2, Array{ComplexF64, 3}, Tuple{Base.Slice{Base.OneTo{Int64}}, Base.Slice{Base.OneTo{Int64}}, Int64}, true}
+    storage::SubArray{
+        ComplexF64,
+        2,
+        Array{ComplexF64,3},
+        Tuple{Base.Slice{Base.OneTo{Int64}},Base.Slice{Base.OneTo{Int64}},Int64},
+        true,
+    }
 end
 function LocalθResampleMap(
     targetsamplingstrategy::Y2,
@@ -68,7 +74,13 @@ struct LocalϕResampleMap{
     outputbuffer::Vector{Complex{T}}
     inputbuffermat::Array{Complex{T},3}
     outputbuffermat::Array{Complex{T},3}
-    storage::SubArray{ComplexF64, 2, Array{ComplexF64, 3}, Tuple{Base.Slice{Base.OneTo{Int64}}, Base.Slice{Base.OneTo{Int64}}, Int64}, true}
+    storage::SubArray{
+        ComplexF64,
+        2,
+        Array{ComplexF64,3},
+        Tuple{Base.Slice{Base.OneTo{Int64}},Base.Slice{Base.OneTo{Int64}},Int64},
+        true,
+    }
 end
 function LocalϕResampleMap(
     targetsamplingstrategy::Y2,
@@ -125,6 +137,20 @@ end
 
 function Base.size(rsm::ResampleMap)
     return length(rsm.outputbuffer), length(rsm.inputbuffer)
+end
+
+function ResampleMap(
+    targetsamplingstrategy::Y2,
+    originalsamplingstrategy::Y1;
+    orderθ = 12,
+    orderϕ = 12,
+) where {Y1<:SphereSamplingStrategy,Y2<:SphereSamplingStrategy}
+    return LocalθLocalϕResampleMap(
+        targetsamplingstrategy,
+        originalsamplingstrategy;
+        orderθ = orderθ,
+        orderϕ = orderϕ,
+    )
 end
 
 function LocalθLocalϕResampleMap(
@@ -267,11 +293,11 @@ function _extract_single_θ!(
     wθ_neg = view(wθ, negθrange)
 
     storage .= 0
-    @inbounds for i in eachindex(storage, 1:Nϕ), j in eachindex(wθ_pos, θinds_pos)        
+    @inbounds for i in eachindex(storage, 1:Nϕ), j in eachindex(wθ_pos, θinds_pos)
         storage[i] += wθ_pos[j] * Ematr[θinds_pos[j], i]
     end
 
-    @inbounds for i in 1:Nϕhalf, j in eachindex(wθ_neg, θinds_neg)
+    @inbounds for i = 1:Nϕhalf, j in eachindex(wθ_neg, θinds_neg)
         storage[i] += wθ_neg[j] * Ematr[θinds_neg[j], Nϕhalf+i]
         storage[Nϕhalf+i] += wθ_neg[j] * Ematr[θinds_neg[j], i]
     end
@@ -393,7 +419,15 @@ function _resamplematrix!(
     storage,
     oldmatrix,
     rsm::θϕResampleMap{R1,R2,Y1,Y2,orderθ,orderϕ,T},
-) where {R1 <: LocalθResampleMap, R2<:LocalϕResampleMap, Y1<:SphereSamplingStrategy,Y2<:SphereSamplingStrategy,orderθ,orderϕ,T}
+) where {
+    R1<:LocalθResampleMap,
+    R2<:LocalϕResampleMap,
+    Y1<:SphereSamplingStrategy,
+    Y2<:SphereSamplingStrategy,
+    orderθ,
+    orderϕ,
+    T,
+}
     newθlength, newϕlength = size(interpolator.finalstorage)
     _local_interpolate_θ!(
         rsm.θresamplemap.storage,
@@ -418,7 +452,15 @@ function _adjoint_resamplematrix!(
     oldmatrix,
     rsm::θϕResampleMap{R1,R2,Y1,Y2,orderθ,orderϕ,T};
     reset::Bool = true,
-) where {R1<:LocalθResampleMap, R2<: LocalϕResampleMap, Y1<:SphereSamplingStrategy,Y2<:SphereSamplingStrategy,orderθ,orderϕ,T}
+) where {
+    R1<:LocalθResampleMap,
+    R2<:LocalϕResampleMap,
+    Y1<:SphereSamplingStrategy,
+    Y2<:SphereSamplingStrategy,
+    orderθ,
+    orderϕ,
+    T,
+}
     newθlength, newϕlength = size(rsm.finalstorage)
     rsm.θresamplemap.storage .= _adjoint_local_interpolate_ϕ!(
         storage,
@@ -459,28 +501,50 @@ function LinearMaps._unsafe_mul!(y, rsm::LocalθResampleMap, x::AbstractVector)
     # setindex! to rsm.outputbuffer also writes into rsm.outputbuffermat
     rsm.outputbuffer .= 0
 
-    _local_interpolate_θ!(
-        view(rsm.outputbuffermat, :, :, 1),
-        view(rsm.inputbuffermat, :, :, 1),
-        size(rsm.outputbuffermat, 1),
-        rsm.θindices,
-        rsm.posθranges,
-        rsm.negθranges,
-        rsm.θweights,
-    )
-
-    _local_interpolate_θ!(
-        view(rsm.outputbuffermat, :, :, 2),
-        view(rsm.inputbuffermat, :, :, 2),
-        size(rsm.outputbuffermat, 1),
-        rsm.θindices,
-        rsm.posθranges,
-        rsm.negθranges,
-        rsm.θweights,
-    )
+    for i in eachindex(axes(rsm.outputbuffermat, 3), axes(rsm.inputbuffermat, 3))
+        _local_interpolate_θ!(
+            view(rsm.outputbuffermat, :, :, i),
+            view(rsm.inputbuffermat, :, :, i),
+            size(rsm.outputbuffermat, 1),
+            rsm.θindices,
+            rsm.posθranges,
+            rsm.negθranges,
+            rsm.θweights,
+        )
+    end
 
     y .= rsm.outputbuffer
     return y
+end
+
+function LinearMaps._unsafe_mul!(
+    x,
+    ad_rsm::LinearMaps.TransposeMap{T,L},
+    y::AbstractVector,
+) where {T,L<:LocalθResampleMap}
+    rsm = ad_rsm.lmap
+
+
+    rsm.inputbuffer .= 0
+
+    # setindex! to rsm.outputbuffer also writes into rsm.outputbuffermat
+    rsm.outputbuffer .= y
+
+    for i in eachindex(axes(rsm.outputbuffermat, 3), axes(rsm.inputbuffermat, 3))
+        _adjoint_local_interpolate_θ!(
+            view(rsm.outputbuffermat, :, :, i),
+            view(rsm.inputbuffermat, :, :, i),
+            size(rsm.outputbuffermat, 1),
+            rsm.θindices,
+            rsm.posθranges,
+            rsm.negθranges,
+            rsm.θweights;
+            reset = true,
+        )
+    end
+
+    x .= rsm.inputbuffer
+    return x
 end
 
 
@@ -499,32 +563,56 @@ function LinearMaps._unsafe_mul!(y, rsm::LocalϕResampleMap, x::AbstractVector)
 
     # setindex! to rsm.outputbuffer also writes into rsm.outputbuffermat
     rsm.outputbuffer .= 0
-    _local_interpolate_ϕ!(
-        view(rsm.outputbuffermat, :, :, 1),
-        view(rsm.inputbuffermat, :, :, 1),
-        size(rsm.outputbuffermat, 2),
-        rsm.ϕindices,
-        rsm.ϕweights,
-    )
+    for i in eachindex(axes(rsm.outputbuffermat, 3), axes(rsm.inputbuffermat, 3))
+        _local_interpolate_ϕ!(
+            view(rsm.outputbuffermat, :, :, i),
+            view(rsm.inputbuffermat, :, :, i),
+            size(rsm.outputbuffermat, 2),
+            rsm.ϕindices,
+            rsm.ϕweights,
+        )
+    end
 
-    _local_interpolate_ϕ!(
-        view(rsm.outputbuffermat, :, :, 2),
-        view(rsm.inputbuffermat, :, :, 2),
-        size(rsm.outputbuffermat, 2),
-        rsm.ϕindices,
-        rsm.ϕweights,
-    )
     y .= rsm.outputbuffer
 
 
     return y
 end
 
+
+function LinearMaps._unsafe_mul!(
+    x,
+    ad_rsm::LinearMaps.TransposeMap{T,L},
+    y::AbstractVector,
+) where {T,L<:LocalϕResampleMap}
+    rsm = ad_rsm.lmap
+
+
+    rsm.inputbuffer .= 0
+
+    # setindex! to rsm.outputbuffer also writes into rsm.outputbuffermat
+    rsm.outputbuffer .= y
+
+    # setindex! to rsm.outputbuffer also writes into rsm.outputbuffermat
+    for i in eachindex(axes(rsm.outputbuffermat, 3), axes(rsm.inputbuffermat, 3))
+        _adjoint_local_interpolate_ϕ!(
+            view(rsm.outputbuffermat, :, :, i),
+            view(rsm.inputbuffermat, :, :, i),
+            size(rsm.outputbuffermat, 2),
+            rsm.ϕindices,
+            rsm.ϕweights,
+        )
+    end
+
+    x .= rsm.inputbuffer
+    return x
+end
+
 function LinearMaps._unsafe_mul!(y, rsm::θϕResampleMap, x::AbstractVector)
 
     rsm.inputbuffer .= x
 
-    mul!(rsm.θresamplemap.outputbuffer,  rsm.θresamplemap, rsm.inputbuffer)
+    mul!(rsm.θresamplemap.outputbuffer, rsm.θresamplemap, rsm.inputbuffer)
     # rsm.θresamplemap.outputbuffer .= rsm.θresamplemap * rsm.inputbuffer
 
     mul!(rsm.outputbuffer, rsm.ϕresamplemap, rsm.θresamplemap.outputbuffer)
@@ -534,3 +622,33 @@ function LinearMaps._unsafe_mul!(y, rsm::θϕResampleMap, x::AbstractVector)
 
     return y
 end
+
+function LinearMaps._unsafe_mul!(
+    x,
+    ad_rsm::LinearMaps.TransposeMap{T,L},
+    y::AbstractVector,
+) where {T,L<:θϕResampleMap}
+    rsm = ad_rsm.lmap
+    rsm.outputbuffer .= y
+
+    mul!(rsm.θresamplemap.outputbuffer, transpose(rsm.ϕresamplemap), rsm.outputbuffer)
+
+    mul!(rsm.inputbuffer, transpose(rsm.θresamplemap), rsm.θresamplemap.outputbuffer)
+    # rsm.θresamplemap.outputbuffer .= rsm.θresamplemap * rsm.inputbuffer
+
+
+    # rsm.outputbuffer .= rsm.ϕresamplemap * rsm.θresamplemap.outputbuffer
+
+    x .= rsm.inputbuffer
+
+    return x
+end
+
+function LinearMaps._unsafe_mul!(
+    x,
+    ad_rsm::LinearMaps.AdjointMap{T,L},
+    y::AbstractVector,
+) where {T,L<:ResampleMap}
+    return LinearMaps._unsafe_mul!(x, transpose(ad_rsm.lmap), y)
+end
+
