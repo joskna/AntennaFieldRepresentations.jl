@@ -329,13 +329,16 @@ function interpolate(
 end
 
 include("resampling.jl")
-function resample(newsamplingstrategy::Y1, pwe::PlaneWaveExpansion{P, Y2, C}) where{Y1<:SphereSamplingStrategy, Y2<:SphereSamplingStrategy, P<:PropagationType}
-    rsm = ResampleMap(Y1, pwe.samplingstrategy)
+function resample(
+    newsamplingstrategy::Y1,
+    pwe::PlaneWaveExpansion{P,Y2,C},
+) where {Y1<:SphereSamplingStrategy,Y2<:SphereSamplingStrategy,P<:PropagationType,C}
+    rsm = ResampleMap(newsamplingstrategy, pwe.samplingstrategy)
     y = rsm * pwe
 
-    θs, ϕs = samples(pwe.samplingstrategy)
-    EθEϕ = reshape(y, length(θs), length(ϕs), 2) 
-    return PlaneWaveExpansion{P, Y1, C}(newsamplingstrategy,EθEϕ,pwe.wavenumber, y)
+    θs, ϕs = samples(newsamplingstrategy)
+    EθEϕ = reshape(y, length(θs), length(ϕs), 2)
+    return PlaneWaveExpansion{P,Y1,C}(newsamplingstrategy, EθEϕ, pwe.wavenumber, y)
 end
 
 include("transfer.jl")
