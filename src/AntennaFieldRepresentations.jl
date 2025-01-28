@@ -165,6 +165,7 @@ export SphericalFieldSampling, SphericalTransmitMap
 export inverse
 export weightsandsamples, samples
 export interpolate, InterpolateMap, LocalθLocalϕInterpolateMap
+export resample, ResampleMap, LocalθLocalϕResampleMap
 
 
 end
