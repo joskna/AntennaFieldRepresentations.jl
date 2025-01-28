@@ -94,13 +94,13 @@ fieldsampling .= transmit(swe, fieldsampling)
 θ=pi/10
 ϕ= pi/7.8
 
+# interpolate pwe at new position
+newEθ, newEϕ = interpolate((θ,ϕ), pwe)
+
 # Actual values at this position
 Eθ, Eϕ = -59.44801130097685 + 58.38482519439182im, 68.0278816964276 + 75.60985071712197im
 
-# interpolate pwe at new position
-newEθ, newEϕ = interpolate(pwe, (θ,ϕ))
-
-
+# Evaluate interpolation error
 abs(Eθ - newEθ) / abs(Eθ) < 0.0055 # true
 abs(Eϕ - newEϕ) / abs(Eϕ) < 0.0044  # true
 
@@ -116,6 +116,7 @@ For better interpolation accuracy, we can specify the keyword arguments `orderθ
 # interpolate pwe at new position with better accuracy
 newEθ, newEϕ = interpolate((θ,ϕ), pwe, orderθ = 18, orderϕ = 18)
 
+# Evaluate interpolation error
 abs(Eθ - newEθ) / abs(Eθ) < 0.00055 # true
 abs(Eϕ - newEϕ) / abs(Eϕ) < 0.00044  # true
 
@@ -124,6 +125,10 @@ abs(Eϕ - newEϕ) / abs(Eϕ) < 0.00044  # true
 true
 ```
 
+!!! tip
+    The most effective way to reduce the interpolation error is to start with oversampled data.
+    Having larger oversampling in the original data is more effectively impacting the interpolation accuracy than the interpolation order.
+---  
 
 ## Resampling Spherically Sampled Data According to a New `SphereSamplingStrategy`
 We can resample spherically sampled data to a new `SphereSamplingStrategy` using the [`resample`](@ref) method or a `ResampleMap`. 
