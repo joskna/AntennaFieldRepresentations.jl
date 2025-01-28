@@ -126,4 +126,34 @@ true
 
 
 ## Resampling Spherically Sampled Data According to a New `SphereSamplingStrategy`
-We can resample spherically sampled data to a new `SphereSamplingStrategy` using the `resample` method or an `ResampleMap`. 
+We can resample spherically sampled data to a new `SphereSamplingStrategy` using the [`resample`] method or a `ResampleMap`. 
+```jldoctest interpolateexamples ; output=false
+# define the target samplingstrategy
+targetsamplingstrategy= RegularθRegularϕSampling(20, 20) 
+
+pwe2= resample(targetsamplingstrategy, pwe)
+
+# output
+440-element PlaneWaveExpansion{Radiated, RegularθRegularϕSampling, ComplexF64}:
+ -109.99025406960146 + 9.483384965974622im
+  -83.34184404308296 + 2.12285509029131im
+  -56.94690918302272 - 2.660562491171087im
+ -31.488184256653895 - 4.398675035216028im
+   -5.16088313042524 - 2.921202463945016im
+   24.53545058560716 + 1.6270563805741496im
+    58.6865681388036 + 8.801102640571184im
+   95.41569276153045 + 17.898493868901554im
+   129.5475773102929 + 28.028855932563122im
+   153.2492457384852 + 38.20049957468889im
+                     ⋮
+  -34.33171148277943 + 57.11217972670092im
+ -29.926566026928807 + 29.95132952779241im
+ -26.842148567855343 + 4.78300815669802im
+ -29.342336093157087 - 22.1301498203163im
+   -37.3959541293728 - 53.882277913601605im
+ -45.207081426575435 - 90.9638794362822im
+ -44.977246064396006 - 129.52052430691433im
+  -29.34618795614716 - 161.4318655423414im
+  4.7295500113711215 - 177.41938955071302im
+
+```
