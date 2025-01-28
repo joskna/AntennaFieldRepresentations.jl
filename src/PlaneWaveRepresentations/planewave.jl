@@ -319,8 +319,8 @@ function rotate!(
 end
 
 function interpolate(
-    pattern::PlaneWaveExpansion,
-    θϕ::Tuple{T,T};
+    θϕ::Tuple{T,T},
+    pattern::PlaneWaveExpansion;
     orderθ = 12,
     orderϕ = 12,
 ) where {T}

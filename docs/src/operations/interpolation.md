@@ -114,7 +114,7 @@ For better interpolation accuracy, we can specify the keyword arguments `orderθ
 
 ```jldoctest interpolateexamples ; output=false
 # interpolate pwe at new position with better accuracy
-newEθ, newEϕ = interpolate(pwe, (θ,ϕ), orderθ = 18, orderϕ = 18)
+newEθ, newEϕ = interpolate((θ,ϕ), pwe, orderθ = 18, orderϕ = 18)
 
 abs(Eθ - newEθ) / abs(Eθ) < 0.00055 # true
 abs(Eϕ - newEϕ) / abs(Eϕ) < 0.00044  # true
@@ -126,7 +126,7 @@ true
 
 
 ## Resampling Spherically Sampled Data According to a New `SphereSamplingStrategy`
-We can resample spherically sampled data to a new `SphereSamplingStrategy` using the [`resample`] method or a `ResampleMap`. 
+We can resample spherically sampled data to a new `SphereSamplingStrategy` using the [`resample`](@ref) method or a `ResampleMap`. 
 ```jldoctest interpolateexamples ; output=false
 # define the target samplingstrategy
 targetsamplingstrategy= RegularθRegularϕSampling(20, 20) 

@@ -422,7 +422,7 @@ Return inverse linear map of `opmap`.
 function inverse end
 
 """
-    interpolate(data::Union{PlaneWaveExpansion, FieldSampling}, θϕ::Tuple{T,T}) where{T<:Real}
+    interpolate( θϕ::Tuple{T,T}, data::Union{PlaneWaveExpansion, FieldSampling}) where{T<:Real}
 
 Returns the two polarizations of spherically sampled `data` at the new location defined by the tuple `θϕ`.
 
@@ -431,6 +431,16 @@ Returns the two polarizations of spherically sampled `data` at the new location 
 - `LocalθLocalϕInterpolateMap`
 """
 function interpolate end
+
+"""
+    resample(targetsampling::SphereSamplingStrategy, data::Union{PlaneWaveExpansion, FieldSampling})
+
+Returns data resampled according to `targetsampling`
+
+# See also:
+- `ResampleMap`
+"""
+function resample end
 #
 #
 # End of definition of AntennaFieldRepresentation Interface
