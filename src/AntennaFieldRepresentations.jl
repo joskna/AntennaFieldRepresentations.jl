@@ -135,12 +135,13 @@ end
 
 
 include(joinpath("AntennaRepresentations", "antennarepresentations.jl"))
+include(joinpath("OperationMaps", "operationmaps.jl"))
 include(joinpath("DipoleInteractions", "dipole.jl"))
 include(joinpath("PlaneWaveRepresentations", "planewave.jl"))
 include(joinpath("SphericalVectorModeFields", "spherical.jl"))
 include(joinpath("SurfaceCurrentDensities", "currentrepresentations.jl"))
 include(joinpath("FieldSamplings", "fieldsamplings.jl"))
-include(joinpath("OperationMaps", "operationmaps.jl"))
+include(joinpath("OperationMaps", "transmitmaps.jl"))
 include(joinpath("OperationMaps", "changerepresentationmaps.jl"))
 
 export PropagationType, Radiated, Absorbed, Incident
@@ -160,6 +161,7 @@ export RegularSphericalFieldSampling
 export j_to_sℓm, sℓm_to_j
 export getwavenumber, equivalentorder
 export changerepresentation, transmit
+export OperationMap
 export ChangeRepresentationMap, TransmitMap
 export SphericalFieldSampling, SphericalTransmitMap
 export inverse

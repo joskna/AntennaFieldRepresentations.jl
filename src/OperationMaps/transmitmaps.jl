@@ -1,4 +1,15 @@
+"""
+    TransmitMap{A, F, C} <: OperationMap{C}
 
+Supertype for function-like object which corresponds to a `transmit` method.
+
+# Type Parameters
+- `A <: AntennaFieldRepresentation`
+- `F <: FieldSampling`
+- `C <: Complex`
+"""
+abstract type TransmitMap{A<:AntennaFieldRepresentation,F<:FieldSampling,C<:Complex} <:
+              OperationMap{C} end
 """
     SphericalTransmitMap{S,F,C} <: TransmitMap{S,F,C}
 
@@ -147,7 +158,7 @@ struct InverseSphericalTransmitMap{
     S<:SphericalWaveExpansion{Radiated},
     F<:SphericalFieldSampling,
     C<:Complex,
-} <: OperationMap{S,C}
+} <: TransmitMap{S,F,C}
     swe::S
     fs::F
     L::Integer

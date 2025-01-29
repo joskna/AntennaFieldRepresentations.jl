@@ -1,6 +1,9 @@
 
+# abstract type ResampleMap{Y1<:SphereSamplingStrategy,Y2<:SphereSamplingStrategy,T<:Real} <:
+#               LinearMaps.LinearMap{T} end
+
 abstract type ResampleMap{Y1<:SphereSamplingStrategy,Y2<:SphereSamplingStrategy,T<:Real} <:
-              LinearMaps.LinearMap{T} end
+              OperationMap{T} end
 
 struct LocalθResampleMap{
     Y1<:SphereSamplingStrategy,

@@ -1,6 +1,6 @@
 # Operation Maps for Operations on Antenna Field Representations
 In `AntennaFieldRepresentations.jl`, an operation map is a [function-like object](https://docs.julialang.org/en/v1/manual/methods/#Function-like-objects-1) which corresponds to a certain method.
-All operation maps  in `AntennaFieldRepresentations.jl` subtype the abstract type `OperationMap{C, A}`. 
+All operation maps  in `AntennaFieldRepresentations.jl` subtype the abstract type `OperationMap{C}`. 
 The idea behind these `OperationMap`s is to reuse allocated memory and save redundant operations for repeated method calls.
 The workflow involving `OperationMap`s starts with initializeing an instance of the `OperationMap`. 
 The generated object then can be used like a function, where all overhead for the function call is moved to the initialization of the object. 
@@ -21,12 +21,11 @@ A comprehensive list of all operation maps provided by `AntennaFieldRepresentati
 | `InterpolateMap`              | `interpolate`             | Interpolation operator of a `PlaneWaveExpansion` into a `PlaneWaveExpansion` with a different `SphereSamplingStrategy`|
 
 ## [Operation Maps as Linear Operators](@id operationmaps_linmap)
-The abstract type `OperationMap{C, A} <: LinearMaps.LinearMap{C}` is a subtype of [`LinearMaps.LinearMap`](https://julialinearalgebra.github.io/LinearMaps.jl/stable/generated/custom/) which means that the operations represented by an `OperationMap{C, A}` are strictly linear operations.
-The usual way to evaluate an `OperationMap` is to use it as a function on an `AntennaFieldRepresentation`. 
+The abstract type `OperationMap{C} <: LinearMaps.LinearMap{C}` is a subtype of [`LinearMaps.LinearMap`](https://julialinearalgebra.github.io/LinearMaps.jl/stable/generated/custom/) which means that the operations represented by an `OperationMap{C}` are strictly linear operations.
+The usual way to evaluate an `OperationMap` is to use it in a matrix-vector-product with an `AntennaFieldRepresentation`. 
 
-!!! note
-    An instance of an `OperationMap{C, A}` only accepts `AntennaFieldRepresentation` of the exact same type `A <: AntennaFieldRepresentation` as used for their creation as input arguments. 
-    Calling an `OperationMap` with a different type of `AntennaFieldRepresentation` could lead to unexpected behavior or errors. To avoid any unintended function calls with `AntennaFieldRepresentation`s of a different type, the input type for the `OperationMap{C, A}` is stored in the type parameter `A`.
+!!! warning
+    Calling an `OperationMap` with a different type of `AntennaFieldRepresentation` could lead to unexpected behavior or errors.
 ---
 
 !!! todo
@@ -34,7 +33,7 @@ The usual way to evaluate an `OperationMap` is to use it as a function on an `An
 ---
 
 
-However, since an `OperationMap{C, A}` implements the interface of [`LinearMaps.jl`](https://julialinearalgebra.github.io/LinearMaps.jl/stable/), the following methods are inherently supported with any operation map `M`[^1]
+Since an `OperationMap{C}` implements the interface of [`LinearMaps.jl`](https://julialinearalgebra.github.io/LinearMaps.jl/stable/), the following methods are inherently supported with any operation map `M`[^1]
 
 | Method                    | Optional | Short Description                                                  |
 | :------------------------ |:-------- | :----------------------------------------------------------------- |
@@ -46,7 +45,7 @@ However, since an `OperationMap{C, A}` implements the interface of [`LinearMaps.
 | `Matrix(M)`               | Yes      | Conversion to a matrix                                             |
 | `M[:, i]`                 | Yes      | Complete slicing of columns (and rows if the adjoint action is defined) |
  
-Remember that any `AntennaFieldRepresentation` is interpreted as an `AbstractVector` with additional context in `AntennaFieldRepresentations.jl`. Thus, by using the interface of [`LinearMaps.jl`](https://julialinearalgebra.github.io/LinearMaps.jl/stable/), the user inherently implies that the vectors `x` which were used in the above matrix vector products corresponds to the coefficient vector belonging to the `AntennaFieldRepresentation` used for the definition of the `OperationMap{C, A}`.
+Remember that any `AntennaFieldRepresentation` is interpreted as an `AbstractVector` with additional context in `AntennaFieldRepresentations.jl`. Thus, by using the interface of [`LinearMaps.jl`](https://julialinearalgebra.github.io/LinearMaps.jl/stable/), the user inherently implies that the vectors `x` which were used in the above matrix vector products corresponds to the coefficient vector belonging to the `AntennaFieldRepresentation` used for the definition of the `OperationMap{C}`.
 
 ## Adjoint, Transposed, and Inverse Operation Maps
 In `AntennaFieldRepresentations.jl`, it is easy to define the adjoint, transposed, or the inverse of any operation map. Generically, taking the transpose of an operation map wraps the operation map by a `TransposeMap`, taking the adjoint wraps it by an `AdjointMap`, and taking the inverse wraps it by an `InverseMap` (or an `IterativeInverseMap`). 

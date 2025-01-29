@@ -1,6 +1,17 @@
 
+# """
+#     InterpolateMap{Y, T} <: LinearMaps.LinearMap{T}
+
+# Abstract supertype for linear maps which performs an interpolation of predefined sampling points from spherically sampled data.
+
+# # Type parameters:
+#  - `Y :: SphereSamplingStrategy` : Defines the sampling points of the spherically sampled original data.
+#  - `T <: Real` : Defines the number type to represent interpolation parameters, e.g. `Float64` or `Float32`.
+# """
+# abstract type InterpolateMap{Y<:SphereSamplingStrategy,T<:Real} <: LinearMaps.LinearMap{T} end
+
 """
-    InterpolateMap{Y, T} <: LinearMaps.LinearMap{T}
+    InterpolateMap{Y, T} <: OperationMap{T}
 
 Abstract supertype for linear maps which performs an interpolation of predefined sampling points from spherically sampled data.
 
@@ -8,7 +19,7 @@ Abstract supertype for linear maps which performs an interpolation of predefined
  - `Y :: SphereSamplingStrategy` : Defines the sampling points of the spherically sampled original data.
  - `T <: Real` : Defines the number type to represent interpolation parameters, e.g. `Float64` or `Float32`.
 """
-abstract type InterpolateMap{Y<:SphereSamplingStrategy,T<:Real} <: LinearMaps.LinearMap{T} end
+abstract type InterpolateMap{Y<:SphereSamplingStrategy,T<:Real} <: OperationMap{T} end
 function InterpolateMap(
     θϕs::AbstractVector{Tuple{T,T}},
     originalsamplingstrategy::Y;

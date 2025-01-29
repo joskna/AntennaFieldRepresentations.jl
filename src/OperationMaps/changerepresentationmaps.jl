@@ -12,7 +12,7 @@ abstract type ChangeRepresentationMap{
     A<:AntennaFieldRepresentation,
     B<:AntennaFieldRepresentation,
     C<:Complex,
-} <: LinearMaps.LinearMap{C} end
+} <: OperationMap{C} end
 
 """
     SphericalToPlaneWaveMap{S,W,C} <: ChangeRepresentationMap{S,W,C}
