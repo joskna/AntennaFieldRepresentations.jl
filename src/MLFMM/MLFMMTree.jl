@@ -61,7 +61,7 @@ function calculatenodesatlevel!(tree::MLFMMTree)
             push!(tree.nodesatlevel, [node])
 
         else
-            append!(tree.nodesatlevel[MLFMMTrees.level(tree, node)], node)
+            append!(tree.nodesatlevel[level(tree, node)], node)
         end
     end
 end
@@ -76,8 +76,8 @@ function addpoints!(
     for i ∈ eachindex(points)
         router = ClusterTrees.Octrees.Router(smallestboxsize, points[i])
         root_state = root(tree), rootcenter, rootsize, 1, 1
-        ClusterTrees.update!(tree, root_state, i, router) do tree, node, data
-            push!(data(tree, node).values, data)
+        ClusterTrees.update!(tree, root_state, i, router) do tree, node, datacontent
+            push!(data(tree, node).values, datacontent)
         end
     end
 end
@@ -109,18 +109,20 @@ function route!(tree::MLFMMTree, state, destination)
     target_level = level + 1
 
     chds = ClusterTrees.children(tree, nodeid)
+    # chds = children(tree, nodeid)
     pos = ClusterTrees.start(chds)
     while !ClusterTrees.done(chds, pos)
         child, newpos = ClusterTrees.next(chds, pos)
-        child_sector = data(tree, child).sector
+        child_sector = AntennaFieldRepresentations.data(tree, child).sector
         child_pos = ClusterTrees.Octrees.hilbert_positions[sfc_state][child_sector+1] + 1
-        child_level = data(tree, child).level
+        child_level = AntennaFieldRepresentations.data(tree, child).level
         target_pos < child_pos && break
         if child_sector == target_sector
             return child, target_center, target_size, target_sfc_state, child_level
         end
         pos = newpos
     end
+
 
     data = BoxData(Int[], target_center, target_size, target_sector, target_level)
     child = insert!(chds, data, pos)
@@ -131,7 +133,11 @@ function ClusterTrees.route!(tree::MLFMMTree, state, destination)
     return route!(tree::MLFMMTree, state, destination)
 end
 
-function Base.insert!(chd_itr::ClusterTrees.ChildIterator{MLFMMTree}, item, state)
+function Base.insert!(
+    chd_itr::ClusterTrees.ChildIterator{M},
+    item,
+    state,
+) where {M<:MLFMMTree}
     prev, next = state
     parent = chd_itr.node
 

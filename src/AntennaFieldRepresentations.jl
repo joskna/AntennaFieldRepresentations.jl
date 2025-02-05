@@ -142,6 +142,7 @@ include(joinpath("SphericalVectorModeFields", "spherical.jl"))
 include(joinpath("SurfaceCurrentDensities", "currentrepresentations.jl"))
 include(joinpath("FieldSamplings", "fieldsamplings.jl"))
 include(joinpath("OperationMaps", "transmitmaps.jl"))
+include(joinpath("MLFMM", "MLFMMMatrix.jl"))
 include(joinpath("OperationMaps", "changerepresentationmaps.jl"))
 
 export PropagationType, Radiated, Absorbed, Incident

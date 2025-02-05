@@ -6,6 +6,5 @@ Supertype for function-like object which corresponds to a certain method acting 
 # Type Parameters
 - `C <: Complex`
 """
-abstract type OperationMap{C<:Complex} <:
-              LinearMaps.LinearMap{C} end
+abstract type OperationMap{C<:Number} <: LinearMaps.LinearMap{C} end
 

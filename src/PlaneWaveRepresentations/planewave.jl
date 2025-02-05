@@ -258,6 +258,39 @@ function equivalentorder(pwe::PlaneWaveExpansion; ϵ = 1e-7)
     return L
 end
 
+"""
+    _phaseshiftmatrix!(storagematrix, R, k₀)
+
+In-place calculation of phaseshiftmatrix which needs to be element-wise multiplied to farfield to shift the farfield to new coordinate origin at R.
+Assumes that size(storagematrix) mathces the matrices in PlaneWaveRepresentation.
+"""
+function _phaseshiftmatrix!(
+    storagematrix::AbstractMatrix,
+    R::AbstractVector,
+    k₀::Number,
+    sampling::Y,
+) where {Y<:SphereSamplingStrategy}
+    a, b = size(storagematrix)
+    θvec, ϕvec = samples(sampling)
+    L = a - 1
+    @assert length(θvec) == a
+    @assert length(ϕvec) == b
+    Rvec = SVector{3}(R)
+    sp = sin.(ϕvec)
+    cp = cos.(ϕvec)
+    st = sin.(θvec)
+    ct = cos.(θvec)
+    for kϕ in eachindex(ϕvec)
+        sinp, cosp = sp[kϕ], cp[kϕ]
+        for kθ in eachindex(θvec)
+            sint, cost = st[kθ], ct[kθ]
+            eᵣ = typeof(Rvec)(cosp * sint, sinp * sint, cost)
+            ejkr = cis(-k₀ * udot(Rvec, eᵣ))
+            storagematrix[kθ, kϕ] = ejkr
+        end
+    end
+end
+
 include("interpolation.jl")
 
 function rotate!(
