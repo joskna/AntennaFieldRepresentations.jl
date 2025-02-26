@@ -681,8 +681,7 @@ function _aggregate_to_minlevel!(A::MLFMMSource; min_aggregationlevel::Integer =
 
     levels = AntennaFieldRepresentations.levels(tree)
     for level in reverse(maximum([min_aggregationlevel, 1]):length(levels))
-        # for parentnode::Int in nodesatlevel(tree, level)
-        Threads.@threads for parentnode::Int in nodesatlevel(tree, level)
+        for parentnode::Int in nodesatlevel(tree, level)
             isleaf(tree, parentnode) && continue
             _aggregate_children!(A, parentnode)
         end
