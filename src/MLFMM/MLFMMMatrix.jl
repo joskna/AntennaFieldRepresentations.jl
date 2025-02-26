@@ -1,7 +1,7 @@
 include("beastglue.jl")
 include("MLFMMTree.jl")
 
-struct MLFMMSource{M<:ResampleMap,Y<:SphereSamplingStrategy,C, X<:MLFMMTree} <:
+struct MLFMMSource{M<:ResampleMap,Y<:SphereSamplingStrategy,C,X<:MLFMMTree} <:
        AntennaFieldRepresentation{Radiated,C}
     tree::X
     expectedaccuracy::Real
@@ -144,13 +144,13 @@ function MLFMMSource(
     sampling = _standardsampling(samplingtype, L)
     θs, ϕs = samples(sampling)
     nθ, nϕ = length(θs), length(ϕs)
-    R = center(tree, 1) 
+    R = center(tree, 1)
     globalphaseshift = Matrix{Complex{T}}(undef, nθ, nϕ)
     _phaseshiftmatrix!(globalphaseshift, -R, wavenumber, sampling)
 
     verbose && println("------------------------------")
 
-    return MLFMMSource{eltype(levelresamplemaps),samplingtype,Complex{T}, typeof(tree)}(
+    return MLFMMSource{eltype(levelresamplemaps),samplingtype,Complex{T},typeof(tree)}(
         tree,
         expectedaccuracy,
         wavenumber,
@@ -409,7 +409,8 @@ function individualfarfields(
 
     for kθ in eachindex(θvec), kϕ in eachindex(ϕvec)
         E_FF =
-            C(0.0, -k₀) * _dipolefarfieldscalingfactor(E()) / (4π) .* cis.(k₀ * udot.(Ref(eᵣ[kθ, kϕ]), dipoles.positions))
+            C(0.0, -k₀) * _dipolefarfieldscalingfactor(E()) / (4π) .*
+            cis.(k₀ * udot.(Ref(eᵣ[kθ, kϕ]), dipoles.positions))
         for (i, dir) in enumerate(dipoles.orientations)
             Epolθ, Epolϕ = _dipoledarfieldpolarization(eθ[kθ, kϕ], eϕ[kϕ], dir, E())
             _eθ(basisfunctionfarfields[i])[kθ, kϕ] = E_FF[i] * Epolθ
@@ -596,9 +597,20 @@ function _aggregate_children!(A::MLFMMSource, parentnode)
 
         sector = tree.nodes[child].data.sector + 1
 
-        resamplemap.outputbuffer .= mul!(resamplemap.outputbuffer, resamplemap, A.nodefarfields[child])
-        _eθ(A.nodefarfields[parentnode]) .= _muladd_or_mulreset!(_eθ(A.nodefarfields[parentnode]), view(resamplemap.outputbuffermat, :, :, 1),  A.phaseshifttoparent[sector, level+1], reset = reset)
-        _eϕ(A.nodefarfields[parentnode]) .= _muladd_or_mulreset!(_eϕ(A.nodefarfields[parentnode]), view(resamplemap.outputbuffermat, :, :, 2),  A.phaseshifttoparent[sector, level+1], reset = reset)
+        resamplemap.outputbuffer .=
+            mul!(resamplemap.outputbuffer, resamplemap, A.nodefarfields[child])
+        _eθ(A.nodefarfields[parentnode]) .= _muladd_or_mulreset!(
+            _eθ(A.nodefarfields[parentnode]),
+            view(resamplemap.outputbuffermat, :, :, 1),
+            A.phaseshifttoparent[sector, level+1],
+            reset = reset,
+        )
+        _eϕ(A.nodefarfields[parentnode]) .= _muladd_or_mulreset!(
+            _eϕ(A.nodefarfields[parentnode]),
+            view(resamplemap.outputbuffermat, :, :, 2),
+            A.phaseshifttoparent[sector, level+1],
+            reset = reset,
+        )
 
         reset = false
     end
@@ -621,9 +633,12 @@ function _transpose_aggregate_children!(A::MLFMMSource, parentnode)
 
         sector = tree.nodes[child].data.sector + 1
 
-        view(resamplemap.outputbuffermat, :, :, 1) .= _eθ(A.nodefarfields[parentnode]) .* A.phaseshifttoparent[sector, level+1]
-        view(resamplemap.outputbuffermat, :, :, 2) .= _eϕ(A.nodefarfields[parentnode]) .* A.phaseshifttoparent[sector, level+1]
-        A.nodefarfields[child] .= mul!(A.nodefarfields[child], transpose_resamplemat, resamplemap.outputbuffer )
+        view(resamplemap.outputbuffermat, :, :, 1) .=
+            _eθ(A.nodefarfields[parentnode]) .* A.phaseshifttoparent[sector, level+1]
+        view(resamplemap.outputbuffermat, :, :, 2) .=
+            _eϕ(A.nodefarfields[parentnode]) .* A.phaseshifttoparent[sector, level+1]
+        A.nodefarfields[child] .=
+            mul!(A.nodefarfields[child], transpose_resamplemat, resamplemap.outputbuffer)
 
 
         # resamplemap.outputbuffer .= mul!(resamplemap.outputbuffer, resamplemap, A.nodefarfields[child])
@@ -651,9 +666,12 @@ function _adjoint_aggregate_children!(A::MLFMMSource, parentnode)
 
         sector = tree.nodes[child].data.sector + 1
 
-        view(resamplemap.outputbuffermat, :, :, 1) .= _eθ(A.nodefarfields[parentnode]) .* conj.(A.phaseshifttoparent[sector, level+1])
-        view(resamplemap.outputbuffermat, :, :, 2) .= _eϕ(A.nodefarfields[parentnode]) .* conj.(A.phaseshifttoparent[sector, level+1])
-        A.nodefarfields[child] .= mul!(A.nodefarfields[child], adjoint_resamplemat, resamplemap.outputbuffer )
+        view(resamplemap.outputbuffermat, :, :, 1) .=
+            _eθ(A.nodefarfields[parentnode]) .* conj.(A.phaseshifttoparent[sector, level+1])
+        view(resamplemap.outputbuffermat, :, :, 2) .=
+            _eϕ(A.nodefarfields[parentnode]) .* conj.(A.phaseshifttoparent[sector, level+1])
+        A.nodefarfields[child] .=
+            mul!(A.nodefarfields[child], adjoint_resamplemat, resamplemap.outputbuffer)
 
 
         # resamplemap.outputbuffer .= mul!(resamplemap.outputbuffer, resamplemap, A.nodefarfields[child])
@@ -699,7 +717,7 @@ function _adjoint_aggregate_to_minlevel!(A::MLFMMSource; min_aggregationlevel::I
     tree = A.tree
 
     levels = AntennaFieldRepresentations.levels(tree)
-    for level in maximum([min_aggregationlevel, 1]):length(levels)
+    for level = maximum([min_aggregationlevel, 1]):length(levels)
         # for parentnode::Int in nodesatlevel(tree, level)
         for parentnode::Int in nodesatlevel(tree, level)
             isleaf(tree, parentnode) && continue
@@ -715,12 +733,15 @@ end
 
 Perform transpose operation to `aggregate_to_minlevel!`
 """
-function _transpose_aggregate_to_minlevel!(A::MLFMMSource; min_aggregationlevel::Integer = 0)
+function _transpose_aggregate_to_minlevel!(
+    A::MLFMMSource;
+    min_aggregationlevel::Integer = 0,
+)
     A.verbose && @info "Aggregate node far fields"
     tree = A.tree
 
     levels = AntennaFieldRepresentations.levels(tree)
-    for level in maximum([min_aggregationlevel, 1]):length(levels)
+    for level = maximum([min_aggregationlevel, 1]):length(levels)
         # for parentnode::Int in nodesatlevel(tree, level)
         for parentnode::Int in nodesatlevel(tree, level)
             isleaf(tree, parentnode) && continue
