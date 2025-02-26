@@ -1,9 +1,9 @@
 include("beastglue.jl")
 include("MLFMMTree.jl")
 
-struct MLFMMSource{M<:ResampleMap,Y<:SphereSamplingStrategy,C} <:
+struct MLFMMSource{M<:ResampleMap,Y<:SphereSamplingStrategy,C, X<:MLFMMTree} <:
        AntennaFieldRepresentation{Radiated,C}
-    tree::MLFMMTree
+    tree::X
     expectedaccuracy::Real
     wavenumber::Real
     nodefarfields::Vector{PlaneWaveExpansion{Radiated,Y,C}}
@@ -11,6 +11,7 @@ struct MLFMMSource{M<:ResampleMap,Y<:SphereSamplingStrategy,C} <:
     levelcutoffparameters::Vector{Int}
     levelresamplemaps::Vector{M}
     phaseshifttoparent::Array{Matrix{C},2}
+    globalphaseshift::Matrix{C}
     nodeisfresh::Vector{Bool}
     leafnodeindices::Vector{Int}
     buffer::Vector{C}
@@ -26,8 +27,8 @@ Base.setindex!(p::MLFMMSource, i, v) = Base.setindex!(asvector(p), i, v)
 function Base.similar(p::MLFMMSource)
     return deepcopy(p)
 end
-function setwavenumber!(p::MLFMMSource{M,Y,C}, val) where {M,Y,C}
-    p = MLFMMSource{M,Y,C}(
+function setwavenumber!(p::MLFMMSource{M,Y,C,X}, val) where {M,Y,C,X}
+    p = MLFMMSource{M,Y,C,X}(
         p.tree,
         p.expectedaccuracy,
         val,
@@ -138,10 +139,18 @@ function MLFMMSource(
         wavenumber;
         samplingtype = samplingtype,
     )
+    L = levelcutoffparameters[1]
+
+    sampling = _standardsampling(samplingtype, L)
+    θs, ϕs = samples(sampling)
+    nθ, nϕ = length(θs), length(ϕs)
+    R = center(tree, 1) 
+    globalphaseshift = Matrix{Complex{T}}(undef, nθ, nϕ)
+    _phaseshiftmatrix!(globalphaseshift, -R, wavenumber, sampling)
 
     verbose && println("------------------------------")
 
-    return MLFMMSource{eltype(levelresamplemaps),samplingtype,Complex{T}}(
+    return MLFMMSource{eltype(levelresamplemaps),samplingtype,Complex{T}, typeof(tree)}(
         tree,
         expectedaccuracy,
         wavenumber,
@@ -150,6 +159,7 @@ function MLFMMSource(
         levelcutoffparameters,
         levelresamplemaps,
         phaseshifttoparent,
+        globalphaseshift,
         nodeisfresh,
         leafnodeindices,
         inputbuffer,
@@ -364,6 +374,7 @@ function individualfarfields(
     cosp = cos.(ϕvec)
     sinp = sin.(ϕvec)
 
+
     eθ =
         SVector{
             3,
@@ -398,14 +409,20 @@ function individualfarfields(
 
     for kθ in eachindex(θvec), kϕ in eachindex(ϕvec)
         E_FF =
-            C(0.0, -k₀) * _dipolefarfieldscalingfactor(E()) / (4π) *
-            dipoles.dipolemoments .* cis.(k₀ * udot.(Ref(eᵣ[kθ, kϕ]), dipoles.positions))
+            C(0.0, -k₀) * _dipolefarfieldscalingfactor(E()) / (4π) .* cis.(k₀ * udot.(Ref(eᵣ[kθ, kϕ]), dipoles.positions))
         for (i, dir) in enumerate(dipoles.orientations)
             Epolθ, Epolϕ = _dipoledarfieldpolarization(eθ[kθ, kϕ], eϕ[kϕ], dir, E())
             _eθ(basisfunctionfarfields[i])[kθ, kϕ] = E_FF[i] * Epolθ
             _eϕ(basisfunctionfarfields[i])[kθ, kϕ] = E_FF[i] * Epolϕ
         end
     end
+
+    # phaseshiftmatrix = Array{Complex{T}}(undef, nθ, nϕ)
+    # for i in eachindex(dipoles)
+    #     _phaseshiftmatrix!(phaseshiftmatrix, dipoles.positions[i], getwavenumber(dipoles), sampling)
+    #     _eθ(basisfunctionfarfields[i]) .*= phaseshiftmatrix
+    #     _eϕ(basisfunctionfarfields[i]) .*= phaseshiftmatrix
+    # end
 
     return basisfunctionfarfields
 end
@@ -466,43 +483,287 @@ function _initializephaseshifttoparent(
         L = cutoffparameters[level-1]
 
         sampling = _standardsampling(samplingtype, L)
+        θs, ϕs = samples(sampling)
+        nθ, nϕ = length(θs), length(ϕs)
         # phaseshiftmatrix=Matrix{Complex{T}}(undef, L + 1, 2 * L + 2)
         node = tree.nodes[nodesatlevel(tree, level)[1]]
         halfsize = node.data.halfsize
 
         R = [halfsize, halfsize, halfsize]
-        phaseshifttoparent[1, level] = Matrix{Complex{T}}(undef, L + 1, 2 * L + 2)
+        phaseshifttoparent[1, level] = Matrix{Complex{T}}(undef, nθ, nϕ)
         _phaseshiftmatrix!(phaseshifttoparent[1, level], R, k0, sampling)
 
         R = [-halfsize, halfsize, halfsize]
-        phaseshifttoparent[2, level] = Matrix{Complex{T}}(undef, L + 1, 2 * L + 2)
+        phaseshifttoparent[2, level] = Matrix{Complex{T}}(undef, nθ, nϕ)
         _phaseshiftmatrix!(phaseshifttoparent[2, level], R, k0, sampling)
 
         R = [halfsize, -halfsize, halfsize]
-        phaseshifttoparent[3, level] = Matrix{Complex{T}}(undef, L + 1, 2 * L + 2)
+        phaseshifttoparent[3, level] = Matrix{Complex{T}}(undef, nθ, nϕ)
         _phaseshiftmatrix!(phaseshifttoparent[3, level], R, k0, sampling)
 
         R = [-halfsize, -halfsize, halfsize]
-        phaseshifttoparent[4, level] = Matrix{Complex{T}}(undef, L + 1, 2 * L + 2)
+        phaseshifttoparent[4, level] = Matrix{Complex{T}}(undef, nθ, nϕ)
         _phaseshiftmatrix!(phaseshifttoparent[4, level], R, k0, sampling)
 
         R = [halfsize, halfsize, -halfsize]
-        phaseshifttoparent[5, level] = Matrix{Complex{T}}(undef, L + 1, 2 * L + 2)
+        phaseshifttoparent[5, level] = Matrix{Complex{T}}(undef, nθ, nϕ)
         _phaseshiftmatrix!(phaseshifttoparent[5, level], R, k0, sampling)
 
         R = [-halfsize, halfsize, -halfsize]
-        phaseshifttoparent[6, level] = Matrix{Complex{T}}(undef, L + 1, 2 * L + 2)
+        phaseshifttoparent[6, level] = Matrix{Complex{T}}(undef, nθ, nϕ)
         _phaseshiftmatrix!(phaseshifttoparent[6, level], R, k0, sampling)
 
         R = [halfsize, -halfsize, -halfsize]
-        phaseshifttoparent[7, level] = Matrix{Complex{T}}(undef, L + 1, 2 * L + 2)
+        phaseshifttoparent[7, level] = Matrix{Complex{T}}(undef, nθ, nϕ)
         _phaseshiftmatrix!(phaseshifttoparent[7, level], R, k0, sampling)
 
         R = [-halfsize, -halfsize, -halfsize]
-        phaseshifttoparent[8, level] = Matrix{Complex{T}}(undef, L + 1, 2 * L + 2)
+        phaseshifttoparent[8, level] = Matrix{Complex{T}}(undef, nθ, nϕ)
         _phaseshiftmatrix!(phaseshifttoparent[8, level], R, k0, sampling)
     end
     return phaseshifttoparent
+end
+
+
+"""
+    _aggregate_leafnodes!(A::MLFMMSource)
+
+Fill storage for leaf node patterns due to excitation vector `A.xvector`.
+"""
+function _aggregate_leafnodes!(A::MLFMMSource)
+    tree = A.tree
+
+    # for leafnode in A.leafnodeindices
+    Threads.@threads for leafnode in A.leafnodeindices
+        reset = true
+        for functionindex::Int in tree(leafnode).data.values::Vector{Int}
+            A.nodefarfields[leafnode] .= _muladd_or_mulreset!(
+                A.nodefarfields[leafnode],
+                A.basisfunctionfarfields[functionindex],
+                A.buffer[functionindex],
+                reset = reset,
+            )
+            reset = false
+        end
+    end
+end
+"""
+    _adjoint_aggregate_leafnodes!(A::MLFMMSource)
+
+Perform the adjoint operation (i.e., conjugate of transposed operation) to `_aggregate_leafnodes!`
+"""
+function _adjoint_aggregate_leafnodes!(A::MLFMMSource)
+    tree = A.tree
+    Threads.@threads for leafnode in A.leafnodeindices
+        pws = A.nodefarfields[leafnode]
+        for basisfunctionindex::Int in tree(leafnode).data.values::Vector{Int}
+            ff = A.basisfunctionfarfields[basisfunctionindex]
+            A.xvector[basisfunctionindex] = dot(ff, pws)
+        end
+    end
+end
+"""
+    _transpose_aggregate_leafnodes!(A::MLFMMSource)
+
+Perform the transpose operation to `_aggregate_leafnodes!`
+"""
+function _transpose_aggregate_leafnodes!(A::MLFMMSource)
+    tree = A.tree
+    Threads.@threads for leafnode in A.leafnodeindices
+        pws = A.nodefarfields[leafnode]
+        for basisfunctionindex::Int in tree(leafnode).data.values::Vector{Int}
+            ff = A.basisfunctionfarfields[basisfunctionindex]
+            A.xvector[basisfunctionindex] = udot(ff, pws)
+        end
+    end
+end
+
+#TODO: store children per node to remove dependency on ClusteTrees.children 
+"""
+    _aggregate_children!(A::MLFMMSource, parentnode)
+
+Fill pattern storage of parentnode with aggregated pattern from all its children.
+"""
+function _aggregate_children!(A::MLFMMSource, parentnode)
+    tree = A.tree
+
+    level = AntennaFieldRepresentations.level(tree, parentnode)
+
+    resamplemap = A.levelresamplemaps[level]
+    reset = true
+
+    for child in children(tree, parentnode)
+
+        sector = tree.nodes[child].data.sector + 1
+
+        resamplemap.outputbuffer .= mul!(resamplemap.outputbuffer, resamplemap, A.nodefarfields[child])
+        _eθ(A.nodefarfields[parentnode]) .= _muladd_or_mulreset!(_eθ(A.nodefarfields[parentnode]), view(resamplemap.outputbuffermat, :, :, 1),  A.phaseshifttoparent[sector, level+1], reset = reset)
+        _eϕ(A.nodefarfields[parentnode]) .= _muladd_or_mulreset!(_eϕ(A.nodefarfields[parentnode]), view(resamplemap.outputbuffermat, :, :, 2),  A.phaseshifttoparent[sector, level+1], reset = reset)
+
+        reset = false
+    end
+end
+"""
+    _transpose_aggregate_children!(A::MLFMMSource, parentnode)
+
+Perform transposed operation to `_aggregate_children!`
+"""
+function _transpose_aggregate_children!(A::MLFMMSource, parentnode)
+    tree = A.tree
+
+    level = AntennaFieldRepresentations.level(tree, parentnode)
+
+    resamplemap = A.levelresamplemaps[level]
+    transpose_resamplemat = transpose(resamplemap)
+    # reset = true
+
+    for child in children(tree, parentnode)
+
+        sector = tree.nodes[child].data.sector + 1
+
+        view(resamplemap.outputbuffermat, :, :, 1) .= _eθ(A.nodefarfields[parentnode]) .* A.phaseshifttoparent[sector, level+1]
+        view(resamplemap.outputbuffermat, :, :, 2) .= _eϕ(A.nodefarfields[parentnode]) .* A.phaseshifttoparent[sector, level+1]
+        A.nodefarfields[child] .= mul!(A.nodefarfields[child], transpose_resamplemat, resamplemap.outputbuffer )
+
+
+        # resamplemap.outputbuffer .= mul!(resamplemap.outputbuffer, resamplemap, A.nodefarfields[child])
+        # _eθ(A.nodefarfields[parentnode]) .= _muladd_or_mulreset!(_eθ(A.nodefarfields[parentnode]), view(resamplemap.outputbuffermat, :, :, 1),  A.phaseshifttoparent[sector, level+1], reset = reset)
+        # _eϕ(A.nodefarfields[parentnode]) .= _muladd_or_mulreset!(_eϕ(A.nodefarfields[parentnode]), view(resamplemap.outputbuffermat, :, :, 2),  A.phaseshifttoparent[sector, level+1], reset = reset)
+
+        # reset = false
+    end
+end
+"""
+    _adjoint_aggregate_children!(A::MLFMMSource, parentnode)
+
+Perform adjoint operation to `_aggregate_children!`
+"""
+function _adjoint_aggregate_children!(A::MLFMMSource, parentnode)
+    tree = A.tree
+
+    level = AntennaFieldRepresentations.level(tree, parentnode)
+
+    resamplemap = A.levelresamplemaps[level]
+    adjoint_resamplemat = adjoint(resamplemap)
+    # reset = true
+
+    for child in children(tree, parentnode)
+
+        sector = tree.nodes[child].data.sector + 1
+
+        view(resamplemap.outputbuffermat, :, :, 1) .= _eθ(A.nodefarfields[parentnode]) .* conj.(A.phaseshifttoparent[sector, level+1])
+        view(resamplemap.outputbuffermat, :, :, 2) .= _eϕ(A.nodefarfields[parentnode]) .* conj.(A.phaseshifttoparent[sector, level+1])
+        A.nodefarfields[child] .= mul!(A.nodefarfields[child], adjoint_resamplemat, resamplemap.outputbuffer )
+
+
+        # resamplemap.outputbuffer .= mul!(resamplemap.outputbuffer, resamplemap, A.nodefarfields[child])
+        # _eθ(A.nodefarfields[parentnode]) .= _muladd_or_mulreset!(_eθ(A.nodefarfields[parentnode]), view(resamplemap.outputbuffermat, :, :, 1),  A.phaseshifttoparent[sector, level+1], reset = reset)
+        # _eϕ(A.nodefarfields[parentnode]) .= _muladd_or_mulreset!(_eϕ(A.nodefarfields[parentnode]), view(resamplemap.outputbuffermat, :, :, 2),  A.phaseshifttoparent[sector, level+1], reset = reset)
+
+        # reset = false
+    end
+end
+
+"""
+    _aggregate_to_minlevel!(A::MLFMMSource, [x::AbstractVector]; min_aggregationlevel::Integer=0)
+
+Aggregate `A` up to min_aggregationlevel. 
+"""
+function _aggregate_to_minlevel!(A::MLFMMSource, x; min_aggregationlevel::Integer = 0)
+    A.buffer .= x
+    _aggregate_to_minlevel!(A, min_aggregationlevel = min_aggregationlevel)
+end
+function _aggregate_to_minlevel!(A::MLFMMSource; min_aggregationlevel::Integer = 0)
+    A.verbose && @info "Aggregate node far fields"
+    tree = A.tree
+
+    _aggregate_leafnodes!(A)
+
+    levels = AntennaFieldRepresentations.levels(tree)
+    for level in reverse(maximum([min_aggregationlevel, 1]):length(levels))
+        # for parentnode::Int in nodesatlevel(tree, level)
+        Threads.@threads for parentnode::Int in nodesatlevel(tree, level)
+            isleaf(tree, parentnode) && continue
+            _aggregate_children!(A, parentnode)
+        end
+    end
+
+end
+"""
+    _adjoint_aggregate_to_minlevel!(A::MLFMMSource; min_aggregationlevel::Integer=0)
+
+
+Perform adjoint operation to `aggregate_to_minlevel!`
+"""
+function _adjoint_aggregate_to_minlevel!(A::MLFMMSource; min_aggregationlevel::Integer = 0)
+    A.verbose && @info "Aggregate node far fields"
+    tree = A.tree
+
+    levels = AntennaFieldRepresentations.levels(tree)
+    for level in maximum([min_aggregationlevel, 1]):length(levels)
+        # for parentnode::Int in nodesatlevel(tree, level)
+        for parentnode::Int in nodesatlevel(tree, level)
+            isleaf(tree, parentnode) && continue
+            _adjoint_aggregate_children!(A, parentnode)
+        end
+    end
+    _adjoint_aggregate_leafnodes!(A)
+
+end
+"""
+    _transpose_aggregate_to_minlevel!(A::MLFMMSource; min_aggregationlevel::Integer=0)
+
+
+Perform transpose operation to `aggregate_to_minlevel!`
+"""
+function _transpose_aggregate_to_minlevel!(A::MLFMMSource; min_aggregationlevel::Integer = 0)
+    A.verbose && @info "Aggregate node far fields"
+    tree = A.tree
+
+    levels = AntennaFieldRepresentations.levels(tree)
+    for level in maximum([min_aggregationlevel, 1]):length(levels)
+        # for parentnode::Int in nodesatlevel(tree, level)
+        for parentnode::Int in nodesatlevel(tree, level)
+            isleaf(tree, parentnode) && continue
+            _transpose_aggregate_children!(A, parentnode)
+        end
+    end
+    _transpose_aggregate_leafnodes!(A)
+end
+
+"""
+    _aggregate_to_farfield!(A::MLFMMSource, [x::AbstractVector]; min_aggregationlevel::Integer=0)
+
+Aggregate `A` to farfield. 
+"""
+function _aggregate_to_farfield!(A::MLFMMSource, x)
+    A.buffer .= x
+    _aggregate_to_farfield!(A)
+end
+function _aggregate_to_farfield!(A::MLFMMSource)
+    _aggregate_to_minlevel!(A)
+    _eθ(A.nodefarfields[1]) .= _eθ(A.nodefarfields[1]) .* A.globalphaseshift
+    _eϕ(A.nodefarfields[1]) .= _eϕ(A.nodefarfields[1]) .* A.globalphaseshift
+end
+"""
+    _adjoint_aggregate_to_farfield!(A::MLFMMSource; min_aggregationlevel::Integer=0)
+
+Perform adjoint operation to `_aggregate_to_farfield!`
+"""
+function _adjoint_aggregate_to_farfield!(A::MLFMMSource)
+    _eθ(A.nodefarfields[1]) .= _eθ(A.nodefarfields[1]) .* conj.(A.globalphaseshift)
+    _eϕ(A.nodefarfields[1]) .= _eϕ(A.nodefarfields[1]) .* conj.(A.globalphaseshift)
+    _adjoint_aggregate_to_minlevel!(A)
+end
+"""
+    _transpose_aggregate_to_farfield!(A::MLFMMSource; min_aggregationlevel::Integer=0)
+
+Perform transpose operation to `_aggregate_to_farfield!`
+"""
+function _transpose_aggregate_to_farfield!(A::MLFMMSource)
+    _eθ(A.nodefarfields[1]) .= _eθ(A.nodefarfields[1]) .* A.globalphaseshift
+    _eϕ(A.nodefarfields[1]) .= _eϕ(A.nodefarfields[1]) .* A.globalphaseshift
+    _transpose_aggregate_to_minlevel!(A)
 end
 
 

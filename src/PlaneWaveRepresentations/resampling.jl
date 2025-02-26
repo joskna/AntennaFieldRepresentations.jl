@@ -345,12 +345,25 @@ function _adjoint_extract_single_θ!(storage, Ematr, iθrange, posθrange, negθ
 end
 
 function _extract_single_ϕ!(storage, Ematr, iϕrange, wϕ)
+
     mul!(storage, view(Ematr, :, iϕrange), wϕ)
+
+    # Nθ = size(Ematr, 1)
+    # storage .= 0
+    # @inbounds for i in eachindex(storage, 1:Nθ), j in eachindex(wϕ, iϕrange)
+    #     storage[i] += wϕ[j] * Ematr[i, iϕrange[j]]
+    # end
+
 
     return storage
 end
 function _adjoint_extract_single_ϕ!(storage, Ematr, iϕrange, wϕ)
-    view(Ematr, :, iϕrange) .+= storage .* adjoint(wϕ)
+    # view(Ematr, :, iϕrange) .+= storage .* adjoint(wϕ)
+
+    Nθ = size(Ematr, 1)
+    @inbounds for i in eachindex(storage, 1:Nθ), j in eachindex(wϕ, iϕrange)
+        Ematr[i, iϕrange[j]] += conj(wϕ[j]) * storage[i]
+    end
 end
 
 function _local_interpolate_θ!(
