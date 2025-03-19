@@ -85,6 +85,25 @@ using Test
         # end
     end
 
+    @testset verbose = true "Multilevel Fast Multipole Method" begin
+
+        @testset "MLFMMSource" begin
+            include(joinpath("test_MLFMM", "test_mlfmm_far.jl"))
+        end
+
+        # @testset "Conversions Dipole -> Spherical" begin 
+        #     include(joinpath("test_Conversions", "test_spherical_dipole_conversion.jl"))
+        # end
+
+        # @testset "Conversions Dipole -> PlaneWave" begin
+        #     include(joinpath("test_Conversions", "test_planewave_dipole_conversion.jl"))
+        # end
+
+        # @testset "Conversions Spherical <-> PlaneWave" begin
+        #     include(joinpath("test_Conversions", "test_planewave_spherical_conversion.jl"))
+        # end
+    end
+
 
     # @testset verbose=true "Interaction Between Field Representations" begin
 
