@@ -47,6 +47,16 @@ function PlaneWaveExpansion(
     buffer = reshape(Eθϕ, length(Eθϕ))
     return PlaneWaveExpansion{P,S,C}(samplingstrategy, Eθϕ, wavenumber, buffer)
 end
+function PlaneWaveExpansion(
+    ::P,
+    samplingstrategy::S,
+    wavenumber::Number,
+) where {P<:PropagationType,S<:SphereSamplingStrategy}
+    a, b = _countsamples(samplingstrategy)
+    Eθϕ = Array{ComplexF64}(undef, a, b, 2)
+    buffer = reshape(Eθϕ, length(Eθϕ))
+    return PlaneWaveExpansion{P,S,ComplexF64}(samplingstrategy, Eθϕ, wavenumber, buffer)
+end
 # function _eθ(p::PlaneWaveExpansion)
 #     _, s2 = _count_samples(p.samplingstrategy)
 #     return view(p.EθEϕ, :, 1:s2)

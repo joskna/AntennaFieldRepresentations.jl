@@ -154,6 +154,12 @@ end
 function _linearmap(crm::ChangeRepresentationMap)
     return crm.lmap
 end
+function _linearmap(crm_ad::LinearMaps.AdjointMap{C, CRM}) where {C, CRM <: ChangeRepresentationMap}
+    return crm_ad.lmap.lmap
+end
+function _linearmap(crm_tr::LinearMaps.TransposeMap{C, CRM}) where {C, CRM <: ChangeRepresentationMap}
+    return crm_tr.lmap.lmap
+end
 function Base.size(crm::ChangeRepresentationMap)
     return size(crm.lmap)
 end
@@ -162,17 +168,17 @@ function LinearMaps._unsafe_mul!(y, crm::ChangeRepresentationMap, x::AbstractVec
 end
 function LinearMaps._unsafe_mul!(
     y,
-    crm_ad::LinearMaps.AdjointMap{ChangeRepresentationMap},
+    crm_ad::LinearMaps.AdjointMap{C, CRM},
     x::AbstractVector,
-)
-    return LinearMaps._unsafe_mul!(y, adjoint(_linearmap(crm_ad.lmap)), x)
+) where {C, CRM <: ChangeRepresentationMap}
+    return LinearMaps._unsafe_mul!(y, adjoint(_linearmap(crm_ad)), x)
 end
 function LinearMaps._unsafe_mul!(
     y,
-    crm_tr::LinearMaps.TransposeMap{ChangeRepresentationMap},
+    crm_tr::LinearMaps.TransposeMap{C, CRM},
     x::AbstractVector,
-)
-    return LinearMaps._unsafe_mul!(y, transpose(_linearmap(crm_tr.lmap)), x)
+) where {C, CRM <: ChangeRepresentationMap}
+    return LinearMaps._unsafe_mul!(y, transpose(_linearmap(crm_tr)), x)
 end
 function inverse(crm::M) where {M<:ChangeRepresentationMap}
     T = _inversetype(M)
@@ -297,4 +303,180 @@ function changerepresentation(
         vec(EθEϕ),
     )
 
+end
+
+
+"""
+    SimpleMLFMMSourceToPlaneWaveMap{M,W,C} <: ChangeRepresentationMap{M,W,C}
+
+Linear map representing a `changerepresentation` operation from a `MLFMMSource` into a `PlaneWaveExpansion`.
+
+The resulting `PlaneWaveExpansion` has the same samplingstrategy as the internal plane wave representation of the 'MLFMMSource' at level 1.
+
+# Type Parameters
+- `M <: MLFMMSource`: Type of the original representation
+- `W <: PlaneWaveExpansion` : Type of the target representation
+- `C <: Complex`
+"""
+struct SimpleMLFMMSourceToPlaneWaveMap{
+    M<:MLFMMSource,
+    W<:PlaneWaveExpansion,
+    C<:Complex,
+} <: ChangeRepresentationMap{M,W,C}
+    mlfmmsource::M
+    targetrepresentation::W
+end
+function Base.size(crm::SimpleMLFMMSourceToPlaneWaveMap)
+    return (length(crm.mlfmmsource.nodefarfields[1]), length(crm.mlfmmsource.buffer))
+end
+
+function LinearMaps._unsafe_mul!(y, crm::SimpleMLFMMSourceToPlaneWaveMap, x::AbstractVector)
+    _aggregate_to_farfield!(crm.mlfmmsource, x)
+    return y.= crm.mlfmmsource.nodefarfields[1]
+end
+
+function LinearMaps._unsafe_mul!(
+    y,
+    crm_ad::LinearMaps.AdjointMap{C, S},
+    x::AbstractVector,
+) where{C, S<:SimpleMLFMMSourceToPlaneWaveMap}
+    crm = crm_ad.lmap
+    crm.mlfmmsource.nodefarfields[1] .= x
+    _adjoint_aggregate_to_farfield!(crm.mlfmmsource)
+    y .= crm.mlfmmsource.buffer
+
+    return y
+end
+
+function LinearMaps._unsafe_mul!(
+    y,
+    crm_tr::LinearMaps.TransposeMap{C, S},
+    x::AbstractVector,
+) where{C, S<:SimpleMLFMMSourceToPlaneWaveMap}
+    crm = crm_tr.lmap
+    crm.mlfmmsource.nodefarfields[1] .= x
+    _transpose_aggregate_to_farfield!(crm.mlfmmsource)
+    y .= crm.mlfmmsource.buffer
+
+    return y
+end
+
+function SimpleMLFMMSourceToPlaneWaveMap(originalrepresentation::M) where{M<:MLFMMSource}
+    targetrepresentation = originalrepresentation.nodefarfields[1]
+    W = typeof(targetrepresentation)
+    C = eltype(targetrepresentation)
+    return SimpleMLFMMSourceToPlaneWaveMap{M,W,C}(originalrepresentation, targetrepresentation)
+end
+
+"""
+    MLFMMSourceToPlaneWaveMap{M,W,CRM,C} <: ChangeRepresentationMap{M,W,C}
+
+Linear map representing a `changerepresentation` operation from a `MLFMMSource` into a `PlaneWaveExpansion`.
+
+The resulting `PlaneWaveExpansion` has an arbitrary samplingstrategy. Its samples are obtained by resampling the internal plane wave representation of the 'MLFMMSource' at level 1.
+
+
+# Type Parameters
+- `M <: MLFMMSource`: Type of the original representation
+- `W <: PlaneWaveExpansion` : Type of the target representation
+- 'RM <: ResampleMap': ResampleMap to map from planewave representation of MLFMMSource to desired sampling
+- `C <: Complex`
+"""
+struct MLFMMSourceToPlaneWaveMap{
+    M<:MLFMMSource,
+    W<:PlaneWaveExpansion,
+    RM<:ResampleMap,
+    C<:Complex,
+} <: ChangeRepresentationMap{M,W,C}
+    originalrepresentation::M
+    targetrepresentation::W
+    resamplemap::RM
+    lmap
+end
+
+
+
+function MLFMMSourceToPlaneWaveMap(
+    targetrepresentation :: W,
+    originalrepresentation :: M;
+    orderθ = 12,
+    orderϕ = 12, ) where{W <: PlaneWaveExpansion{Radiated}, M <:MLFMMSource}
+
+    originalsamplingstrategy = originalrepresentation.nodefarfields[1].samplingstrategy
+    targetsamplingstrategy = targetrepresentation.samplingstrategy
+    resamplemap = ResampleMap(
+        targetsamplingstrategy,
+        originalsamplingstrategy;
+        orderθ = orderθ,
+        orderϕ = orderϕ,
+    )
+    RM = typeof(resamplemap)
+    C = eltype(originalrepresentation.buffer)
+
+    lmap = resamplemap * SimpleMLFMMSourceToPlaneWaveMap(originalrepresentation)
+
+    return MLFMMSourceToPlaneWaveMap{M,W,RM,C}( originalrepresentation, targetrepresentation, resamplemap, lmap)
+end
+
+function MLFMMSourceToPlaneWaveMap(
+    targetsampling :: Y,
+    originalrepresentation :: M;
+    orderθ = 12,
+    orderϕ = 12, ) where{Y <: SphereSamplingStrategy, M <:MLFMMSource}
+
+    targetrepresentation = PlaneWaveExpansion(Radiated(), targetsampling, originalrepresentation.wavenumber)
+
+    return MLFMMSourceToPlaneWaveMap(
+        targetrepresentation,
+        originalrepresentation;
+        orderθ = orderθ,
+        orderϕ = orderϕ,
+    )
+end
+
+function MLFMMSourceToPlaneWaveMap(
+    ::Type{PlaneWaveExpansion{Radiated,Y,C}},
+    originalrepresentation::MLFMMSource;
+    samplingstrategy = _standardsampling(Y, equivalentorder(originalrepresentation)),
+    orderθ = 12,
+    orderϕ = 12,
+) where {
+    C<:Number,
+    Y<:SphereSamplingStrategy,
+}
+    return MLFMMSourceToPlaneWaveMap(samplingstrategy, originalrepresentation; orderθ = orderθ, orderϕ = orderϕ, )
+end
+function ChangeRepresentationMap(
+    ::Type{PlaneWaveExpansion{Radiated,Y,C}},
+    originalrepresentation::MLFMMSource;
+    samplingstrategy = _standardsampling(Y, equivalentorder(originalrepresentation)),
+    orderθ = 12,
+    orderϕ = 12,
+) where {
+    C<:Number,
+    Y<:SphereSamplingStrategy,
+}
+    return MLFMMSourceToPlaneWaveMap(PlaneWaveExpansion{Radiated,Y,C}, 
+    originalrepresentation;
+    samplingstrategy = samplingstrategy,
+    orderθ = orderθ,
+    orderϕ = orderϕ, )
+end
+function ChangeRepresentationMap(
+    ::Type{PlaneWaveExpansion},
+    originalrepresentation::MLFMMSource;
+)
+return SimpleMLFMMSourceToPlaneWaveMap(originalrepresentation)
+end
+
+function ChangeRepresentationMap(
+    ::Type{W},
+    originalrepresentation::MLFMMSource;
+    orderθ = 12,
+    orderϕ = 12,
+) where {W<:PlaneWaveExpansion}
+    return MLFMMSourceToPlaneWaveMap(W, 
+    originalrepresentation;
+    orderθ = orderθ,
+    orderϕ = orderϕ, )
 end

@@ -169,6 +169,7 @@ export inverse
 export weightsandsamples, samples
 export interpolate, InterpolateMap, LocalθLocalϕInterpolateMap
 export resample, ResampleMap, LocalθLocalϕResampleMap
+export MLFMMSource
 
 
 end

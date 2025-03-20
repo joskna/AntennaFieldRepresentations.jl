@@ -559,7 +559,7 @@ function _adjoint_aggregate_leafnodes!(A::MLFMMSource)
         pws = A.nodefarfields[leafnode]
         for basisfunctionindex::Int in tree(leafnode).data.values::Vector{Int}
             ff = A.basisfunctionfarfields[basisfunctionindex]
-            A.xvector[basisfunctionindex] = dot(ff, pws)
+            A.buffer[basisfunctionindex] = dot(ff, pws)
         end
     end
 end
@@ -574,7 +574,7 @@ function _transpose_aggregate_leafnodes!(A::MLFMMSource)
         pws = A.nodefarfields[leafnode]
         for basisfunctionindex::Int in tree(leafnode).data.values::Vector{Int}
             ff = A.basisfunctionfarfields[basisfunctionindex]
-            A.xvector[basisfunctionindex] = udot(ff, pws)
+            A.buffer[basisfunctionindex] = udot(ff, pws)
         end
     end
 end
@@ -785,6 +785,11 @@ function _transpose_aggregate_to_farfield!(A::MLFMMSource)
     _eϕ(A.nodefarfields[1]) .= _eϕ(A.nodefarfields[1]) .* A.globalphaseshift
     _transpose_aggregate_to_minlevel!(A)
 end
+
+function equivalentorder(A::MLFMMSource)
+    return Al.levelcutoffparameters[1]
+end
+
 
 
 # struct MLFMMReceive{R<:ResampleMap,Y<:SphereSamplingStrategy,R<:Real}
