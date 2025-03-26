@@ -229,9 +229,10 @@ function _muladd_or_mulreset!(
     reset::Bool = false,
 )
     if reset
-        storage.EθEϕ .= factor * summand.EθEϕ
+        storage.EθEϕ .= summand.EθEϕ
+        storage.EθEϕ .*= factor
     else
-        storage.EθEϕ .+= factor * summand.EθEϕ
+        storage.EθEϕ .+= factor .* summand.EθEϕ
     end
     return storage
 end

@@ -117,8 +117,10 @@ function localpotential!(
 
     # pointsiterator = collect(enumerate(points))
     # for (p, y) ∈ pointsiterator
-    Threads.@threads for p ∈ eachindex(points)
-        threadid = Threads.threadid()
+    # Threads.@threads for p ∈ eachindex(points)
+    for p ∈ eachindex(points)
+        # threadid = Threads.threadid()
+        threadid = 1
         y = points[p]
         for (q, el) ∈ enumerate(els)
             fill!(zlocal[threadid], zero(T))
@@ -187,7 +189,7 @@ function individualcartesianfarfields(
         BEAST.MWDoubleLayerFarField3D(; wavenumber = k0),
         pts,
         funspace;
-        t = typeindicator{SVector{3,Complex{R}}}(),
+        t = typeindicator{SVector{3,C}}(),
         quadstrat = quadstrat,
         verbose = verbose,
     )

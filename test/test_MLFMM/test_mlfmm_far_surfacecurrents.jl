@@ -63,9 +63,6 @@ dipoles = rotate(
     0.9,
     1.3,
 )
-# dipoles= generate_AUTdips(collect(-0.5λ: λ/4: 0.5λ), collect(-0.5λ: λ/4: 0λ), collect(-1λ: λ/4: 1λ), k0)
-
-stuff = MLFMMSource(dipoles, dipoles.wavenumber, verbose = false)
 
 samplingtype = GaussLegendreθRegularϕSampling
 
@@ -77,43 +74,68 @@ using LinearAlgebra
 
 pwe = changerepresentation(PlaneWaveExpansion, dipoles)
 
-AntennaFieldRepresentations._aggregate_to_farfield!(stuff, dipoles)
-
-swe = changerepresentation(SphericalWaveExpansion, dipoles)
 
 
-begin
-    AntennaFieldRepresentations._aggregate_to_farfield!(stuff, dipoles)
-    swe2 = changerepresentation(SphericalWaveExpansion, stuff.nodefarfields[1])
-end
+using CompScienceMeshes
+using BEAST
 
-@test norm(swe .- swe2[1:length(swe)]) / norm(swe) < 3e-5
+radius = 1.5 * λ
 
-crm= ChangeRepresentationMap(typeof(pwe), stuff, samplingstrategy = pwe.samplingstrategy)
-crm2= ChangeRepresentationMap(SphericalWaveExpansion, pwe)
+sphere_mesh = meshsphere(radius, λ / 5)
+Γ = BEAST.raviartthomas(sphere_mesh)
 
-CRM= crm2*crm
+currents = SurfaceCurrentDensity{Radiated,Electric,typeof(Γ),ComplexF64}(
+    Γ,
+    rand(ComplexF64, numfunctions(Γ)),
+    dipoles.wavenumber,
+)
+currentsmag = SurfaceCurrentDensity{Radiated,Magnetic,typeof(Γ),ComplexF64}(
+    Γ,
+    rand(ComplexF64, numfunctions(Γ)),
+    dipoles.wavenumber,
+)
 
-swe2 = CRM * dipoles
-@test norm(swe .- swe2[1:length(swe)]) / norm(swe) < 3e-5
 
-# Also adjoint and transpose operations should work: 
+mlfmmsrc = MLFMMSource(currents, currents.wavenumber, verbose = false)
+mlfmmsrcm = MLFMMSource(currentsmag, currents.wavenumber, verbose = false)
 
-A = ChangeRepresentationMap(typeof(pwe), stuff, samplingstrategy = pwe.samplingstrategy)
+
+b = Vector(pwe)
+
+A = ChangeRepresentationMap(typeof(pwe), mlfmmsrc, samplingstrategy = pwe.samplingstrategy)
 Aᴴ = adjoint(A)
 
-AAᴴ = A*Aᴴ
-AᴴA = Aᴴ*A
+B = ChangeRepresentationMap(typeof(pwe), mlfmmsrcm, samplingstrategy = pwe.samplingstrategy)
+Bᴴ = adjoint(B)
+
+C = [A B]
+# C= A
+
+Cᴴ = adjoint(C)
+
+CCᴴ = C * Cᴴ
+CᴴC = Cᴴ * C
+
+Cᴴb = Cᴴ * b
+
+# y=zeros(ComplexF64,size(Cᴴb))
+y = zeros(ComplexF64, size(b))
+# y=CCᴴ* b / norm(b)
 
 using IterativeSolvers
+# gmres!(y, CᴴC , Cᴴb / norm(Cᴴb), verbose=true, restart=1, maxiter = 200,abstol=1e-6)
+minres!(y, CCᴴ, b / norm(b), verbose = true, maxiter = 100, abstol = 1e-3)
 
-b=Vector(pwe)
+# cg!(y, CCᴴ, b / norm(b), verbose=true, maxiter = 100, abstol=1e-3)
 
-Aᴴb = Aᴴ*b
+# x= y * norm(Cᴴb)
+x = Cᴴ * y * norm(b)
+pwe2 = similar(pwe)
+pwe2 .= C * x
 
-x=zeros(ComplexF64,size(b))
+pwe3 = similar(pwe)
+pwe3 .= pwe - pwe2
 
-minres!(x, AAᴴ, b/norm(b), maxiter=100, verbose=true, abstol= 1e-3)
 
 
-@test norm(b-AAᴴ*x*norm(b)) / norm(b) < 1e-3
+@test norm(pwe3) / norm(pwe) < 1e-3

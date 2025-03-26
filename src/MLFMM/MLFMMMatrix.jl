@@ -303,9 +303,10 @@ end
 Returns a vector of farfields, one for each coefficient in `basisfunctions`, sampled according to `sampling`.
 """
 function individualfarfields(
-    basisfunctions::SurfaceCurrentDensity,
+    basisfunctions::SurfaceCurrentDensity{P,E,B,C},
     sampling::Y,
-) where {Y<:SphereSamplingStrategy}
+) where {Y<:SphereSamplingStrategy,P,E,B,C}
+    T = real(C)
     θvec, ϕvec = samples(sampling)
 
     nθ, nϕ = length(θvec), length(ϕvec)
@@ -325,37 +326,38 @@ function individualfarfields(
     eϕ = SVector{3}.([[-sinp[kϕ], cosp[kϕ], zero(T)] for kϕ in eachindex(ϕvec)])
 
     pts = [
-        point(cosp[kk] * sint[k], sinp[kk] * sint[k], cost[k]) for k in eachindex(θvec)
-        for kk in eachindex(ϕvec)
+        point(cosp[kk] * sint[k], sinp[kk] * sint[k], cost[k]) for k in eachindex(θvec),
+        kk in eachindex(ϕvec)
     ]
 
-    farfieldmatrices = individualcartesianfarfields(
-        basisfunctions,
-        pts,
-    )::Matrix{SVector{3,Complex{eltype(θvec)}}}
+    farfieldmatrices =
+        individualcartesianfarfields(basisfunctions, pts)::Matrix{SVector{3,C}}
 
-    basisfunctionfarfields = Vector{PlaneWaveExpansion{Radiated,Y,Complex{T}}}(
-        undef,
-        numfunctions(basisfunctions),
-    )
-    ff = Matrix{SVector{3,Complex{T}}}(undef, nθ, nϕ)
+    basisfunctionfarfields =
+        Vector{PlaneWaveExpansion{Radiated,Y,C}}(undef, numfunctions(basisfunctions))
+    ff = Matrix{SVector{3,C}}(undef, nθ, nϕ)
     for functionindex in eachindex(basisfunctionfarfields)
         ff .= reshape(view(farfieldmatrices, :, functionindex), nθ, nϕ)
 
         basisfunctionfarfields[functionindex] = PlaneWaveExpansion(
             Radiated(),
             sampling,
-            Matrix{Complex{T}}(undef, nθ, nϕ),
-            Matrix{Complex{T}}(undef, nθ, nϕ),
+            Matrix{C}(undef, nθ, nϕ),
+            Matrix{C}(undef, nθ, nϕ),
             getwavenumber(basisfunctions),
         )
-        Eθ = _eθ(basisfunctionfarfields[functionindex])
-        Eϕ = _eϕ(basisfunctionfarfields[functionindex])
+        # Eθ = _eθ(basisfunctionfarfields[functionindex])
+        # Eϕ = _eϕ(basisfunctionfarfields[functionindex])
         for kθ in eachindex(θvec), kϕ in eachindex(ϕvec)
 
 
-            Eθ[kθ, kϕ] = Complex{R}(udot(eθ[kθ, kϕ], ff[kθ, kϕ]))
-            Eϕ[kθ, kϕ] = Complex{R}(udot(eϕ[kϕ], ff[kθ, kϕ]))
+            # Eθ[kθ, kϕ] = C(udot(eθ[kθ, kϕ], ff[kθ, kϕ]))
+            # Eϕ[kθ, kϕ] = C(udot(eϕ[kϕ], ff[kθ, kϕ]))
+
+            basisfunctionfarfields[functionindex].EθEϕ[kθ, kϕ, 1] =
+                C(udot(eθ[kθ, kϕ], ff[kθ, kϕ]))
+            basisfunctionfarfields[functionindex].EθEϕ[kθ, kϕ, 2] =
+                C(udot(eϕ[kϕ], ff[kθ, kϕ]))
         end
 
     end
@@ -534,11 +536,11 @@ Fill storage for leaf node patterns due to excitation vector `A.xvector`.
 function _aggregate_leafnodes!(A::MLFMMSource)
     tree = A.tree
 
-    # for leafnode in A.leafnodeindices
-    Threads.@threads for leafnode in A.leafnodeindices
+    for leafnode in A.leafnodeindices
+        # Threads.@threads for leafnode in A.leafnodeindices
         reset = true
         for functionindex::Int in tree(leafnode).data.values::Vector{Int}
-            A.nodefarfields[leafnode] .= _muladd_or_mulreset!(
+            A.nodefarfields[leafnode].buffer .= _muladd_or_mulreset!(
                 A.nodefarfields[leafnode],
                 A.basisfunctionfarfields[functionindex],
                 A.buffer[functionindex],
@@ -555,7 +557,8 @@ Perform the adjoint operation (i.e., conjugate of transposed operation) to `_agg
 """
 function _adjoint_aggregate_leafnodes!(A::MLFMMSource)
     tree = A.tree
-    Threads.@threads for leafnode in A.leafnodeindices
+    # Threads.@threads for leafnode in A.leafnodeindices
+    for leafnode in A.leafnodeindices
         pws = A.nodefarfields[leafnode]
         for basisfunctionindex::Int in tree(leafnode).data.values::Vector{Int}
             ff = A.basisfunctionfarfields[basisfunctionindex]
@@ -599,13 +602,25 @@ function _aggregate_children!(A::MLFMMSource, parentnode)
 
         resamplemap.outputbuffer .=
             mul!(resamplemap.outputbuffer, resamplemap, A.nodefarfields[child])
-        _eθ(A.nodefarfields[parentnode]) .= _muladd_or_mulreset!(
+        # _eθ(A.nodefarfields[parentnode]) .= _muladd_or_mulreset!(
+        #     _eθ(A.nodefarfields[parentnode]),
+        #     view(resamplemap.outputbuffermat, :, :, 1),
+        #     A.phaseshifttoparent[sector, level+1],
+        #     reset = reset,
+        # )
+        # _eϕ(A.nodefarfields[parentnode]) .= _muladd_or_mulreset!(
+        #     _eϕ(A.nodefarfields[parentnode]),
+        #     view(resamplemap.outputbuffermat, :, :, 2),
+        #     A.phaseshifttoparent[sector, level+1],
+        #     reset = reset,
+        # )
+        _muladd_or_mulreset!(
             _eθ(A.nodefarfields[parentnode]),
             view(resamplemap.outputbuffermat, :, :, 1),
             A.phaseshifttoparent[sector, level+1],
             reset = reset,
         )
-        _eϕ(A.nodefarfields[parentnode]) .= _muladd_or_mulreset!(
+        _muladd_or_mulreset!(
             _eϕ(A.nodefarfields[parentnode]),
             view(resamplemap.outputbuffermat, :, :, 2),
             A.phaseshifttoparent[sector, level+1],
@@ -670,8 +685,11 @@ function _adjoint_aggregate_children!(A::MLFMMSource, parentnode)
             _eθ(A.nodefarfields[parentnode]) .* conj.(A.phaseshifttoparent[sector, level+1])
         view(resamplemap.outputbuffermat, :, :, 2) .=
             _eϕ(A.nodefarfields[parentnode]) .* conj.(A.phaseshifttoparent[sector, level+1])
-        A.nodefarfields[child] .=
-            mul!(A.nodefarfields[child], adjoint_resamplemat, resamplemap.outputbuffer)
+        A.nodefarfields[child] .= mul!(
+            A.nodefarfields[child].buffer,
+            adjoint_resamplemat,
+            resamplemap.outputbuffer,
+        )
 
 
         # resamplemap.outputbuffer .= mul!(resamplemap.outputbuffer, resamplemap, A.nodefarfields[child])
