@@ -89,10 +89,10 @@ end
 
 @test norm(swe .- swe2[1:length(swe)]) / norm(swe) < 3e-5
 
-crm= ChangeRepresentationMap(typeof(pwe), stuff, samplingstrategy = pwe.samplingstrategy)
-crm2= ChangeRepresentationMap(SphericalWaveExpansion, pwe)
+crm = ChangeRepresentationMap(typeof(pwe), stuff, samplingstrategy = pwe.samplingstrategy)
+crm2 = ChangeRepresentationMap(SphericalWaveExpansion, pwe)
 
-CRM= crm2*crm
+CRM = crm2 * crm
 
 swe2 = CRM * dipoles
 @test norm(swe .- swe2[1:length(swe)]) / norm(swe) < 3e-5
@@ -102,18 +102,18 @@ swe2 = CRM * dipoles
 A = ChangeRepresentationMap(typeof(pwe), stuff, samplingstrategy = pwe.samplingstrategy)
 Aᴴ = adjoint(A)
 
-AAᴴ = A*Aᴴ
-AᴴA = Aᴴ*A
+AAᴴ = A * Aᴴ
+AᴴA = Aᴴ * A
 
 using IterativeSolvers
 
-b=Vector(pwe)
+b = Vector(pwe)
 
-Aᴴb = Aᴴ*b
+Aᴴb = Aᴴ * b
 
-x=zeros(ComplexF64,size(b))
+x = zeros(ComplexF64, size(b))
 
-minres!(x, AAᴴ, b/norm(b), maxiter=100, verbose=true, abstol= 1e-3)
+minres!(x, AAᴴ, b / norm(b), maxiter = 100, verbose = true, abstol = 1e-3)
 
 
-@test norm(b-AAᴴ*x*norm(b)) / norm(b) < 1e-3
+@test norm(b - AAᴴ * x * norm(b)) / norm(b) < 1e-3
