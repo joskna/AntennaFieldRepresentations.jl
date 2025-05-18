@@ -10,6 +10,9 @@ struct ProbeAntenna{A<:AntennaFieldRepresentation}
     aut_field::A
     probesize::Real
 end
+function getwavenumber(pa::ProbeAntenna)
+    return getwavenumber(pa.aut_field)
+end
 """
     getprobesize(p::ProbeAntenna)
 

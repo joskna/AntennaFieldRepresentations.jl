@@ -33,17 +33,20 @@ const Z₀ = sqrt(μ₀ / ε₀) # Ω
 
 Return u⋅v without complex conjugation of u
 """
-function udot(u::Array{<:Real,1}, v::Array{<:Real,1})
-    return u ⋅ v
-end
-function udot(u::Array{<:Complex,1}, v::Array{<:Complex,1})
-    return dotu(length(u), u, 1, v, 1)
-end
-function udot(u::Array{<:Complex,1}, v::Array{<:Real,1})
-    return dotu(length(u), u, 1, complex(v), 1)
-end
-function udot(u::Array{<:Real,1}, v::Array{<:Complex,1})
-    return dotu(length(u), complex(u), 1, v, 1)
+# function udot(u::Array{<:Real,1}, v::Array{<:Real,1})
+#     return u ⋅ v
+# end
+# function udot(u::Array{<:Complex,1}, v::Array{<:Complex,1})
+#     return dotu(length(u), u, 1, v, 1)
+# end
+# function udot(u::Array{<:Complex,1}, v::Array{<:Real,1})
+#     return dotu(length(u), u, 1, complex(v), 1)
+# end
+# function udot(u::Array{<:Real,1}, v::Array{<:Complex,1})
+#     return dotu(length(u), complex(u), 1, v, 1)
+# end
+function udot(u::Vector, v::Vector)
+    return transpose(u) * v
 end
 function udot(u, v)
     # return sum(u .* v)

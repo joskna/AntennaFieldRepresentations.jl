@@ -304,6 +304,16 @@ end
 
 include("interpolation.jl")
 
+function rotate(    
+    pattern::W,
+    χ::T,
+    θ::T,
+    ϕ::T;
+    orderθ::Integer = 12,
+    orderϕ::Integer = 12,
+) where {W<:PlaneWaveExpansion,T<:Number}
+    return rotate!(similar(pattern), pattern, χ, θ, ϕ; orderθ = orderθ, orderϕ = orderϕ)
+end
 function rotate!(
     rotated_pattern::W,
     pattern::W,
@@ -345,14 +355,9 @@ function rotate!(
 
             Eθ, Eϕ = interpolate_single_planewave(
                 (θ_rot, ϕ_rot),
-                pattern,
-                LocalθLocalΦInterpolateMap{
-                    typeof(pattern.samplingstrategy),
-                    orderθ,
-                    orderϕ,
-                    T,
-                };
-                θvecϕvec = (θvec, ϕvec),
+                pattern;
+                orderθ = orderθ,
+                orderϕ = orderϕ,
             )
 
             rotated_pattern.EθEϕ[kθ, kϕ, 1] = (eθ_rot ⋅ eϕ_i) * Eϕ + (eθ_rot ⋅ eθ_i) * Eθ

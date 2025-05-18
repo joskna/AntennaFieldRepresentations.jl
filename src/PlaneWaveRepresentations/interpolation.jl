@@ -390,7 +390,7 @@ function extract_single_entry!(
     return udot(wϕ, storage)
 end
 
-function _planϕweightsandindices(newϕs, oldϕs, orderϕ, T)
+function _planϕweightsandindices(newϕs, oldϕs, orderϕ::I, T) where{I <: Integer}
     ϕweights = Vector{SVector{orderϕ,T}}(undef, length(newϕs))
     ϕindices = Vector{SVector{orderϕ,Int64}}(undef, length(newϕs))
     Δϕ = oldϕs[2] - oldϕs[1]
