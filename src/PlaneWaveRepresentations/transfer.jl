@@ -7,7 +7,8 @@ struct OnTheFlyTransfer{S,T} <: AbstractTransfer where {S<:SphereSamplingStrateg
     L::Integer
     sampling::S
 end
-struct PlannedTransfer{S,C,T} <: AbstractTransfer where {S<:SphereSamplingStrategy,C<:Complex,T<:Real}
+struct PlannedTransfer{S,C,T} <:
+       AbstractTransfer where {S<:SphereSamplingStrategy,C<:Complex,T<:Real}
     R::SVector{3,T}
     k0::T
     L::Integer
@@ -50,12 +51,14 @@ end
 #     end
 #     return PlannedTransfer{L, Complex{T}}(transfermatrix)
 # end
-function _initialize_transfermatrix!(Pℓstorage::Vector{T},
+function _initialize_transfermatrix!(
+    Pℓstorage::Vector{T},
     Rin::AbstractVector,
     k0::T,
     sampling::S,
     L::Integer;
-    multiplyweights::Bool=false) where {T<:Real,S<:SphereSamplingStrategy}
+    multiplyweights::Bool = false,
+) where {T<:Real,S<:SphereSamplingStrategy}
 
     R = SVector{3,T}(Rin)
     d = cdist(R)
@@ -69,12 +72,13 @@ function _initialize_transfermatrix!(Pℓstorage::Vector{T},
     Rhat = SVector{3,T}(real(R) / norm(real(R)))
     sp, cp = sin.(ϕs), cos.(ϕs)
     st, ct = sin.(θs), cos.(θs)
+    er = zeros(T, 3)
     for k in eachindex(ϕs)
         sinp, cosp = sp[k], cp[k]
         for kk in eachindex(θs)
             sint, cost = st[kk], ct[kk]
 
-            er = SVector{3,T}(sint .* cosp, sint .* sinp, cost)
+            er .= [sint .* cosp, sint .* sinp, cost]
             fac = Complex{T}(0.0)
             Pℓ = _collectPl!(Pℓ, L, udot(er, Rhat))
             for ℓ = 0:(L)
@@ -95,14 +99,16 @@ function _initialize_plannedtransfer!(
     Rin::AbstractVector,
     k0::T,
     sampling::S,
-    L::Integer
+    L::Integer;
+    multiplyweights::Bool = false,
 ) where {T<:Real,S<:SphereSamplingStrategy}
     transfermatrix = _initialize_transfermatrix!(
         Pℓstorage,
         Rin,
         k0,
         sampling,
-        L
+        L;
+        multiplyweights = multiplyweights,
     )
 
     return PlannedTransfer{S,Complex{T},T}(Rin, k0, L, sampling, transfermatrix)
@@ -192,11 +198,11 @@ function transfer!(
     incidentfield::P,
     farfield::F,
     tr::PlannedTransfer{C};
-    reset::Bool=true,
+    reset::Bool = true,
 ) where {C,F<:PlaneWaveExpansion{Radiated},P<:PlaneWaveExpansion{Incident}}
 
-    _muladd!(_eθ(incidentfield), _eθ(farfield), tr.transfermatrix; reset=reset)
-    _muladd!(_eϕ(incidentfield), _eϕ(farfield), tr.transfermatrix; reset=reset)
+    _muladd!(_eθ(incidentfield), _eθ(farfield), tr.transfermatrix; reset = reset)
+    _muladd!(_eϕ(incidentfield), _eϕ(farfield), tr.transfermatrix; reset = reset)
     return incidentfield
 end
 # function translate!(incidentfield::P, farfield::F, transfer::OnTheFlyTransfer{L,C}; reset::Bool=true) where{L, C, F<:FarfieldPattern, P<:PlaneWaveSpectrum}  
@@ -207,10 +213,10 @@ function transfer!(
     incidentfield::PlaneWaveExpansion{Incident},
     farfield::PlaneWaveExpansion{Radiated},
     R::AbstractVector{T};
-    reset::Bool=true,
+    reset::Bool = true,
 ) where {T<:Real}
     transfer = OnTheFlyTransfer{pattern.L,T}(SVector{3,T}(R), getwavenumber(farfield))
-    return transfer!(incidentfield, farfield, transfer, reset=reset)
+    return transfer!(incidentfield, farfield, transfer, reset = reset)
 end
 
 
@@ -218,12 +224,12 @@ function _adjoint_transfer!(
     incidentfield::P,
     farfield::F,
     tr::PlannedTransfer{C};
-    reset::Bool=true,
+    reset::Bool = true,
 ) where {C,F<:PlaneWaveExpansion{Radiated},P<:PlaneWaveExpansion{Incident}}
     conj!(tr.transfermatrix)
 
-    _muladd!(_eθ(farfield), _eθ(incidentfield), tr.transfermatrix; reset=reset)
-    _muladd!(_eϕ(farfield), _eϕ(incidentfield), tr.transfermatrix; reset=reset)
+    _muladd!(_eθ(farfield), _eθ(incidentfield), tr.transfermatrix; reset = reset)
+    _muladd!(_eϕ(farfield), _eϕ(incidentfield), tr.transfermatrix; reset = reset)
 
     conj!(tr.transfermatrix)
     return farfield
@@ -233,11 +239,11 @@ function _transpose_transfer!(
     incidentfield::P,
     farfield::F,
     tr::PlannedTransfer{C};
-    reset::Bool=true,
+    reset::Bool = true,
 ) where {C,F<:PlaneWaveExpansion{Radiated},P<:PlaneWaveExpansion{Incident}}
 
-    _muladd!(_eθ(farfield), _eθ(incidentfield), tr.transfermatrix; reset=reset)
-    _muladd!(_eϕ(farfield), _eϕ(incidentfield), tr.transfermatrix; reset=reset)
+    _muladd!(_eθ(farfield), _eθ(incidentfield), tr.transfermatrix; reset = reset)
+    _muladd!(_eϕ(farfield), _eϕ(incidentfield), tr.transfermatrix; reset = reset)
     return incidentfield
 end
 
@@ -282,7 +288,8 @@ function _collectPl!(
 
     # use two-term recurrence relation for Pℓ in direction of increasing ℓ
     for ℓ = 2:Lmax
-        floatℓ = T(ℓ)
+        # floatℓ = T(ℓ)
+        floatℓ = ℓ
         Pℓstorage[ℓ+1] =
             (
                 (T(2) .* floatℓ .- T(1)) .* x .* Pℓstorage[ℓ] -

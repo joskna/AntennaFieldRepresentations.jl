@@ -15,6 +15,7 @@ struct MLFMMSource{M<:ResampleMap,Y<:SphereSamplingStrategy,C,X<:MLFMMTree} <:
     nodeisfresh::Vector{Bool}
     nodeisoccupied::Vector{Bool}
     leafnodeindices::Vector{Int}
+    aggregationlist::Vector{Vector{Int}}
     rootnode::Int
     buffer::Vector{C}
     outputbuffer::Vector{C}
@@ -29,35 +30,16 @@ Base.setindex!(p::MLFMMSource, i, v) = Base.setindex!(asvector(p), i, v)
 function Base.similar(p::MLFMMSource)
     return deepcopy(p)
 end
-function setwavenumber!(p::MLFMMSource{M,Y,C,X}, val) where {M,Y,C,X}
-    p = MLFMMSource{M,Y,C,X}(
-        p.tree,
-        p.expectedaccuracy,
-        val,
-        p.nodefarfields,
-        p.basisfunctionfarfields,
-        p.levelcutoffparameters,
-        p.levelresamplemaps,
-        p.phaseshifttoparent,
-        p.nodeisfresh,
-        p.nodeisoccupied,
-        p.leafnodeindices,
-        p.rootnode,
-        p.buffer,
-        p.outputbuffer,
-        p.verbose,
-    )
-    return p
-end
+
 function MLFMMSource(
     basisfunctions, #Can be ::SurfaceCurrentDensity, ::DipoleArray, NamedTuple(:points,:sourcefunctions) 
     wavenumber::T;
-    expectedaccuracy=T(1e-3),
-    verbose=false,
-    minhalfsize=π / (2 * wavenumber),
-    orderθ=8,
-    orderϕ=8,
-    samplingtype::Type{S}=GaussLegendreθRegularϕSampling,
+    expectedaccuracy = T(1e-3),
+    verbose = false,
+    minhalfsize = π / (2 * wavenumber),
+    orderθ = 8,
+    orderϕ = 8,
+    samplingtype::Type{S} = GaussLegendreθRegularϕSampling,
 ) where {T<:Real,S<:SphereSamplingStrategy}
     verbose &&
         @info "----------------------\n   Assemble MLFMM source \n----------------------------"
@@ -82,7 +64,7 @@ function MLFMMSource(
         nodeisoccupied,
         wavenumber,
     )
-    outputbuffer = nodefarfields[1].buffer
+    outputbuffer = nodefarfields[rootnode].buffer
 
     verbose && @info "Assemble leaf patterns"
     leafnodeindices = leafs(tree)
@@ -91,8 +73,8 @@ function MLFMMSource(
         basisfunctions,
         levelcutoffparameters[end],
         wavenumber;
-        verbose=verbose,
-        samplingtype=samplingtype,
+        verbose = verbose,
+        samplingtype = samplingtype,
     )
     inputbuffer = Vector{Complex{T}}(undef, length(basisfunctions))
     inputbuffer .= basisfunctions
@@ -104,14 +86,13 @@ function MLFMMSource(
         orderθ,
         orderϕ,
         levelcutoffparameters;
-        samplingtype=samplingtype,
+        samplingtype = samplingtype,
     )
     phaseshifttoparent = _initializephaseshifttoparent(
-        T,
         tree,
         levelcutoffparameters,
-        wavenumber;
-        samplingtype=samplingtype,
+        T(wavenumber);
+        samplingtype = samplingtype,
     )
     L = levelcutoffparameters[min_aggregationlevel]
 
@@ -121,6 +102,10 @@ function MLFMMSource(
     R = center(tree, rootnode)
     globalphaseshift = Matrix{Complex{T}}(undef, nθ, nϕ)
     _phaseshiftmatrix!(globalphaseshift, -R, wavenumber, sampling)
+
+    numlevels = length(levels(tree))
+    # aggregationlist = Vector{Vector{Int}}(undef, numlevels)
+    aggregationlist = [Vector{Int}([]) for _ = 1:numlevels]
 
     verbose && println("------------------------------")
 
@@ -137,12 +122,31 @@ function MLFMMSource(
         nodeisfresh,
         nodeisoccupied,
         leafnodeindices,
+        aggregationlist,
         rootnode,
         inputbuffer,
         outputbuffer,
         verbose,
     )
 
+end
+
+# TODD: docstrings
+struct MLFMMReceive{M<:ResampleMap,Y<:SphereSamplingStrategy,C,X<:MLFMMTree}
+    tree::X
+    expectedaccuracy::Real
+    wavenumber::Real
+    nodespectra::Vector{PlaneWaveExpansion{Incident,Y,C}}
+    testfunctionfarfields::Vector{PlaneWaveExpansion{Radiated,Y,C}}
+    levelcutoffparameters::Vector{Int}
+    levelresamplemaps::Vector{M}
+    phaseshifttoparent::Array{Matrix{C},2}
+    nodeisfresh::Vector{Bool}
+    nodeisoccupied::Vector{Bool}
+    disaggregationlist::Vector{Vector{Int}}
+    rootnode::Int
+    leafnodeindices::Vector{Int}
+    verbose::Bool
 end
 
 
@@ -153,34 +157,21 @@ struct MLFMMTransmitMap{
     M<:ResampleMap,
     Y<:SphereSamplingStrategy,
     C<:Complex,
+    X<:MLFMMTree,
+    TP<:AbstractTransfer,
 } <: TransmitMap{A,F,C}
     inputbuffer::Vector{C}
     outputbuffer::Vector{C}
-    sourcetree::MLFMMTree
-    receivetree::MLFMMTree
-    expectedaccuracy::Real
-    wavenumber::Real
-    nodefarfields::Vector{PlaneWaveExpansion{Radiated,Y,C}}
-    nodespectra::Vector{PlaneWaveExpansion{Incident,Y,C}}
-    basisfunctionfarfields::Vector{PlaneWaveExpansion{Radiated,Y,C}}
-    testfunctionfarfields::Vector{PlaneWaveExpansion{Radiated,Y,C}}
-    levelcutoffparameters::Vector{Int}
-    levelresamplemaps::Vector{M}
-    phaseshifttoparent::Array{Matrix{C},2}
+    sourcestruct::MLFMMSource{M,Y,C,X}
+    receivestruct::MLFMMReceive{M,Y,C,X}
     transferlist::Vector{Vector{Int}}
     adjoint_transferlist::Vector{Vector{Int}}
-    transferplan::Vector{Vector{PlannedTransfer{C}}}
-    transmitnodeisfresh::Vector{Bool}
-    receivenodeisfresh::Vector{Bool}
-    transmitnodeisoccupied::Vector{Bool}
-    receivenodeisoccupied::Vector{Bool}
+    transferplan::Vector{Vector{TP}}
     firetranslationnodes::Vector{Int}
-    aggregationlist::Vector{Vector{Int}}
-    disaggregationlist::Vector{Vector{Int}}
-    transmitleafnodeindices::Vector{Int}
-    receiveleafnodeindices::Vector{Int}
+    mintranslationlevel::Int
+    receivetranslationnodes::Vector{Int}
     verbose::Bool
-    tmpmatrix::Matrix{C}
+    # tmpmatrix::Matrix{C}
 end
 
 Base.size(p::MLFMMTransmitMap) = (length(p.outputbuffer), length(pinputbuffer))
@@ -189,14 +180,16 @@ function MLFMMTransmitMap(
     basisfunctions, #Can be ::SurfaceCurrentDensity, ::DipoleArray, NamedTuple(:points,:sourcefunctions)
     fieldsampling::IrregularFieldSampling,
     wavenumber::T;
-    expectedaccuracy=T(1e-3),
-    verbose=false,
-    minhalfsize=π / (2 * wavenumber),
-    orderθ=8,
-    orderϕ=8,
-    samplingtype::Type{S}=GaussLegendreθRegularϕSampling,
-    num_bufferboxes::Integer=1,
+    expectedaccuracy = T(1e-3),
+    verbose = false,
+    minhalfsize = π / (2 * wavenumber),
+    orderθ = 8,
+    orderϕ = 8,
+    samplingtype::Type{S} = GaussLegendreθRegularϕSampling,
+    num_bufferboxes::Integer = 1,
+    transfertype = PlannedTransfer{samplingtype,Complex{T},T},
 ) where {T<:Real,S<:SphereSamplingStrategy}
+    C = Complex{T}
 
     verbose && @info "Initialize  MLFMM tree"
     sourcepoints = _getpoints(basisfunctions)
@@ -207,8 +200,10 @@ function MLFMMTransmitMap(
     receivetree = deepcopy(sourcetree)
     for leafnode in leafnodeindices
         # Threads.@threads for leafnode in A.leafnodeindices
-        sourceindices = findall(x -> x <= length(sourcepoints), sourcetree(leafnode).data.values)
-        receiveindices = findall(x -> x > length(sourcepoints), receivetree(leafnode).data.values)
+        sourceindices =
+            findall(x -> x <= length(sourcepoints), sourcetree(leafnode).data.values)
+        receiveindices =
+            findall(x -> x > length(sourcepoints), receivetree(leafnode).data.values)
 
         deleteat!(sourcetree(leafnode).data.values, receiveindices)
         deleteat!(receivetree(leafnode).data.values, sourceindices)
@@ -226,17 +221,36 @@ function MLFMMTransmitMap(
     sourcerootnode = _findrootnode(sourcetree, transmitnodeisoccupied)
     receiverootnode = _findrootnode(receivetree, receivenodeisoccupied)
 
-    nodeisfresh = [false for k in 1:length(sourcetree.nodes)]
+    transmitnodeisfresh = [false for k = 1:length(sourcetree.nodes)]
+    receivenodeisfresh = [false for k = 1:length(receivetree.nodes)]
 
-    message = string(" ", length(levels(sourcetree)), " levels,  ", numberofnodes(sourcetree), " boxes")
+    message = string(
+        " ",
+        length(levels(sourcetree)),
+        " levels,  ",
+        numberofnodes(sourcetree),
+        " boxes",
+    )
     verbose && @info message
     message = string(sum(transmitnodeisoccupied), " boxes contain sources")
     verbose && @info message
-    message = string("Box ", sourcerootnode, " at level ", level(sourcetree, sourcerootnode), " contains all sources")
+    message = string(
+        "Box ",
+        sourcerootnode,
+        " at level ",
+        level(sourcetree, sourcerootnode),
+        " contains all sources",
+    )
     verbose && @info message
     message = string(sum(receivenodeisoccupied), " boxes contain probes")
     verbose && @info message
-    message = string("Box ", receiverootnode, " at level ", level(receivetree, receiverootnode), " contains all probes")
+    message = string(
+        "Box ",
+        receiverootnode,
+        " at level ",
+        level(receivetree, receiverootnode),
+        " contains all probes",
+    )
     verbose && @info message
 
 
@@ -250,7 +264,7 @@ function MLFMMTransmitMap(
         transmitnodeisoccupied,
         wavenumber,
     )
-    message = string(Base.summarysize(nodefarfields), " bytes in memory")
+    message = string(Base.format_bytes(Base.summarysize(nodefarfields)), " in memory")
     verbose && @info message
 
     verbose && println()
@@ -263,7 +277,7 @@ function MLFMMTransmitMap(
         receivenodeisoccupied,
         wavenumber,
     )
-    message = string(Base.summarysize(nodespectra), " bytes in memory")
+    message = string(Base.format_bytes(Base.summarysize(nodespectra)), " in memory")
     verbose && @info message
 
     verbose && println()
@@ -277,15 +291,17 @@ function MLFMMTransmitMap(
         basisfunctions,
         samplingstrategy,
         wavenumber;
-        verbose=verbose,
+        verbose = verbose,
     )
     inputbuffer = Vector{Complex{T}}(undef, length(basisfunctions))
     inputbuffer .= basisfunctions
     message = string(length(inputbuffer), " basis functions")
     verbose && @info message
-    message = string(Base.summarysize(basisfunctionfarfields), " bytes in memory")
+    message =
+        string(Base.format_bytes(Base.summarysize(basisfunctionfarfields)), " in memory")
     verbose && @info message
 
+    outputbuffer = deepcopy(asvector(fieldsampling))
     verbose && println()
     verbose && @info "Compute probe patterns"
     message = string(length(fieldsampling), " sampling positions")
@@ -297,7 +313,8 @@ function MLFMMTransmitMap(
         samplingstrategy,
         verbose,
     )
-    message = string(Base.summarysize(testfunctionfarfields), " bytes in memory")
+    message =
+        string(Base.format_bytes(Base.summarysize(testfunctionfarfields)), " in memory")
     verbose && @info message
 
     verbose && println()
@@ -308,17 +325,16 @@ function MLFMMTransmitMap(
         orderθ,
         orderϕ,
         levelcutoffparameters;
-        samplingtype=samplingtype,
+        samplingtype = samplingtype,
     )
     phaseshifttoparent = _initializephaseshifttoparent(
-        T,
         sourcetree,
         levelcutoffparameters,
-        wavenumber;
-        samplingtype=samplingtype,
+        T(wavenumber);
+        samplingtype = samplingtype,
     )
     sumsize = Base.summarysize(levelresamplemaps) + Base.summarysize(phaseshifttoparent)
-    message = string(sumsize, " bytes in memory")
+    message = string(Base.format_bytes(sumsize), " in memory")
     verbose && @info message
 
     verbose && println()
@@ -339,7 +355,8 @@ function MLFMMTransmitMap(
         nodefarfields,
         nodespectra,
         levelcutoffparameters;
-        transfertype=PlannedTransfer{typeof(samplingstrategy),Complex{T},T},)
+        transfertype = transfertype,
+    )
 
     numtransfers = 0
     for transfers in transferlist
@@ -353,51 +370,86 @@ function MLFMMTransmitMap(
         message = string(length(uniquetransfers[k]), " unique transfers on level ", k)
         verbose && @info message
     end
-    message = string(Base.summarysize(uniquetransfers), " bytes in memory")
+    message = string(Base.format_bytes(Base.summarysize(uniquetransfers)), " in memory")
     verbose && @info message
 
-    aggregationlist = _initialize_aggregationlist(sourcetree, transferlist, transmitnodeisoccupied)
-    dissagregationlist = _initialize_disaggregationlist(receivetree, transferlist, receivenodeisoccupied)
+    aggregationlist =
+        _initialize_aggregationlist(sourcetree, transferlist, transmitnodeisoccupied)
+    disaggregationlist =
+        _initialize_disaggregationlist(receivetree, transferlist, receivenodeisoccupied)
 
-
-
-
-
-    L = levelcutoffparameters[1]
-
-    sampling = _standardsampling(samplingtype, L)
+    sampling = nodefarfields[sourcerootnode].samplingstrategy
     θs, ϕs = samples(sampling)
     nθ, nϕ = length(θs), length(ϕs)
-    R = center(sourcetree, 1)
+    R = center(sourcetree, sourcerootnode)
     globalphaseshift = Matrix{Complex{T}}(undef, nθ, nϕ)
     _phaseshiftmatrix!(globalphaseshift, -R, wavenumber, sampling)
 
     verbose && println("------------------------------")
 
-    return points,
-    sourcetree,
-    receivetree,
-    transmitnodeisoccupied,
-    receivenodeisoccupied,
-    levelcutoffparameters,
-    nodeisfresh,
-    nodefarfields,
-    nodespectra,
-    basisfunctionfarfields,
-    testfunctionfarfields,
-    levelresamplemaps,
-    phaseshifttoparent,
-    transferlist,
-    adjoint_transferlist,
-    mintranslationlevel,
-    receivetranslationnodes,
-    firetranslationnodes,
-    transferplan,
-    uniquetransfers,
-    aggregationlist,
-    dissagregationlist,
-    sourcerootnode,
-    receiverootnode
+    sourcestruct =
+        MLFMMSource{typeof(levelresamplemaps[end]),samplingtype,C,typeof(sourcetree)}(
+            sourcetree,
+            expectedaccuracy,
+            wavenumber,
+            nodefarfields,
+            basisfunctionfarfields,
+            levelcutoffparameters,
+            levelresamplemaps,
+            phaseshifttoparent,
+            globalphaseshift,
+            transmitnodeisfresh,
+            transmitnodeisoccupied,
+            leafs(sourcetree),
+            aggregationlist,
+            sourcerootnode,
+            inputbuffer,
+            nodefarfields[sourcerootnode].buffer,
+            verbose,
+        )
+
+    receivestruct =
+        MLFMMReceive{typeof(levelresamplemaps[end]),samplingtype,C,typeof(sourcetree)}(
+            receivetree,
+            expectedaccuracy,
+            wavenumber,
+            nodespectra,
+            vec(testfunctionfarfields),
+            levelcutoffparameters,
+            levelresamplemaps,
+            phaseshifttoparent,
+            receivenodeisfresh,
+            receivenodeisoccupied,
+            disaggregationlist,
+            receiverootnode,
+            leafnodeindices,
+            verbose,
+        )
+
+    transmap = MLFMMTransmitMap{
+        typeof(basisfunctions),
+        typeof(fieldsampling),
+        typeof(levelresamplemaps[end]),
+        samplingtype,
+        C,
+        typeof(sourcetree),
+        transfertype,
+    }(
+        inputbuffer,
+        outputbuffer,
+        sourcestruct,
+        receivestruct,
+        transferlist,
+        adjoint_transferlist,
+        transferplan,
+        firetranslationnodes,
+        mintranslationlevel,
+        receivetranslationnodes,
+        verbose,
+        # tmpmatrix::Matrix{C}
+    )
+
+    return transmap
 
 end
 
@@ -422,7 +474,7 @@ function _findrootnode(tree, nodeisoccupied)
 end
 
 """
-    _initialize_aggregationlist(sourcetree:MLFMMTree, transferlist, transmitnodeisoccupied)
+    _initialize_aggregationlist(sourcetree:MLFMMTree, transmitnodeisoccupied)
 
 Return a list of nodes per level which shall be aggregated to be able to perform all transfers provided in `transferlist`.
 """
@@ -485,7 +537,11 @@ function _initialize_transfers(
     nodefarfields,
     nodespectra,
     levelcutoffparameters;
-    transfertype::P=PlannedTransfer{typeof(nodefarfields[1].sampling),eltype(nodefarfields[1].EθEϕ),typeof(nodefarfields[1].k0)},
+    transfertype::P = PlannedTransfer{
+        typeof(nodefarfields[1].sampling),
+        eltype(nodefarfields[1].EθEϕ),
+        typeof(nodefarfields[1].k0),
+    },
 ) where {P<:Type{<:AbstractTransfer}}
 
     transferlist = [Int[] for _ = 1:numberofnodes(receivetree)]
@@ -498,10 +554,8 @@ function _initialize_transfers(
         _ in eachindex(transferlist)
     ]
 
-    Pℓstorage = Vector{typeof(nodefarfields[1].wavenumber)}(
-        undef,
-        levelcutoffparameters[1] + 1,
-    )
+    Pℓstorage =
+        Vector{typeof(nodefarfields[1].wavenumber)}(undef, levelcutoffparameters[1] + 1)
 
 
     for receivenode in DepthFirstIterator(receivetree, root(receivetree))
@@ -512,12 +566,18 @@ function _initialize_transfers(
         for sourcenode in nodesatlevel(sourcetree, receivelevel)
             !(transmitnodeisoccupied[sourcenode]) && continue
 
-            if _transfercanhappen(sourcenode, receivenode, sourcetree, numbufferboxes=numbufferboxes)
+            if _transfercanhappen(
+                sourcenode,
+                receivenode,
+                sourcetree,
+                numbufferboxes = numbufferboxes,
+            )
                 append!(transferlist[receivenode], sourcenode)
                 append!(adjoint_transferlist[sourcenode], receivenode)
                 mintranslationlevel = minimum([Int(receivelevel), mintranslationlevel])
                 boxhalfsize = halfsize(receivetree, receivenode)
-                transvector = center(sourcetree, sourcenode) - center(receivetree, receivenode)
+                transvector =
+                    center(sourcetree, sourcenode) - center(receivetree, receivenode)
                 isnew = true
                 for uniquetransfer in uniquetransfers[receivelevel]
                     uniquetransfervector = gettransfervector(uniquetransfer)
@@ -535,8 +595,12 @@ function _initialize_transfers(
                     sourcesampling = nodefarfields[sourcenode].samplingstrategy
                     θs, ϕs = samples(receivesampling) .- samples(sourcesampling)
 
-                    maximum(abs.(θs)) > 1e-13 && DimensionMismatch("Samplings before and after Transfer don't match.")
-                    maximum(abs.(ϕs)) > 1e-13 && DimensionMismatch("Samplings before and after Transfer don't match.")
+                    maximum(abs.(θs)) > 1e-13 && DimensionMismatch(
+                        "Samplings before and after Transfer don't match.",
+                    )
+                    maximum(abs.(ϕs)) > 1e-13 && DimensionMismatch(
+                        "Samplings before and after Transfer don't match.",
+                    )
 
 
                     # newtransfer = 
@@ -550,16 +614,19 @@ function _initialize_transfers(
                     # transferplan[receivenode][sourcenode] = newtransfer 
                     # append!(uniquetransfers[receivelevel], newtransfer)
 
-                    transferplan[receivenode][sourcenode] =
-                        _initialize_plannedtransfer!(
-                            Pℓstorage,
-                            transvector,
-                            getwavenumber(nodefarfields[sourcenode]),
-                            nodefarfields[sourcenode].samplingstrategy,
-                            levelcutoffparameters[receivelevel],
-                            multiplyweights=true)
+                    transferplan[receivenode][sourcenode] = _initialize_plannedtransfer!(
+                        Pℓstorage,
+                        transvector,
+                        getwavenumber(nodefarfields[sourcenode]),
+                        nodefarfields[sourcenode].samplingstrategy,
+                        levelcutoffparameters[receivelevel],
+                        multiplyweights = true,
+                    )
 
-                    append!(uniquetransfers[receivelevel], [transferplan[receivenode][sourcenode]])
+                    append!(
+                        uniquetransfers[receivelevel],
+                        [transferplan[receivenode][sourcenode]],
+                    )
                 end
             end
 
@@ -591,19 +658,29 @@ Inputs:
 - `numbufferboxes` : minimum number of empty boxes between `sourcenode` and `receivenode` to count as far from each other.  
 
 """
-function _transfercanhappen(sourcenode, receivenode, tree; numbufferboxes=1)
+function _transfercanhappen(sourcenode, receivenode, tree; numbufferboxes = 1)
     numbufferboxes = maximum([one(typeof(numbufferboxes)), numbufferboxes])
     sourcelevel = level(tree, sourcenode)
     receivelevel = level(tree, receivenode)
     sourcelevel < 3 && return false
     sourcelevel != receivelevel && return false
 
-    isnearmlfmmbox(center(tree, sourcenode), center(tree, receivenode), halfsize(tree, sourcenode), numbufferboxes) && return false
+    isnearmlfmmbox(
+        center(tree, sourcenode),
+        center(tree, receivenode),
+        halfsize(tree, sourcenode),
+        numbufferboxes,
+    ) && return false
 
     sourceparent = parent(tree, sourcenode)
     receiveparent = parent(tree, receivenode)
 
-    isfarmlfmmbox(center(tree, sourceparent), center(tree, receiveparent), halfsize(tree, sourceparent), numbufferboxes) && return false
+    isfarmlfmmbox(
+        center(tree, sourceparent),
+        center(tree, receiveparent),
+        halfsize(tree, sourceparent),
+        numbufferboxes,
+    ) && return false
 
     return true
 
@@ -625,12 +702,7 @@ Returns 'true' if each any coordinate of `Rvec = (center_a - center_b)` is small
 - `halfsize`: Half of the sidelength of the boxes (sidelength for first and second box are assumed to be equal)
 - 'numbufferboxes': minimum number of boxes which must lie between first and second box such that the boxes count as "far" 
 """
-function isnearmlfmmbox(
-    center_a,
-    center_b,
-    halfsize,
-    numbufferboxes,
-)
+function isnearmlfmmbox(center_a, center_b, halfsize, numbufferboxes)
     Rvec = (center_a - center_b) ./ (2 * halfsize)
 
     threshold = (numbufferboxes + 0.5)^2
@@ -660,13 +732,8 @@ Returns 'false' if each any coordinate of `Rvec = (center_a - center_b)` is smal
 - `halfsize`: Half of the sidelength of the boxes (sidelength for first and second box are assumed to be equal)
 - 'numbufferboxes': minimum number of boxes which must lie between first and second box such that the boxes count as "far" 
 """
-function isfarmlfmmbox(
-    center_a,
-    center_b,
-    halfsize,
-    numbufferboxes,
-)
-    return !(isnearmlfmmbox(center_a, center_b, halfsize, numbufferboxes,))
+function isfarmlfmmbox(center_a, center_b, halfsize, numbufferboxes)
+    return !(isnearmlfmmbox(center_a, center_b, halfsize, numbufferboxes))
 end
 
 """
@@ -674,8 +741,8 @@ end
 
 Return a voctor of Boolean values to indicate which nodes of the tree contain values.
 """
-function _findoccupiednodes(tree; minlevel=1)
-    nodeisoccupied = [false for k in 1:length(tree.nodes)]
+function _findoccupiednodes(tree; minlevel = 1)
+    nodeisoccupied = [false for k = 1:length(tree.nodes)]
 
     levels = AntennaFieldRepresentations.levels(tree)
     for level in reverse(maximum([minlevel, 1]):length(levels))
@@ -802,7 +869,7 @@ function _allocatenodepattern(
     cutoffparameters::Vector{<:Integer},
     nodeisoccupied::Vector{Bool},
     wavenumber;
-    minlevel::Integer=1,
+    minlevel::Integer = 1,
 ) where {P<:PropagationType,S<:SphereSamplingStrategy,C}
     nodepattern = Vector{W}(undef, length(tree.nodes))
 
@@ -834,8 +901,8 @@ function _initializebasisfunctionfarfields(
     basisfunctions::S,
     cutoffparameter::Integer,
     k0::T;
-    samplingtype::Type{Y}=GaussLegendreθRegularϕSampling,
-    verbose::Bool=false,
+    samplingtype::Type{Y} = GaussLegendreθRegularϕSampling,
+    verbose::Bool = false,
 ) where {T<:Real,S,Y<:SphereSamplingStrategy}
     L = cutoffparameter
     samplingstrategy = _standardsampling(samplingtype, L)
@@ -844,7 +911,7 @@ function _initializebasisfunctionfarfields(
         basisfunctions,
         samplingstrategy,
         k0;
-        verbose=verbose,
+        verbose = verbose,
     )
 
 end
@@ -853,7 +920,7 @@ function _initializebasisfunctionfarfields(
     basisfunctions::S,
     samplingstrategy::Y,
     k0::T;
-    verbose::Bool=false,
+    verbose::Bool = false,
 ) where {T<:Real,S,Y<:SphereSamplingStrategy}
 
     θvec, ϕvec = samples(samplingstrategy)
@@ -1024,33 +1091,36 @@ function _initializebasisfunctionweightingpatterns(
 
     C = eltype(fieldsampling)
 
-    probepatterns = Vector{PlaneWaveExpansion{Radiated,Y,C}}(undef, length(fieldsampling.probes))
+    probepatterns =
+        Vector{PlaneWaveExpansion{Radiated,Y,C}}(undef, length(fieldsampling.probes))
 
 
 
     for (probeID, probe) in enumerate(fieldsampling.probes)
-        probepatterns[probeID] =
-            PlaneWaveExpansion(
-                Radiated(),
-                samplingstrategy,
-                zeros(C, nθ, nϕ),
-                zeros(C, nθ, nϕ),
-                getwavenumber(probe),
-            )
+        probepatterns[probeID] = PlaneWaveExpansion(
+            Radiated(),
+            samplingstrategy,
+            zeros(C, nθ, nϕ),
+            zeros(C, nθ, nϕ),
+            getwavenumber(probe),
+        )
 
         for (θind, θ) in enumerate(θvec)
             for (ϕind, ϕ) in enumerate(ϕvec)
-                _eθ(probepatterns[probeID])[θind, ϕind], _eθ(probepatterns[probeID])[θind, ϕind] = farfield(probe.aut_field, (θ, ϕ))
+                _eθ(probepatterns[probeID])[θind, ϕind],
+                _eθ(probepatterns[probeID])[θind, ϕind] = farfield(probe.aut_field, (θ, ϕ))
             end
         end
     end
 
-    basisfunctionweightingpatterns = Array{PlaneWaveExpansion{Radiated,Y,C}}(undef, size(fieldsampling.probeIDs))
+    basisfunctionweightingpatterns =
+        Array{PlaneWaveExpansion{Radiated,Y,C}}(undef, size(fieldsampling.probeIDs))
 
     for k in eachindex(basisfunctionweightingpatterns)
         probepattern = probepatterns[fieldsampling.probeIDs[k]]
         χ, θ, ϕ = fieldsampling.eulerangles[k]
-        basisfunctionweightingpatterns[k] = rotate(probepattern, χ, θ, ϕ; orderθ=6, orderϕ=6)
+        basisfunctionweightingpatterns[k] =
+            rotate(probepattern, χ, θ, ϕ; orderθ = 6, orderϕ = 6)
     end
 
     k0 = getwavenumber(probepatterns[1])
@@ -1077,8 +1147,8 @@ function _initializelevelresamplemaps(
     orderθ::Integer,
     orderϕ::Integer,
     cutoffparameters::Vector{<:Integer};
-    minlevel::Int=0,
-    samplingtype::Type{Y}=GaussLegendreθRegularϕSampling,
+    minlevel::Int = 0,
+    samplingtype::Type{Y} = GaussLegendreθRegularϕSampling,
 ) where {Y}
     levels = AntennaFieldRepresentations.levels(tree)
 
@@ -1100,21 +1170,20 @@ function _initializelevelresamplemaps(
         levelresamplemaps[level] = LocalθLocalϕResampleMap(
             newsampling,
             oldsampling;
-            orderθ=orderθ,
-            orderϕ=orderϕ,
+            orderθ = orderθ,
+            orderϕ = orderϕ,
         )
     end
     return levelresamplemaps
 end
 #TODO: only initialize required phaseshifts and share between source and receive
 function _initializephaseshifttoparent(
-    T::Type{<:Real},
     tree::MLFMMTree,
-    cutoffparameters::Vector{<:Integer},
-    k0::Real;
-    minlevel::Int=0,
-    samplingtype::Type{Y}=GaussLegendreθRegularϕSampling,
-) where {Y}
+    cutoffparameters::Vector{I},
+    k0::T;
+    minlevel::Int = 0,
+    samplingtype::Type{Y} = GaussLegendreθRegularϕSampling,
+) where {Y,T<:Real,I<:Integer}
     levels = AntennaFieldRepresentations.levels(tree)
     phaseshifttoparent = Array{Matrix{Complex{T}}}(undef, 8, length(levels))
     for level in levels[2:end]
@@ -1182,7 +1251,7 @@ function _aggregate_leafnodes!(A::MLFMMSource)
                 A.nodefarfields[leafnode],
                 A.basisfunctionfarfields[functionindex],
                 A.buffer[functionindex],
-                reset=reset,
+                reset = reset,
             )
             reset = false
         end
@@ -1260,13 +1329,13 @@ function _aggregate_children!(A::MLFMMSource, parentnode)
             _eθ(A.nodefarfields[parentnode]),
             view(resamplemap.outputbuffermat, :, :, 1),
             A.phaseshifttoparent[sector, level+1],
-            reset=reset,
+            reset = reset,
         )
         _muladd_or_mulreset!(
             _eϕ(A.nodefarfields[parentnode]),
             view(resamplemap.outputbuffermat, :, :, 2),
             A.phaseshifttoparent[sector, level+1],
-            reset=reset,
+            reset = reset,
         )
 
         reset = false
@@ -1423,18 +1492,19 @@ end
 
 Aggregate `A` up to min_aggregationlevel. 
 """
-function _aggregate_to_minlevel!(A::MLFMMSource, x; min_aggregationlevel::Integer=0)
+function _aggregate_to_minlevel!(A::MLFMMSource, x; min_aggregationlevel::Integer = 0)
     A.buffer .= x
-    _aggregate_to_minlevel!(A, min_aggregationlevel=min_aggregationlevel)
+    _aggregate_to_minlevel!(A, min_aggregationlevel = min_aggregationlevel)
 end
-function _aggregate_to_minlevel!(A::MLFMMSource; min_aggregationlevel::Integer=0)
+function _aggregate_to_minlevel!(A::MLFMMSource; min_aggregationlevel::Integer = 0)
     A.verbose && @info "Aggregate node far fields"
     tree = A.tree
 
     _aggregate_leafnodes!(A)
 
     levels = AntennaFieldRepresentations.levels(tree)
-    for level in reverse(maximum([min_aggregationlevel, level(tree, A.rootnode), 1]):length(levels))
+    for level in
+        reverse(maximum([min_aggregationlevel, level(tree, A.rootnode), 1]):length(levels))
         for parentnode::Int in nodesatlevel(tree, level)
             !(A.nodeisoccupied[parentnode]) && continue
             isleaf(tree, parentnode) && continue
@@ -1449,7 +1519,7 @@ end
 
 Perform adjoint operation to `aggregate_to_minlevel!`
 """
-function _adjoint_aggregate_to_minlevel!(A::MLFMMSource; min_aggregationlevel::Integer=0)
+function _adjoint_aggregate_to_minlevel!(A::MLFMMSource; min_aggregationlevel::Integer = 0)
     A.verbose && @info "Aggregate node far fields"
     tree = A.tree
 
@@ -1473,7 +1543,7 @@ Perform transpose operation to `aggregate_to_minlevel!`
 """
 function _transpose_aggregate_to_minlevel!(
     A::MLFMMSource;
-    min_aggregationlevel::Integer=0,
+    min_aggregationlevel::Integer = 0,
 )
     A.verbose && @info "Aggregate node far fields"
     tree = A.tree
@@ -1501,8 +1571,10 @@ function _aggregate_to_farfield!(A::MLFMMSource, x)
 end
 function _aggregate_to_farfield!(A::MLFMMSource)
     _aggregate_to_minlevel!(A)
-    _eθ(A.nodefarfields[A.rootnode]) .= _eθ(A.nodefarfields[A.rootnode]) .* A.globalphaseshift
-    _eϕ(A.nodefarfields[A.rootnode]) .= _eϕ(A.nodefarfields[A.rootnode]) .* A.globalphaseshift
+    _eθ(A.nodefarfields[A.rootnode]) .=
+        _eθ(A.nodefarfields[A.rootnode]) .* A.globalphaseshift
+    _eϕ(A.nodefarfields[A.rootnode]) .=
+        _eϕ(A.nodefarfields[A.rootnode]) .* A.globalphaseshift
 end
 """
     _adjoint_aggregate_to_farfield!(A::MLFMMSource; min_aggregationlevel::Integer=0)
@@ -1510,8 +1582,10 @@ end
 Perform adjoint operation to `_aggregate_to_farfield!`
 """
 function _adjoint_aggregate_to_farfield!(A::MLFMMSource)
-    _eθ(A.nodefarfields[A.rootnode]) .= _eθ(A.nodefarfields[A.rootnode]) .* conj.(A.globalphaseshift)
-    _eϕ(A.nodefarfields[A.rootnode]) .= _eϕ(A.nodefarfields[A.rootnode]) .* conj.(A.globalphaseshift)
+    _eθ(A.nodefarfields[A.rootnode]) .=
+        _eθ(A.nodefarfields[A.rootnode]) .* conj.(A.globalphaseshift)
+    _eϕ(A.nodefarfields[A.rootnode]) .=
+        _eϕ(A.nodefarfields[A.rootnode]) .* conj.(A.globalphaseshift)
     _adjoint_aggregate_to_minlevel!(A)
 end
 """
@@ -1520,8 +1594,10 @@ end
 Perform transpose operation to `_aggregate_to_farfield!`
 """
 function _transpose_aggregate_to_farfield!(A::MLFMMSource)
-    _eθ(A.nodefarfields[A.rootnode]) .= _eθ(A.nodefarfields[A.rootnode]) .* A.globalphaseshift
-    _eϕ(A.nodefarfields[A.rootnode]) .= _eϕ(A.nodefarfields[A.rootnode]) .* A.globalphaseshift
+    _eθ(A.nodefarfields[A.rootnode]) .=
+        _eθ(A.nodefarfields[A.rootnode]) .* A.globalphaseshift
+    _eϕ(A.nodefarfields[A.rootnode]) .=
+        _eϕ(A.nodefarfields[A.rootnode]) .* A.globalphaseshift
     _transpose_aggregate_to_minlevel!(A)
 end
 

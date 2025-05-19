@@ -82,7 +82,7 @@ struct IrregularFieldSampling{P<:ProbeAntenna,T<:Real,C<:Complex} <: FieldSampli
         return new{P,T,C}(positions, eulerangles, probeIDs, probes, S21values)
     end
 end
-Base.size(fs::IrregularFieldSampling) = (length(fs.S21values), )
+Base.size(fs::IrregularFieldSampling) = (length(fs.S21values),)
 Base.getindex(fs::IrregularFieldSampling, i) = getindex(fs.S21values, i)
 Base.setindex!(fs::IrregularFieldSampling, i, v) = setindex!(fs.S21values, i, v)
 function Base.similar(fs::IrregularFieldSampling)

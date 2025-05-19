@@ -304,7 +304,7 @@ end
 
 include("interpolation.jl")
 
-function rotate(    
+function rotate(
     pattern::W,
     χ::T,
     θ::T,
