@@ -60,7 +60,8 @@ function _initialize_transfermatrix!(
     multiplyweights::Bool = false,
 ) where {T<:Real,S<:SphereSamplingStrategy}
 
-    R = SVector{3,T}(Rin)
+    # R = SVector{3,T}(Rin)
+    R = Rin
     d = cdist(R)
     kd = (k0 * d)
     h2 = collectsphericalHankel2(L + 1, kd)
@@ -69,7 +70,8 @@ function _initialize_transfermatrix!(
     θweights, ϕweights, θs, ϕs = weightsandsamples(sampling)
 
     transfermatrix = Matrix{Complex{T}}(undef, length(θs), length(ϕs))
-    Rhat = SVector{3,T}(real(R) / norm(real(R)))
+    # Rhat = SVector{3,T}(real(R) / norm(real(R)))
+    Rhat = real.(R) / norm(real.(R))
     sp, cp = sin.(ϕs), cos.(ϕs)
     st, ct = sin.(θs), cos.(θs)
     er = zeros(T, 3)
@@ -78,7 +80,7 @@ function _initialize_transfermatrix!(
         for kk in eachindex(θs)
             sint, cost = st[kk], ct[kk]
 
-            er .= [sint .* cosp, sint .* sinp, cost]
+            er .= sint .* cosp, sint .* sinp, cost
             fac = Complex{T}(0.0)
             Pℓ = _collectPl!(Pℓ, L, udot(er, Rhat))
             for ℓ = 0:(L)

@@ -277,29 +277,32 @@ Assumes that size(storagematrix) mathces the matrices in PlaneWaveRepresentation
 """
 function _phaseshiftmatrix!(
     storagematrix::AbstractMatrix,
-    R::AbstractVector,
+    R,
     k₀::Number,
     sampling::Y,
 ) where {Y<:SphereSamplingStrategy}
+    T = Float64
     a, b = size(storagematrix)
     θvec, ϕvec = samples(sampling)
     L = a - 1
     @assert length(θvec) == a
     @assert length(ϕvec) == b
-    Rvec = SVector{3}(R)
-    sp = sin.(ϕvec)
-    cp = cos.(ϕvec)
-    st = sin.(θvec)
-    ct = cos.(θvec)
+
+    sp = T.(sin.(ϕvec))
+    cp = T.(cos.(ϕvec))
+    st = T.(sin.(θvec))
+    ct = T.(cos.(θvec))
+    eᵣ = zeros(T, 3)
     for kϕ in eachindex(ϕvec)
         sinp, cosp = sp[kϕ], cp[kϕ]
         for kθ in eachindex(θvec)
             sint, cost = st[kθ], ct[kθ]
-            eᵣ = typeof(Rvec)(cosp * sint, sinp * sint, cost)
-            ejkr = cis(-k₀ * udot(Rvec, eᵣ))
+            eᵣ .= cosp * sint, sinp * sint, cost
+            ejkr = cis(-k₀ * udot(R, eᵣ))
             storagematrix[kθ, kϕ] = ejkr
         end
     end
+    return storagematrix
 end
 
 include("interpolation.jl")

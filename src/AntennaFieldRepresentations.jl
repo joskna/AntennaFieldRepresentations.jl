@@ -45,7 +45,7 @@ Return u⋅v without complex conjugation of u
 # function udot(u::Array{<:Real,1}, v::Array{<:Complex,1})
 #     return dotu(length(u), complex(u), 1, v, 1)
 # end
-function udot(u::Vector, v::Vector)
+function udot(u::AbstractVector, v::AbstractVector)
     return transpose(u) * v
 end
 function udot(u, v)
