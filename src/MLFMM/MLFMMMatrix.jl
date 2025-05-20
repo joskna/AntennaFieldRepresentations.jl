@@ -34,12 +34,12 @@ end
 function MLFMMSource(
     basisfunctions, #Can be ::SurfaceCurrentDensity, ::DipoleArray, NamedTuple(:points,:sourcefunctions) 
     wavenumber::T;
-    expectedaccuracy = T(1e-3),
-    verbose = false,
-    minhalfsize = π / (2 * wavenumber),
-    orderθ = 8,
-    orderϕ = 8,
-    samplingtype::Type{S} = GaussLegendreθRegularϕSampling,
+    expectedaccuracy=T(1e-3),
+    verbose=false,
+    minhalfsize=π / (2 * wavenumber),
+    orderθ=8,
+    orderϕ=8,
+    samplingtype::Type{S}=GaussLegendreθRegularϕSampling,
 ) where {T<:Real,S<:SphereSamplingStrategy}
     verbose &&
         @info "----------------------\n   Assemble MLFMM source \n----------------------------"
@@ -64,7 +64,7 @@ function MLFMMSource(
         nodeisoccupied,
         wavenumber,
     )
-    outputbuffer = nodefarfields[rootnode].buffer
+    sourceoutputbuffer = nodefarfields[rootnode].buffer
 
     verbose && @info "Assemble leaf patterns"
     leafnodeindices = leafs(tree)
@@ -73,8 +73,8 @@ function MLFMMSource(
         basisfunctions,
         levelcutoffparameters[end],
         wavenumber;
-        verbose = verbose,
-        samplingtype = samplingtype,
+        verbose=verbose,
+        samplingtype=samplingtype,
     )
     inputbuffer = Vector{Complex{T}}(undef, length(basisfunctions))
     inputbuffer .= basisfunctions
@@ -86,13 +86,13 @@ function MLFMMSource(
         orderθ,
         orderϕ,
         levelcutoffparameters;
-        samplingtype = samplingtype,
+        samplingtype=samplingtype,
     )
     phaseshifttoparent = _initializephaseshifttoparent(
         tree,
         levelcutoffparameters,
         T(wavenumber);
-        samplingtype = samplingtype,
+        samplingtype=samplingtype,
     )
     L = levelcutoffparameters[min_aggregationlevel]
 
@@ -125,7 +125,7 @@ function MLFMMSource(
         aggregationlist,
         rootnode,
         inputbuffer,
-        outputbuffer,
+        sourceoutputbuffer,
         verbose,
     )
 
@@ -147,6 +147,7 @@ struct MLFMMReceive{M<:ResampleMap,Y<:SphereSamplingStrategy,C,X<:MLFMMTree}
     rootnode::Int
     leafnodeindices::Vector{Int}
     verbose::Bool
+    buffer::Vector{C}
 end
 
 
@@ -174,20 +175,20 @@ struct MLFMMTransmitMap{
     # tmpmatrix::Matrix{C}
 end
 
-Base.size(p::MLFMMTransmitMap) = (length(p.outputbuffer), length(pinputbuffer))
+Base.size(p::MLFMMTransmitMap) = (length(p.outputbuffer), length(p.inputbuffer))
 
 function MLFMMTransmitMap(
     basisfunctions, #Can be ::SurfaceCurrentDensity, ::DipoleArray, NamedTuple(:points,:sourcefunctions)
     fieldsampling::IrregularFieldSampling,
     wavenumber::T;
-    expectedaccuracy = T(1e-3),
-    verbose = false,
-    minhalfsize = π / (2 * wavenumber),
-    orderθ = 8,
-    orderϕ = 8,
-    samplingtype::Type{S} = GaussLegendreθRegularϕSampling,
-    num_bufferboxes::Integer = 1,
-    transfertype = PlannedTransfer{samplingtype,Complex{T},T},
+    expectedaccuracy=T(1e-3),
+    verbose=false,
+    minhalfsize=π / (2 * wavenumber),
+    orderθ=8,
+    orderϕ=8,
+    samplingtype::Type{S}=GaussLegendreθRegularϕSampling,
+    num_bufferboxes::Integer=1,
+    transfertype=PlannedTransfer{samplingtype,Complex{T},T},
 ) where {T<:Real,S<:SphereSamplingStrategy}
     C = Complex{T}
 
@@ -291,7 +292,7 @@ function MLFMMTransmitMap(
         basisfunctions,
         samplingstrategy,
         wavenumber;
-        verbose = verbose,
+        verbose=verbose,
     )
     inputbuffer = Vector{Complex{T}}(undef, length(basisfunctions))
     inputbuffer .= basisfunctions
@@ -325,13 +326,13 @@ function MLFMMTransmitMap(
         orderθ,
         orderϕ,
         levelcutoffparameters;
-        samplingtype = samplingtype,
+        samplingtype=samplingtype,
     )
     phaseshifttoparent = _initializephaseshifttoparent(
         sourcetree,
         levelcutoffparameters,
         T(wavenumber);
-        samplingtype = samplingtype,
+        samplingtype=samplingtype,
     )
     sumsize = Base.summarysize(levelresamplemaps) + Base.summarysize(phaseshifttoparent)
     message = string(Base.format_bytes(sumsize), " in memory")
@@ -355,7 +356,7 @@ function MLFMMTransmitMap(
         nodefarfields,
         nodespectra,
         levelcutoffparameters;
-        transfertype = transfertype,
+        transfertype=transfertype,
     )
 
     numtransfers = 0
@@ -424,6 +425,7 @@ function MLFMMTransmitMap(
             receiverootnode,
             leafnodeindices,
             verbose,
+            outputbuffer
         )
 
     transmap = MLFMMTransmitMap{
@@ -537,7 +539,7 @@ function _initialize_transfers(
     nodefarfields,
     nodespectra,
     levelcutoffparameters;
-    transfertype::P = PlannedTransfer{
+    transfertype::P=PlannedTransfer{
         typeof(nodefarfields[1].sampling),
         eltype(nodefarfields[1].EθEϕ),
         typeof(nodefarfields[1].k0),
@@ -570,7 +572,7 @@ function _initialize_transfers(
                 sourcenode,
                 receivenode,
                 sourcetree,
-                numbufferboxes = numbufferboxes,
+                numbufferboxes=numbufferboxes,
             )
                 append!(transferlist[receivenode], sourcenode)
                 append!(adjoint_transferlist[sourcenode], receivenode)
@@ -620,7 +622,7 @@ function _initialize_transfers(
                         getwavenumber(nodefarfields[sourcenode]),
                         nodefarfields[sourcenode].samplingstrategy,
                         levelcutoffparameters[receivelevel],
-                        multiplyweights = true,
+                        multiplyweights=true,
                     )
 
                     append!(
@@ -658,7 +660,7 @@ Inputs:
 - `numbufferboxes` : minimum number of empty boxes between `sourcenode` and `receivenode` to count as far from each other.  
 
 """
-function _transfercanhappen(sourcenode, receivenode, tree; numbufferboxes = 1)
+function _transfercanhappen(sourcenode, receivenode, tree; numbufferboxes=1)
     numbufferboxes = maximum([one(typeof(numbufferboxes)), numbufferboxes])
     sourcelevel = level(tree, sourcenode)
     receivelevel = level(tree, receivenode)
@@ -741,7 +743,7 @@ end
 
 Return a voctor of Boolean values to indicate which nodes of the tree contain values.
 """
-function _findoccupiednodes(tree; minlevel = 1)
+function _findoccupiednodes(tree; minlevel=1)
     nodeisoccupied = [false for k = 1:length(tree.nodes)]
 
     levels = AntennaFieldRepresentations.levels(tree)
@@ -869,7 +871,7 @@ function _allocatenodepattern(
     cutoffparameters::Vector{<:Integer},
     nodeisoccupied::Vector{Bool},
     wavenumber;
-    minlevel::Integer = 1,
+    minlevel::Integer=1,
 ) where {P<:PropagationType,S<:SphereSamplingStrategy,C}
     nodepattern = Vector{W}(undef, length(tree.nodes))
 
@@ -901,8 +903,8 @@ function _initializebasisfunctionfarfields(
     basisfunctions::S,
     cutoffparameter::Integer,
     k0::T;
-    samplingtype::Type{Y} = GaussLegendreθRegularϕSampling,
-    verbose::Bool = false,
+    samplingtype::Type{Y}=GaussLegendreθRegularϕSampling,
+    verbose::Bool=false,
 ) where {T<:Real,S,Y<:SphereSamplingStrategy}
     L = cutoffparameter
     samplingstrategy = _standardsampling(samplingtype, L)
@@ -911,7 +913,7 @@ function _initializebasisfunctionfarfields(
         basisfunctions,
         samplingstrategy,
         k0;
-        verbose = verbose,
+        verbose=verbose,
     )
 
 end
@@ -920,7 +922,7 @@ function _initializebasisfunctionfarfields(
     basisfunctions::S,
     samplingstrategy::Y,
     k0::T;
-    verbose::Bool = false,
+    verbose::Bool=false,
 ) where {T<:Real,S,Y<:SphereSamplingStrategy}
 
     θvec, ϕvec = samples(samplingstrategy)
@@ -1120,7 +1122,7 @@ function _initializebasisfunctionweightingpatterns(
         probepattern = probepatterns[fieldsampling.probeIDs[k]]
         χ, θ, ϕ = fieldsampling.eulerangles[k]
         basisfunctionweightingpatterns[k] =
-            rotate(probepattern, χ, θ, ϕ; orderθ = 6, orderϕ = 6)
+            rotate(probepattern, χ, θ, ϕ; orderθ=6, orderϕ=6)
     end
 
     k0 = getwavenumber(probepatterns[1])
@@ -1147,8 +1149,8 @@ function _initializelevelresamplemaps(
     orderθ::Integer,
     orderϕ::Integer,
     cutoffparameters::Vector{<:Integer};
-    minlevel::Int = 0,
-    samplingtype::Type{Y} = GaussLegendreθRegularϕSampling,
+    minlevel::Int=0,
+    samplingtype::Type{Y}=GaussLegendreθRegularϕSampling,
 ) where {Y}
     levels = AntennaFieldRepresentations.levels(tree)
 
@@ -1170,8 +1172,8 @@ function _initializelevelresamplemaps(
         levelresamplemaps[level] = LocalθLocalϕResampleMap(
             newsampling,
             oldsampling;
-            orderθ = orderθ,
-            orderϕ = orderϕ,
+            orderθ=orderθ,
+            orderϕ=orderϕ,
         )
     end
     return levelresamplemaps
@@ -1181,8 +1183,8 @@ function _initializephaseshifttoparent(
     tree::MLFMMTree,
     cutoffparameters::Vector{I},
     k0::T;
-    minlevel::Int = 0,
-    samplingtype::Type{Y} = GaussLegendreθRegularϕSampling,
+    minlevel::Int=0,
+    samplingtype::Type{Y}=GaussLegendreθRegularϕSampling,
 ) where {Y,T<:Real,I<:Integer}
     levels = AntennaFieldRepresentations.levels(tree)
     phaseshifttoparent = Array{Matrix{Complex{T}}}(undef, 8, length(levels))
@@ -1251,7 +1253,7 @@ function _aggregate_leafnodes!(A::MLFMMSource)
                 A.nodefarfields[leafnode],
                 A.basisfunctionfarfields[functionindex],
                 A.buffer[functionindex],
-                reset = reset,
+                reset=reset,
             )
             reset = false
         end
@@ -1329,13 +1331,13 @@ function _aggregate_children!(A::MLFMMSource, parentnode)
             _eθ(A.nodefarfields[parentnode]),
             view(resamplemap.outputbuffermat, :, :, 1),
             A.phaseshifttoparent[sector, level+1],
-            reset = reset,
+            reset=reset,
         )
         _muladd_or_mulreset!(
             _eϕ(A.nodefarfields[parentnode]),
             view(resamplemap.outputbuffermat, :, :, 2),
             A.phaseshifttoparent[sector, level+1],
-            reset = reset,
+            reset=reset,
         )
 
         reset = false
@@ -1364,8 +1366,8 @@ function _transpose_aggregate_children!(A::MLFMMSource, parentnode)
             _eθ(A.nodefarfields[parentnode]) .* A.phaseshifttoparent[sector, level+1]
         view(resamplemap.outputbuffermat, :, :, 2) .=
             _eϕ(A.nodefarfields[parentnode]) .* A.phaseshifttoparent[sector, level+1]
-        A.nodefarfields[child] .=
-            mul!(A.nodefarfields[child], transpose_resamplemat, resamplemap.outputbuffer)
+        # A.nodefarfields[child] .=
+        mul!(A.nodefarfields[child], transpose_resamplemat, resamplemap.outputbuffer)
 
 
         # resamplemap.outputbuffer .= mul!(resamplemap.outputbuffer, resamplemap, A.nodefarfields[child])
@@ -1414,20 +1416,22 @@ function _adjoint_aggregate_children!(A::MLFMMSource, parentnode)
 end
 
 """
-    _aggregate!(A::MLFMMSource, aggregationlist::Vector{Vector{Int}})
+    _aggregate_to_aggregationlist!(A::MLFMMSource)
 
-Aggregate `A` according to aggregationlist.
+Aggregate `A` according to `A.aggregationlist`.
 
-The aggregationlist specifies for each level which nodes shall be aggregated.
+`A.aggregationlist` specifies for each level which nodes shall be aggregated.
 """
-function _aggregate_to_aggregationlist!(A::MLFMMSource, aggregationlist)
+function _aggregate_to_aggregationlist!(A::MLFMMSource)
     A.verbose && @info "Aggregate node far fields"
 
     _aggregate_leafnodes!(A)
 
+    aggregationlist = A.aggregationlist
+
     for level in reverse(eachindex(aggregationlist))
-        # for node in aggregationlist[level]
-        Threads.@threads for node in aggregationlist[level]
+        for node in aggregationlist[level]
+            # Threads.@threads for node in aggregationlist[level]
             _aggregate_children!(A, node)
         end
     end
@@ -1435,27 +1439,29 @@ function _aggregate_to_aggregationlist!(A::MLFMMSource, aggregationlist)
 end
 
 """
-    _adjoint_aggregate_to_aggregationlist!(A::MLFMMSource, aggregationlist::Vector{Vector{Int}})
+    _adjoint_aggregate_to_aggregationlist!(A::MLFMMSource)
 
-Perform adjoint operation (i.e., complex conjugate of transposed operation) of ` _adjoint_aggregate!`
+Perform adjoint operation (i.e., complex conjugate of transposed operation) of ` _transpose_aggregate_to_aggregationlist!`
 """
-function _adjoint_aggregate_to_aggregationlist!(A::MLFMMSource, aggregationlist)
+function _adjoint_aggregate_to_aggregationlist!(A::MLFMMSource)
     A.verbose && @info "Adjoint aggregate node far fields"
+
+    aggregationlist = A.aggregationlist
 
     for level in eachindex(aggregationlist)
         aggregationlist[level] == [] && continue
-        # for sector in 1:8
-        Threads.@threads for sector = 1:8
+        for sector in 1:8
+            # Threads.@threads for sector = 1:8
             conj!(A.phaseshifttoparent[sector, level+1])
         end
 
-        # for node in aggregationlist[level]
-        Threads.@threads for node in aggregationlist[level]
+        for node in aggregationlist[level]
+            # Threads.@threads for node in aggregationlist[level]
             _transpose_aggregate_children!(A, node)
         end
 
-        # for sector in 1:8
-        Threads.@threads for sector = 1:8
+        for sector in 1:8
+            # Threads.@threads for sector = 1:8
             conj!(A.phaseshifttoparent[sector, level+1])
         end
     end
@@ -1465,18 +1471,20 @@ function _adjoint_aggregate_to_aggregationlist!(A::MLFMMSource, aggregationlist)
 end
 
 """
-    _transpose_aggregate_to_aggregationlist!(A::MLFMMSource, aggregationlist::Vector{Vector{Int}})
+    _transpose_aggregate_to_aggregationlist!(A::MLFMMSource)
 
-Perform transpose operation of `_aggregate!`
+Perform transpose operation of `_transpose_aggregate_to_aggregationlist!`
 """
-function _transpose_aggregate_to_aggregationlist!(A::MLFMMSource, aggregationlist)
+function _transpose_aggregate_to_aggregationlist!(A::MLFMMSource)
     A.verbose && @info "Adjoint aggregate node far fields"
+
+    aggregationlist = A.aggregationlist
 
     for level in eachindex(aggregationlist)
         aggregationlist[level] == [] && continue
 
-        # for node in aggregationlist[level]
-        Threads.@threads for node in aggregationlist[level]
+        for node in aggregationlist[level]
+            # Threads.@threads for node in aggregationlist[level]
             _transpose_aggregate_children!(A, node)
         end
     end
@@ -1492,11 +1500,11 @@ end
 
 Aggregate `A` up to min_aggregationlevel. 
 """
-function _aggregate_to_minlevel!(A::MLFMMSource, x; min_aggregationlevel::Integer = 0)
+function _aggregate_to_minlevel!(A::MLFMMSource, x; min_aggregationlevel::Integer=0)
     A.buffer .= x
-    _aggregate_to_minlevel!(A, min_aggregationlevel = min_aggregationlevel)
+    _aggregate_to_minlevel!(A, min_aggregationlevel=min_aggregationlevel)
 end
-function _aggregate_to_minlevel!(A::MLFMMSource; min_aggregationlevel::Integer = 0)
+function _aggregate_to_minlevel!(A::MLFMMSource; min_aggregationlevel::Integer=0)
     A.verbose && @info "Aggregate node far fields"
     tree = A.tree
 
@@ -1519,7 +1527,7 @@ end
 
 Perform adjoint operation to `aggregate_to_minlevel!`
 """
-function _adjoint_aggregate_to_minlevel!(A::MLFMMSource; min_aggregationlevel::Integer = 0)
+function _adjoint_aggregate_to_minlevel!(A::MLFMMSource; min_aggregationlevel::Integer=0)
     A.verbose && @info "Aggregate node far fields"
     tree = A.tree
 
@@ -1543,7 +1551,7 @@ Perform transpose operation to `aggregate_to_minlevel!`
 """
 function _transpose_aggregate_to_minlevel!(
     A::MLFMMSource;
-    min_aggregationlevel::Integer = 0,
+    min_aggregationlevel::Integer=0,
 )
     A.verbose && @info "Aggregate node far fields"
     tree = A.tree
@@ -1606,28 +1614,495 @@ function equivalentorder(A::MLFMMSource)
 end
 
 
+"""
+    _disaggregate_leafnodes!(receivestruct::MLFMMReceive)
 
-# struct MLFMMReceive{R<:ResampleMap,Y<:SphereSamplingStrategy,R<:Real}
-#     tree::MLFMMtree
-#     # expectedaccuracy::R
-#     # wavenumber::R
-#     nodespectra::Vector{PlaneWaveExpansion{Incident,Y,Complex{R}}}
-#     basisfunctionpatterns::Vector{PlaneWaveExpansion{Radiated,Y,Complex{R}}}
-#     levelcutoffparameters::Vector{Int}
-#     levelinterpolators::Vector{A}
-#     phaseshifttoparent::Array{Matrix{Complex{R}},2}
-#     transferlist::Vector{Vector{Int}}
-#     adjoint_transferlist::Vector{Vector{Int}}
-#     transferplan::Vector{Vector{PlannedTransfer{Complex{R}}}}
-#     nodeisfresh::Vector{Bool}
-#     leafnodeindices::Vector{Int}
-#     minreceivelevel::Int
-#     minsourcetranslationlevel::Int
-#     receivetranslationnodes::Vector{Int}
-#     firetranslationnodes::Vector{Int}
-#     aggregationlist::Vector{Vector{Int}}
-#     disaggregationlist::Vector{Vector{Int}}
-#     bvector::Vector{Complex{R}}
-#     verbose::Bool
-#     tmpmatrix::Matrix{Complex{R}}
-# end
+Test leaf node patterns with all test functions of corresponding leafnode and store result in `receivestruct.bvector`
+"""
+function _disaggregate_leafnodes!(receivestruct::MLFMMReceive)
+    receivetree = receivestruct.tree
+
+    # Threads.@threads for leafnode in receivestruct.leafnodeindices
+    for leafnode in receivestruct.leafnodeindices
+        !(receivestruct.nodeisoccupied[leafnode]) && continue
+
+        pws = receivestruct.nodespectra[leafnode]
+
+        for probeindex::Int in receivetree(leafnode).data.values::Vector{Int}
+            ff = receivestruct.testfunctionfarfields[probeindex]
+
+            receivestruct.buffer[probeindex] = udot(pws, ff)
+        end
+    end
+
+end
+
+
+"""
+    _adjoint_disaggregate_leafnodes!(A::MLFMMReceive)
+
+Perform ajoint operation (i.e., complex conjugate of transposed operation) of `_disaggregate_leafnodes!`
+"""
+function _adjoint_disaggregate_leafnodes!(A::MLFMMReceive)
+    receivetree = A.tree
+
+    # Threads.@threads for leafnode in A.leafnodeindices
+    for leafnode in A.leafnodeindices
+        !(A.nodeisoccupied[leafnode]) && continue
+        reset = true
+        for functionindex in receivetree(leafnode).data.values
+            if !reset
+                _eθ(A.nodespectra[leafnode]) .+=
+                    A.buffer[functionindex] .*
+                    conj.(_eθ(A.testfunctionfarfields[functionindex]))
+                _eϕ(A.nodespectra[leafnode]) .+=
+                    A.buffer[functionindex] .*
+                    conj.(_eϕ(A.testfunctionfarfields[functionindex]))
+            else
+                _eθ(A.nodespectra[leafnode]) .=
+                    A.buffer[functionindex] .*
+                    conj.(_eθ(A.testfunctionfarfields[functionindex]))
+                _eϕ(A.nodespectra[leafnode]) .=
+                    A.buffer[functionindex] .*
+                    conj.(_eϕ(A.testfunctionfarfields[functionindex]))
+                reset = false
+            end
+        end
+    end
+
+end
+
+"""
+    _transpose_disaggregate_leafnodes!(A::MLFMMReceive)
+
+Perform transposed operation to `disaggregate_leafnodes!`
+"""
+function _transpose_disaggregate_leafnodes!(A::MLFMMReceive)
+    receivetree = A.tree
+
+    # Threads.@threads for leafnode in A.leafnodeindices
+    for leafnode in A.leafnodeindices
+        !(A.nodeisoccupied[leafnode]) && continue
+        reset = true
+        for functionindex::Int in receivetree(leafnode).data.values::Vector{Int}
+            A.nodespectra[leafnode].buffer .= _muladd_or_mulreset!(
+                A.nodespectra[leafnode],
+                A.testfunctionfarfields[functionindex],
+                A.buffer[functionindex],
+                reset=reset,
+            )
+            reset = false
+        end
+    end
+
+end
+
+"""
+    _disaggregate_children!(receivestruct, parentnode)
+
+Disaggregate pattern of parentnode to all its children and store the resulting patterns in `receivestruct.nodespectra[child]`
+"""
+function _disaggregate_children!(receivestruct::MLFMMReceive, parentnode)
+
+    receivetree = receivestruct.tree
+
+
+    lvl = AntennaFieldRepresentations.level(receivetree, parentnode)
+
+    resamplemap = receivestruct.levelresamplemaps[lvl]
+    transpose_resamplemat = transpose(resamplemap)
+    # reset = true
+
+    for child in children(receivetree, parentnode)
+        !(receivestruct.nodeisoccupied[child]) && continue
+
+        sector = receivetree.nodes[child].data.sector + 1
+
+        view(resamplemap.outputbuffermat, :, :, 1) .=
+            _eθ(receivestruct.nodespectra[parentnode]) .* receivestruct.phaseshifttoparent[sector, lvl+1]
+        view(resamplemap.outputbuffermat, :, :, 2) .=
+            _eϕ(receivestruct.nodespectra[parentnode]) .* receivestruct.phaseshifttoparent[sector, lvl+1]
+        # receivestruct.nodespectra[child] .=
+        mul!(receivestruct.nodespectra[child], transpose_resamplemat, resamplemap.outputbuffer)
+        # receivestruct.nodeisfresh[child] = true
+    end
+end
+
+"""
+    _transpose_disaggregate_children!(A, parentnode)
+
+Perform transposed operation to `disaggrgate_children!`
+"""
+function _transpose_disaggregate_children!(A, parentnode)
+    tree = A.tree
+
+    level = AntennaFieldRepresentations.level(tree, parentnode)
+
+    resamplemap = A.levelresamplemaps[level]
+    reset = true
+
+    for child in children(tree, parentnode)
+        !(A.nodeisoccupied[child]) && continue
+
+        sector = tree.nodes[child].data.sector + 1
+
+        resamplemap.outputbuffer .=
+            mul!(resamplemap.outputbuffer, resamplemap, A.nodespectra[child])
+
+        _muladd_or_mulreset!(
+            _eθ(A.nodespectra[parentnode]),
+            view(resamplemap.outputbuffermat, :, :, 1),
+            A.phaseshifttoparent[sector, level+1],
+            reset=reset,
+        )
+        _muladd_or_mulreset!(
+            _eϕ(A.nodespectra[parentnode]),
+            view(resamplemap.outputbuffermat, :, :, 2),
+            A.phaseshifttoparent[sector, level+1],
+            reset=reset,
+        )
+
+        reset = false
+    end
+end
+
+"""
+    _adjoint_disaggregate_children!(A, parentnode)
+
+Perform adjoint operation to `disaggrgate_children!`
+"""
+function _adjoint_disaggregate_children!(A, parentnode)
+    tree = A.tree
+
+    level = AntennaFieldRepresentations.level(tree, parentnode)
+
+
+    # resamplemap = conj.(A.levelresamplemaps[level]) -> since resamplemap is real, conj.(conj.(A.levelresamplemaps[level]) == A.levelresamplemaps[level])
+    resamplemap = A.levelresamplemaps[level]
+    reset = true
+
+    for child in children(tree, parentnode)
+        !(A.nodeisoccupied[child]) && continue
+
+        sector = tree.nodes[child].data.sector + 1
+
+        resamplemap.outputbuffer .=
+            mul!(resamplemap.outputbuffer, resamplemap, A.nodespectra[child])
+
+        _muladd_or_mulreset!(
+            _eθ(A.nodespectra[parentnode]),
+            view(resamplemap.outputbuffermat, :, :, 1),
+            conj.(A.phaseshifttoparent[sector, level+1]),
+            reset=reset,
+        )
+        _muladd_or_mulreset!(
+            _eϕ(A.nodespectra[parentnode]),
+            view(resamplemap.outputbuffermat, :, :, 2),
+            conj.(A.phaseshifttoparent[sector, level+1]),
+            reset=reset,
+        )
+
+        reset = false
+    end
+end
+
+"""
+    _disaggregate_to_disaggregationslist!(receivestruct::MLFMMReceive)
+
+Perform all disaggregations according to `receivestruct.disaggregationlist`.
+The `receivestruct.disaggregationlist` stores all nodes at each level which shall perform a disaggregation.
+"""
+function _disaggregate_to_disaggregationslist!(receivestruct::MLFMMReceive)
+    receivestruct.verbose && @info "Disaggregate node spectra "
+
+
+    for level in eachindex(receivestruct.disaggregationlist)
+        receivestruct.disaggregationlist[level] == [] && continue
+        for sector in 1:8
+            # Threads.@threads for sector = 1:8
+            conj!(receivestruct.phaseshifttoparent[sector, level+1])
+        end
+
+        for node in receivestruct.disaggregationlist[level]
+            # Threads.@threads for node in receivestruct.disaggregationlist[level]
+            !(receivestruct.nodeisoccupied[node]) && continue
+            _disaggregate_children!(receivestruct, node)
+        end
+
+        for sector in 1:8
+            # Threads.@threads for sector = 1:8
+            conj!(receivestruct.phaseshifttoparent[sector, level+1])
+        end
+
+    end
+
+    _disaggregate_leafnodes!(receivestruct)
+
+end
+
+"""
+    _adjoint_disaggregate_to_disaggregationslist!(A::MLFMMReceive, [y::AbstractVector])
+
+Perform adjoint operation (i.e., complex conjugate of transposed operation) of `_disaggregate!`#
+
+If no vector `y` is given, the content in `A.buffer` is used for adjoint disaggregation. 
+Otherwise, `A.buffer` is overwritten by `y` before adjoint disaggregation.
+"""
+function _adjoint_disaggregate_to_disaggregationslist!(A::MLFMMReceive, y::AbstractVector)
+    A.buffer .= y
+    _adjoint_disaggregate_to_disaggregationslist!(A)
+end
+function _adjoint_disaggregate_to_disaggregationslist!(A::MLFMMReceive)
+    A.verbose && @info "Adjoint disaggregate node spectra "
+
+    _adjoint_disaggregate_leafnodes!(A)
+
+    for level in reverse(eachindex(A.disaggregationlist))
+
+        for node in A.disaggregationlist[level]
+            # Threads.@threads for node in A.disaggregationlist[level]
+            !(A.nodeisoccupied[node]) && continue
+            # _adjoint_disaggregate_children!(A, node)
+            _transpose_disaggregate_children!(A, node)
+        end
+
+    end
+    # _adjoint_disaggregate_leafnodes!(A)
+
+end
+
+"""
+    _transpose_disaggregate_to_disaggregationslist!(A::MLFMMReceive, [y::AbstractVector])
+
+    Perform transposed operation of `_disaggregate!`
+
+If no vector `y` is given, the content in `A.buffer` is used for transposed disaggregation. 
+Otherwise, `A.buffer` is overwritten by `y` before transposed disaggregation.
+"""
+function _transpose_disaggregate_to_disaggregationslist!(A::MLFMMReceive, y::AbstractVector)
+    A.buffer .= y
+    _transpose_disaggregate_to_disaggregationslist!(A)
+end
+function _transpose_disaggregate_to_disaggregationslist!(A::MLFMMReceive)
+    A.verbose && @info "Transpose disaggregate node spectra "
+
+    _transpose_disaggregate_leafnodes!(A)
+
+    for level in reverse(eachindex(A.disaggregationlist))
+        A.disaggregationlist[level] == [] && continue
+
+        # Threads.@threads for sector = 1:8
+        for sector = 1:8
+            conj!(A.phaseshifttoparent[sector, level+1])
+        end
+
+
+        # Threads.@threads for node in A.disaggregationlist[level]
+        for node in A.disaggregationlist[level]
+            !(A.nodeisoccupied[node]) && continue
+            _transpose_disaggregate_children!(A, node)
+        end
+
+        # Threads.@threads for sector = 1:8
+        for sector = 1:8
+            conj!(A.phaseshifttoparent[sector, level+1])
+        end
+
+    end
+
+end
+
+"""
+    _transfer!(A::MLFMMTransmitMap)
+
+Perform all required transfers between the `sourcestruct` and the `receivestruct` of `A`.
+"""
+function _transfer!(A::MLFMMTransmitMap)
+    transferlist = A.transferlist
+    transferplan = A.transferplan
+    A.verbose && @info "Transfer source → receive"
+
+    sourcestruct = A.sourcestruct
+    receivestruct = A.receivestruct
+    receivestruct.nodeisfresh .= false
+
+
+    # Threads.@threads for receivenode in receivestruct.receivetranslationnodes
+    for receivenode in A.receivetranslationnodes
+        transfers = transferlist[receivenode]
+        for transfernode in transfers
+            transfer!(
+                receivestruct.nodespectra[receivenode],
+                sourcestruct.nodefarfields[transfernode],
+                transferplan[receivenode][transfernode],
+                reset=!receivestruct.nodeisfresh[receivenode],
+            )
+            receivestruct.nodeisfresh[receivenode] = true
+        end
+    end
+    nothing
+end
+
+"""
+    _adjoint_transfer!(A::MLFMMTransmitMap)
+
+Perform the adjoint operator (i.e., complex conjugate of transposed operator) of `_transfer!(A::MLFMMTransmitMap)`
+"""
+function _adjoint_transfer!(A::MLFMMTransmitMap)
+
+    adjoint_transferlist = A.adjoint_transferlist
+    transferplan = A.transferplan
+    A.verbose && @info "Adjoint transfer source ← receive"
+
+    sourcestruct = A.sourcestruct
+    receivestruct = A.receivestruct
+
+    sourcestruct.nodeisfresh .= false
+
+    # Threads.@threads for transfernode in receivestruct.firetranslationnodes
+    for transfernode in A.firetranslationnodes
+        transfers = adjoint_transferlist[transfernode]
+        for receivenode in transfers
+            _adjoint_transfer!(
+                receivestruct.nodespectra[receivenode],
+                sourcestruct.nodefarfields[transfernode],
+                transferplan[receivenode][transfernode],
+                reset=!sourcestruct.nodeisfresh[transfernode],
+            )
+            sourcestruct.nodeisfresh[transfernode] = true
+        end
+    end
+    nothing
+
+end
+
+"""
+    _transpose_transfer!(A::MLFMMTransmitMap)
+
+Perform the transposed operator to `_transfer!(A::MLFMMTransmitMap)`
+"""
+function _transpose_transfer!(A::MLFMMTransmitMap)
+
+    adjoint_transferlist = A.adjoint_transferlist
+    transferplan = A.transferplan
+    A.verbose && @info "transpose transfer source ← receive"
+
+    sourcestruct = A.sourcestruct
+    receivestruct = A.receivestruct
+
+    sourcestruct.nodeisfresh .= false
+
+    # Threads.@threads for transfernode in receivestruct.firetranslationnodes
+    for transfernode in A.firetranslationnodes
+        transfers = adjoint_transferlist[transfernode]
+        for receivenode in transfers
+            _transpose_transfer!(
+                receivestruct.nodespectra[receivenode],
+                sourcestruct.nodefarfields[transfernode],
+                transferplan[receivenode][transfernode],
+                reset=!sourcestruct.nodeisfresh[transfernode],
+            )
+            sourcestruct.nodeisfresh[transfernode] = true
+        end
+    end
+    nothing
+
+end
+
+"""
+    _forward!((A::MLFMMTransmitMap), [x])
+
+Store the result of the matrix vector product in `A.outputbuffer`
+
+If no vector `x` is given, `A.inputbuffer` is used as excitation vector.
+Otherwise, `A.inputvector` is overwritten by the content of `x` before the operation is performed
+"""
+function _forward!(A::MLFMMTransmitMap)
+    A.verbose && @info "-------------------------\n   Evaluate forward operator\n-------------------------------"
+
+    # _aggregate_to_minlevel!(sourcestruct; min_aggregationlevel=receivestruct.minsourcetranslationlevel)
+    _aggregate_to_aggregationlist!(A.sourcestruct)
+    _transfer!(A)
+    _disaggregate_to_disaggregationslist!(A.receivestruct)
+    A.outputbuffer .= A.receivestruct.buffer
+
+    A.verbose &&
+        println("---------------------------------")
+    nothing
+end
+function _forward!(A::MLFMMTransmitMap, x)
+    A.inputbuffer .= x
+    A.sourcestruct.buffer .= x
+    _forward!(A)
+end
+
+"""
+    _transpose_forward!(A::MLFMMTransmitMap, [y])
+
+Store the result of the transposed matrix vector product in `A.inputbuffer`
+
+If no vector `y` is given, `A.outputbuffer` is used as input vector.
+Otherwise, `A.outputbuffer` is overwritten by the content of `y` before the operation is performed
+"""
+function _transpose_forward!(A::MLFMMTransmitMap)
+    A.verbose &&
+        @info "---------------------------------\n   Evaluate transpose forward operator\n---------------------------------------"
+
+    _transpose_disaggregate_to_disaggregationslist!(A.receivestruct)
+    _transpose_transfer!(A)
+    _transpose_aggregate_to_aggregationlist!(A.sourcestruct)
+    A.inputbuffer .= A.sourcestruct.buffer
+
+    A.verbose &&
+        println("-----------------------------------------")
+    nothing
+end
+function _transpose_forward!(A::MLFMMTransmitMap, y)
+    A.outputbuffer .= y
+    A.receivestruct.buffer .= y
+    _transpose_forward!(A)
+end
+
+"""
+    _adjoint_forward!(A::MLFMMTransmitMap)
+
+Store the result of the adjoint matrix vector product in `A.inputbuffer`
+
+If no vector `y` is given, `A.outputbuffer` is used as input vector.
+Otherwise, `A.outputbuffer` is overwritten by the content of `y` before the operation is performed    
+"""
+function _adjoint_forward!(A::MLFMMTransmitMap)
+    A.verbose &&
+        @info "---------------------------------\n   Evaluate adjoint forward operator\n---------------------------------------"
+
+    _adjoint_disaggregate_to_disaggregationslist!(A.receivestruct)
+    _adjoint_transfer!(A)
+    _adjoint_aggregate_to_aggregationlist!(A.sourcestruct)
+    A.inputbuffer .= A.sourcestruct.buffer
+
+    A.verbose &&
+        println("-----------------------------------------")
+    nothing
+end
+function _adjoint_forward!(A::MLFMMTransmitMap, y)
+    A.outputbuffer .= y
+    A.receivestruct.buffer .= y
+    _adjoint_forward!(A)
+end
+
+function LinearMaps._unsafe_mul!(y, A::MLFMMTransmitMap, x)
+    _forward!(A, x)
+    y .= A.outputbuffer
+end
+
+function LinearMaps._unsafe_mul!(y, A_ad::LinearMaps.AdjointMap{C,MLFMMTransmitMap{AA,F,M,Y,C,X,TP}}, x::AbstractVector) where {AA,F,M,Y,C,X,TP}
+    A = A_ad.lmap
+    _adjoint_forward!(A, x)
+    y .= A.inputbuffer
+end
+
+function LinearMaps._unsafe_mul!(y, A_tr::LinearMaps.TransposeMap{C,MLFMMTransmitMap{AA,F,M,Y,C,X,TP}}, x::AbstractVector) where {AA,F,M,Y,C,X,TP}
+    A = A_tr.lmap
+    _transpose_forward!(A, x)
+    y .= A.inputbuffer
+end
