@@ -207,7 +207,16 @@ Rotate the field representation where the rotation is defined by the Euler angle
 This is equivalent to the original representation being represented in a rotated coordinate system,
 where the coordinate axes of the original coordinate system must be rotated around the Euler angles
 `-χ`, `-θ`, `-ϕ` to get the rotated coordinate frame.
+
+The rotations are performed according to the `z,y,z`- sequence defined by extrinsic rotations.
+Extrinsic rotations are elemental rotations that occur about the axes of the fixed coordinate, i.e., not the intrinsic coordinates of the rotated object.
+First, the object is rotated about the global `z`-axis by `χ`.
+Then, the object is rotated about the global `y`-axis by `θ`.
+Finally, the object is rotated about the global `z`-axis by `ϕ`.
+
+Refer to https://en.wikipedia.org/wiki/Euler_angles for more details on Euler angles.
 """
+function rotate end
 function rotate(aut_field::AntennaFieldRepresentation, χ, θ, ϕ)
     return rotate!(similar(aut_field), aut_field, χ, θ, ϕ)
 end

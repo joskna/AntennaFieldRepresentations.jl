@@ -237,6 +237,20 @@ function _muladd_or_mulreset!(
     return storage
 end
 
+function _muladd_or_mulreset!(
+    storage::AbstractVector,
+    operator,
+    summand::AbstractVector;
+    reset::Bool = false,
+)
+    if reset
+        storage .= operator * summand
+    else
+        storage .+= operator * summand
+    end
+    return storage
+end
+
 function _mul_or_reset!(
     storage::PlaneWaveExpansion,
     factor::PlaneWaveExpansion;

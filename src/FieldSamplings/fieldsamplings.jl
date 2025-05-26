@@ -115,7 +115,7 @@ Returns an `IrregularFieldSampling` struct for sampling an `AntennaFieldRepresen
 
 # Inputs:
 - `positions::Array{V}` : An array of 3D position vectors. Julia must be able to `convert` the type `V` into an `SVector{3,T<:Real}`.
-- `eulerangles::Array{D}` : An array of 3-Tuples denoting the Euler angles `ϑ`, `φ`, and `χ` for rotating the probe antenna at each sample position. Julia must be able to `convert` the type `D` into a `Tuple{T,T,T}}`.
+- `eulerangles::Array{D}` : An array of 3-Tuples denoting the Euler angles `χ`, `ϑ`, and , `φ`  for rotating the probe antenna at each sample position. The definition of the Euler angles is aligned with their definition in the `rotate` function. Julia must be able to `convert` the type `D` into a `Tuple{T,T,T}}`.
 - `probeIDs::Array{<:Integer}` : Array of probeIDs (= indices) to assign a probe from the list `probes` to each sample.
 - `probes::Vector{P<:ProbeAntenna}`: Vector of probe antennas which occur in the field sampling 
 """
@@ -151,8 +151,8 @@ function EfieldSampling(positions::Vector{V}) where {V}
     pos = [pos1 pos1 pos1]
 
     tuple1 = convert(Tuple{T,T,T}, Tuple([0, 0, 0])) # for z-oriented dipole
-    tuple2 = convert(Tuple{T,T,T}, Tuple([pi / 2, 0, 0])) # for x-oriented dipole
-    tuple3 = convert(Tuple{T,T,T}, Tuple([pi / 2, pi / 2, 0])) # for y-oriented dipole
+    tuple2 = convert(Tuple{T,T,T}, Tuple([0, pi / 2, 0])) # for x-oriented dipole
+    tuple3 = convert(Tuple{T,T,T}, Tuple([0, pi / 2, pi / 2])) # for y-oriented dipole
     eulerangles = Array{Tuple{T,T,T}}(undef, length(positions), 3)
     for k in size(eulerangles, 1)
         eulerangles[k, 1] = tuple2
@@ -193,8 +193,8 @@ function HfieldSampling(positions::Vector{V}) where {V}
     pos = [pos1 pos1 pos1]
 
     tuple1 = convert(Tuple{T,T,T}, Tuple([0, 0, 0])) # for z-oriented dipole
-    tuple2 = convert(Tuple{T,T,T}, Tuple([pi / 2, 0, 0])) # for x-oriented dipole
-    tuple3 = convert(Tuple{T,T,T}, Tuple([pi / 2, pi / 2, 0])) # for y-oriented dipole
+    tuple2 = convert(Tuple{T,T,T}, Tuple([0, pi / 2, 0])) # for x-oriented dipole
+    tuple3 = convert(Tuple{T,T,T}, Tuple([0, pi / 2, pi / 2])) # for y-oriented dipole
     eulerangles = Array{Tuple{T,T,T}}(undef, length(positions), 3)
     for k in size(eulerangles, 1)
         eulerangles[k, 1] = tuple2
