@@ -31,23 +31,26 @@ function setprobesize!(p::ProbeAntenna, probesize::Real)
     return p
 end
 
-function transmit(aut_field, p::ProbeAntenna{D}) where {D<:DipoleArray}
-    dipoles = p.aut_field
-
-    result = zero(eltype(dipoles))
-    for k in eachindex(dipoles.positions)
-        E = efield(aut_field, dipoles.positions[k])
-        result += 0.5 * udot(E, dipoles.orientations[k]) * dipoles.dipolemoments[k]
-    end
-    return result
+function transmit(aut_field, p::ProbeAntenna{D}) where {D<:DipoleArray{Radiated}}
+    return transmit(aut_field, p, [0, 0, 0])
 end
-function transmit(aut_field, p::ProbeAntenna{D}, R) where {D<:DipoleArray}
+function transmit(aut_field, p::ProbeAntenna{D}, R) where {D<:DipoleArray{Radiated,Electric}}
     dipoles = p.aut_field
 
     result = zero(eltype(dipoles))
     for k in eachindex(dipoles.positions)
         E = efield(aut_field, dipoles.positions[k] + R)
         result += 0.5 * udot(E, dipoles.orientations[k]) * dipoles.dipolemoments[k]
+    end
+    return result
+end
+function transmit(aut_field, p::ProbeAntenna{D}, R) where {D<:DipoleArray{Radiated,Magnetic}}
+    dipoles = p.aut_field
+
+    result = zero(eltype(dipoles))
+    for k in eachindex(dipoles.positions)
+        H = hfield(aut_field, dipoles.positions[k] + R)
+        result += -0.5 * udot(H, dipoles.orientations[k]) * dipoles.dipolemoments[k]
     end
     return result
 end
