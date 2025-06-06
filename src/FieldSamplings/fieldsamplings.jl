@@ -1,35 +1,4 @@
-"""
-    ProbeAntenna{A}
-
-Wrapper around an `AntennaFieldRepresentation` to indicate that it is used as a probe.
-
-# Type Parameters
-- `A <: AntennaFieldRepresentation`
-"""
-struct ProbeAntenna{A<:AntennaFieldRepresentation}
-    aut_field::A
-    probesize::Real
-end
-function getwavenumber(pa::ProbeAntenna)
-    return getwavenumber(pa.aut_field)
-end
-"""
-    getprobesize(p::ProbeAntenna)
-
-Return the radius of the smallest sphere fitting around the physical dimensions of the probe antenna.
-"""
-function getprobesize(p::ProbeAntenna)
-    return p.probesize
-end
-"""
-    getprobesize(p::ProbeAntenna)
-
-Change the radius of the smallest sphere fitting around the physical dimensions of the probe antenna.
-"""
-function setprobesize!(p::ProbeAntenna, probesize::Real)
-    p = ProbeAntenna(p.aut_field, probesize)
-    return p
-end
+include("probeantenna.jl")
 
 """
     FieldSampling{C}
@@ -290,4 +259,12 @@ function Base.similar(fs::SphericalFieldSampling)
         fs.samplingstrategy,
         similar(fs.S21values),
     )
+end
+
+function transmit(aut_field::AntennaFieldRepresentation, fs::SphericalFieldSampling)
+    stm = SphericalTransmitMap(swe, fs)
+    stm.swe .= αtoβ(stm.swe)
+    y = asvector(fastsphericalforward!(stm))
+    stm.swe .= βtoα(stm.swe)
+    return y
 end

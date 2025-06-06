@@ -657,6 +657,8 @@ function _initializebasisfunctionweightingpatterns(
             for (ϕind, ϕ) in enumerate(ϕvec)
                 _eθ(probepatterns[probeID])[θind, ϕind],
                 _eϕ(probepatterns[probeID])[θind, ϕind] = farfield(probe.aut_field, (θ, ϕ))
+
+                _eϕ(probepatterns[probeID])[θind, ϕind] *= -1
             end
         end
     end
@@ -664,35 +666,19 @@ function _initializebasisfunctionweightingpatterns(
     basisfunctionweightingpatterns =
         Array{PlaneWaveExpansion{Radiated,Y,C}}(undef, size(fieldsampling.probeIDs))
 
-    for k in eachindex(basisfunctionweightingpatterns)
-        basisfunctionweightingpatterns[k] =
-            deepcopy(probepatterns[fieldsampling.probeIDs[k]])
-    end
-
-    # for k in eachindex(basisfunctionweightingpatterns)
-    #     probepattern = probepatterns[fieldsampling.probeIDs[k]]
-    #     χ, θ, ϕ = fieldsampling.eulerangles[k]
-    #     basisfunctionweightingpatterns[k] =
-    #         rotate(probepattern, χ, θ, ϕ; orderθ=6, orderϕ=6)
-    # end
-
-    k0 = getwavenumber(probepatterns[1])
-    phaseshiftmatrix = Array{C}(undef, nθ, nϕ)
-    for leafnode::Int in leafs(tree)
-        for functionindex::Int in tree(leafnode).data.values
-            _phaseshiftmatrix!(
-                phaseshiftmatrix,
-                -positions[functionindex] + center(tree, leafnode),
-                k0,
-                samplingstrategy,
-            )
-            _eθ(basisfunctionweightingpatterns[functionindex]) .*= (phaseshiftmatrix)
-            _eϕ(basisfunctionweightingpatterns[functionindex]) .*= (phaseshiftmatrix)
-        end
-    end
 
     for k in eachindex(basisfunctionweightingpatterns)
         χ, θ, ϕ = fieldsampling.eulerangles[k]
+
+        protoprobe = probepatterns[fieldsampling.probeIDs[k]]
+        samplingstrategy = protoprobe.samplingstrategy
+        Eθ = _eθ(protoprobe)
+        Eϕ = _eϕ(protoprobe)
+        wavenumber = getwavenumber(protoprobe)
+
+        basisfunctionweightingpatterns[k] =
+            PlaneWaveExpansion(Radiated(), samplingstrategy, Eθ, Eϕ, wavenumber)
+
         rotate!(
             basisfunctionweightingpatterns[k],
             deepcopy(basisfunctionweightingpatterns[k]),
@@ -703,6 +689,32 @@ function _initializebasisfunctionweightingpatterns(
             orderϕ = 6,
         )
     end
+
+    # for k in eachindex(basisfunctionweightingpatterns)
+    #     probepattern = probepatterns[fieldsampling.probeIDs[k]]
+    #     χ, θ, ϕ = fieldsampling.eulerangles[k]
+    #     basisfunctionweightingpatterns[k] =
+    #         rotate(probepattern, χ, θ, ϕ; orderθ=6, orderϕ=6)
+    # end
+
+    k0 = getwavenumber(probepatterns[1])
+
+    phaseshiftmatrix = Array{C}(undef, nθ, nϕ)
+    for leafnode::Int in leafs(tree)
+        for functionindex::Int in tree(leafnode).data.values
+            phaseshiftmatrix .= _phaseshiftmatrix!(
+                phaseshiftmatrix,
+                positions[functionindex] - center(tree, leafnode),
+                k0,
+                samplingstrategy,
+            )
+            _eθ(basisfunctionweightingpatterns[functionindex]) .=
+                _eθ(basisfunctionweightingpatterns[functionindex]) .* phaseshiftmatrix
+            _eϕ(basisfunctionweightingpatterns[functionindex]) .=
+                _eϕ(basisfunctionweightingpatterns[functionindex]) .* phaseshiftmatrix
+        end
+    end
+
 
     return basisfunctionweightingpatterns
 end

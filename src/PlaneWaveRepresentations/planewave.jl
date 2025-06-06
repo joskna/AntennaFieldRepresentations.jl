@@ -34,8 +34,8 @@ Returns a collection of electromagnetic plane waves propagating into various dir
 function PlaneWaveExpansion(
     propagation::P,
     samplingstrategy::S,
-    Eθ::Matrix{C},
-    Eϕ::Matrix{C},
+    Eθ::AbstractMatrix{C},
+    Eϕ::AbstractMatrix{C},
     wavenumber::Number,
 ) where {P<:PropagationType,S<:SphereSamplingStrategy,C}
     a, b = size(Eθ)
@@ -99,10 +99,11 @@ function efield!(
     reset = true,
 ) where {S<:SphereSamplingStrategy,C<:Complex}
     θweights, ϕweights, θs, ϕs = weightsandsamples(pwe.samplingstrategy)
+    k₀ = getwavenumber(pwe)
 
     T = real(C)
     Rvec = SVector{3}(R)
-    reset && fill!(storage, zero(C))
+    # reset && fill!(storage, zero(C))
     sintcost = sincos.(θs)
     for (kk, ϕ) in enumerate(ϕs)
         sinp, cosp = sincos(ϕ)
@@ -115,7 +116,12 @@ function efield!(
 
             Epol = _eθ(pwe)[k, kk] * eθ + _eϕ(pwe)[k, kk] * eϕ
             ejkr = cis(-k₀ * udot(eᵣ, Rvec)) * θweights[k] * ϕweights[kk]
-            storage += Epol * ejkr
+            if reset
+                storage .= Epol * ejkr
+            else
+                storage .+= Epol * ejkr
+            end
+            reset = false
         end
     end
     return storage
@@ -144,7 +150,12 @@ function hfield!(
 
             Hpol = _eθ(pwe)[k, kk] * eϕ - _eϕ(pwe)[k, kk] * eθ
             ejkr = cis(-k₀ * udot(eᵣ, Rvec)) * θweights[k] * ϕweights[kk]
-            storage += Hpol * ejkr / Z₀
+            if reset
+                storage .= Hpol * ejkr / Z₀
+            else
+                storage .+= Hpol * ejkr / Z₀
+            end
+            reset = false
         end
     end
     return storage
@@ -176,8 +187,14 @@ function ehfield!(
             Hpol = _eθ(pwe)[k, kk] * eϕ - _eϕ(pwe)[k, kk] * eθ
             Epol = _eθ(pwe)[k, kk] * eθ + _eϕ(pwe)[k, kk] * eϕ
             ejkr = cis(-k₀ * udot(eᵣ, Rvec)) * θweights[k] * ϕweights[kk]
-            storage .+= Epol * ejkr
-            hstorage .+= Hpol * ejkr / Z₀
+            if reset
+                storage .= Epol * ejkr
+                hstorage .= Hpol * ejkr / Z₀
+            else
+                storage .+= Epol * ejkr
+                hstorage .+= Hpol * ejkr / Z₀
+            end
+            reset = false
         end
     end
     return estorage, hstorage
@@ -408,3 +425,138 @@ function resample(
 end
 
 include("transfer.jl")
+
+# function ehfield!(storage_efield, storage_hfield, aut_field::PlaneWaveExpansion{Incident,Y,C}, R; reset=true) where {Y,C}
+#     θweights, ϕweights, θs, ϕs = weightsandsamples(aut_field.samplingstrategy)
+#     sint, cost = sin.(θs), cos.(θs)
+#     sinp, cosp = sin.(ϕs), cos.(ϕs)
+
+#     eϕ = zeros(eltype(θs), 3)
+#     eθ = zeros(eltype(θs), 3)
+#     eᵣ = zeros(eltype(θs), 3)
+#     res = reset
+#     for kk in eachindex(ϕvec)
+#         eϕ .= [-sinp[kk], cosp[kk], zero(T)]
+#         for k in eachindex(θvec)
+
+#             eθ .= [cosp * cost, sinp * cost, -sint]
+#             eᵣ .= [cosp * sint, sinp * sint, cost]
+
+#             Epol = _eθ(aut_field)[k, kk] * eθ + _eϕ(aut_field)[k, kk] * eϕ
+#             Hpol = _eθ(aut_field)[k, kk] * eϕ - _eϕ(aut_field)[k, kk] * eθ
+#             ejkr = cis(-k₀ * udot(eᵣ, R)) * θweights[k] * ϕweights[kk]
+#             if res
+#                 storage_efield .= Epol * ejkr
+#                 storage_hfield .= Hpol * ejkr / Z₀
+#             else
+#                 storage_efield .+= Epol * ejkr
+#                 storage_hfield .+= Hpol * ejkr / Z₀
+#             end
+#             res = false
+#         end
+#     end
+
+#     return storage_efield, storage_hfield
+
+# end
+
+# function efield!(storage_efield, aut_field::PlaneWaveExpansion{Incident,Y,C}, R; reset=true) where {Y,C}
+#     θweights, ϕweights, θs, ϕs = weightsandsamples(aut_field.samplingstrategy)
+#     sint, cost = sin.(θs), cos.(θs)
+#     sinp, cosp = sin.(ϕs), cos.(ϕs)
+
+#     eϕ = zeros(eltype(θs), 3)
+#     eθ = zeros(eltype(θs), 3)
+#     eᵣ = zeros(eltype(θs), 3)
+#     res = reset
+#     for kk in eachindex(ϕvec)
+#         eϕ .= [-sinp[kk], cosp[kk], zero(T)]
+#         for k in eachindex(θvec)
+
+#             eθ .= [cosp * cost, sinp * cost, -sint]
+#             eᵣ .= [cosp * sint, sinp * sint, cost]
+
+#             Epol = _eθ(aut_field)[k, kk] * eθ + _eϕ(aut_field)[k, kk] * eϕ
+#             ejkr = cis(-k₀ * udot(eᵣ, R)) * θweights[k] * ϕweights[kk]
+#             if res
+#                 storage_efield .= Epol * ejkr
+#             else
+#                 storage_efield .+= Epol * ejkr
+#             end
+#             res = false
+#         end
+#     end
+
+#     return storage_efield
+
+# end
+
+# function hfield!(storage_hfield, aut_field::PlaneWaveExpansion{Incident,Y,C}, R; reset=true) where {Y,C}
+#     θweights, ϕweights, θs, ϕs = weightsandsamples(aut_field.samplingstrategy)
+#     sint, cost = sin.(θs), cos.(θs)
+#     sinp, cosp = sin.(ϕs), cos.(ϕs)
+
+#     eϕ = zeros(eltype(θs), 3)
+#     eθ = zeros(eltype(θs), 3)
+#     eᵣ = zeros(eltype(θs), 3)
+#     res = reset
+#     for kk in eachindex(ϕvec)
+#         eϕ .= [-sinp[kk], cosp[kk], zero(T)]
+#         for k in eachindex(θvec)
+
+#             eθ .= [cosp * cost, sinp * cost, -sint]
+#             eᵣ .= [cosp * sint, sinp * sint, cost]
+
+#             Hpol = _eθ(aut_field)[k, kk] * eϕ - _eϕ(aut_field)[k, kk] * eθ
+#             ejkr = cis(-k₀ * udot(eᵣ, R)) * θweights[k] * ϕweights[kk]
+#             if res
+#                 storage_hfield .= Hpol * ejkr / Z₀
+#             else
+#                 storage_hfield .+= Hpol * ejkr / Z₀
+#             end
+#             res = false
+#         end
+#     end
+
+#     return storage_hfield
+# end
+
+function ehfield!(
+    storage_efield,
+    storage_hfield,
+    aut_field::PlaneWaveExpansion{Radiated,Y,C},
+    R;
+    reset = true,
+) where {Y,C}
+    incident_pws = transfer(aut_field, R)
+    ehfield!(
+        storage_efield,
+        storage_hfield,
+        incident_pws,
+        zeros(eltype(R), 3);
+        reset = reset,
+    )
+    return storage_efield, storage_hfield
+end
+
+function efield!(
+    storage_efield,
+    aut_field::PlaneWaveExpansion{Radiated,Y,C},
+    R;
+    reset = true,
+) where {Y,C}
+    incident_pws = transfer(aut_field, R)
+    efield!(storage_efield, incident_pws, zeros(eltype(R), 3); reset = reset)
+    return storage_efield
+end
+
+function hfield!(
+    storage_hfield,
+    aut_field::PlaneWaveExpansion{Radiated,Y,C},
+    R;
+    reset = true,
+) where {Y,C}
+    incident_pws = transfer(aut_field, R)
+    hfield!(storage_hfield, incident_pws, zeros(eltype(R), 3); reset = reset)
+    return storage_hfield
+end

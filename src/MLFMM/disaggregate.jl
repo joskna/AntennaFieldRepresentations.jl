@@ -18,6 +18,7 @@ function _disaggregate_leafnodes!(receivestruct::MLFMMReceive)
             ff = receivestruct.testfunctionfarfields[probeindex]
 
             receivestruct.buffer[probeindex] = udot(pws, ff)
+            # receivestruct.buffer[probeindex] = sum(pws .* ff)
         end
     end
 
@@ -30,6 +31,7 @@ end
 Perform ajoint operation (i.e., complex conjugate of transposed operation) of `_disaggregate_leafnodes!`
 """
 function _adjoint_disaggregate_leafnodes!(A::MLFMMReceive)
+    # function _transpose_disaggregate_leafnodes!(A::MLFMMReceive)
     receivetree = A.tree
 
     # Threads.@threads for leafnode in A.leafnodeindices
@@ -64,6 +66,7 @@ end
 Perform transposed operation to `disaggregate_leafnodes!`
 """
 function _transpose_disaggregate_leafnodes!(A::MLFMMReceive)
+    # function _adjoint_disaggregate_leafnodes!(A::MLFMMReceive)
     receivetree = A.tree
 
     # Threads.@threads for leafnode in A.leafnodeindices
@@ -210,6 +213,7 @@ function _disaggregate_to_disaggregationslist!(receivestruct::MLFMMReceive)
 
 
     for level in eachindex(receivestruct.disaggregationlist)
+        # for level in levels(receivestruct.tree)
         receivestruct.disaggregationlist[level] == [] && continue
         # for sector in 1:8
         #     # Threads.@threads for sector = 1:8

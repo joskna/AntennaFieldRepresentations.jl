@@ -474,9 +474,12 @@ function _transfer!(A::MLFMMTransmitMap)
     sourcestruct = A.sourcestruct
     receivestruct = A.receivestruct
     receivestruct.nodeisfresh .= false
-
+    # for nodespectrum in receivestruct.nodespectra[receivestruct.nodeisoccupied]
+    #     nodespectrum.EθEϕ .*= 0
+    # end
 
     # Threads.@threads for receivenode in receivestruct.receivetranslationnodes
+    # for receivenode in A.receivetranslationnodes
     for receivenode in A.receivetranslationnodes
         transfers = transferlist[receivenode]
         for transfernode in transfers

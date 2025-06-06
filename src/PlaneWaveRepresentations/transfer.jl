@@ -69,7 +69,9 @@ function _initialize_transfermatrix!(
     Pℓ = view(Pℓstorage, 1:L+1)
     θweights, ϕweights, θs, ϕs = weightsandsamples(sampling)
 
-    transfermatrix = Matrix{Complex{T}}(undef, length(θs), length(ϕs))
+    C = Complex{T}
+
+    transfermatrix = Matrix{C}(undef, length(θs), length(ϕs))
     # Rhat = SVector{3,T}(real(R) / norm(real(R)))
     Rhat = real.(R) / norm(real.(R))
     sp, cp = sin.(ϕs), cos.(ϕs)
@@ -81,11 +83,12 @@ function _initialize_transfermatrix!(
             sint, cost = st[kk], ct[kk]
 
             er .= sint .* cosp, sint .* sinp, cost
-            fac = Complex{T}(0.0)
-            Pℓ = _collectPl!(Pℓ, L, udot(er, Rhat))
+            fac = C(0.0)
+            Pℓ .= _collectPl!(Pℓ, L, udot(er, Rhat))
             for ℓ = 0:(L)
                 fac += _imaginarypowerofℓ(ℓ) .* (2 .* ℓ .+ 1) .* h2[ℓ.+1] .* Pℓ[ℓ.+1]
             end
+            # transfermatrix[kk, k] = C(0, -0.5) * fac / pi * k0
             transfermatrix[kk, k] = 0.5 * fac / Z₀
             if multiplyweights
                 transfermatrix[kk, k] *= θweights[kk] * ϕweights[k]
@@ -127,34 +130,47 @@ end
 # end
 
 function transfer(
-    pattern::P,
+    pattern::PlaneWaveExpansion{Radiated,Y,C},
     tr::OnTheFlyTransfer{T},
-) where {T,P<:PlaneWaveExpansion{Radiated}}
+) where {T,Y,C}
     # L=transfer.L
     # pattern.L != L && ErrorException("FarFieldPattern and PlannedTransfer must have the same order L !")
-    L = pattern.L
+    L = tr.L
 
-    patternout = converttype(reciprocaltype(P), pattern)
+    a, b = size(_eθ(pattern))
+
+    patternout = PlaneWaveExpansion(
+        Incident(),
+        pattern.samplingstrategy,
+        Matrix(_eθ(pattern)),
+        Matrix(_eϕ(pattern)),
+        getwavenumber(pattern),
+    )
+
+    # println(_eθ(patternout))
+
     R = tr.R
     d = cdist(R)
     kd = (tr.k0 * d)
 
     h2 = collectsphericalHankel2(L + 1, kd)
 
-    _, θvec, ϕvec = samplingrule(pattern.L)
+
+    θvec, ϕvec = samples(pattern.samplingstrategy)
 
     for k in eachindex(ϕvec)
         sinp, cosp = sincos(ϕvec[k])
         for kk in eachindex(θvec)
             sint, cost = sincos(θvec[kk])
             er = [sint * cosp; sint * sinp; cost]
-            fac = Complex{T}(0, 0)
-            Pℓ = collectPl(patternout.L, er ⋅ real(R) / norm(real(R)))
+            fac = C(0)
+            Pℓ = collectPl(tr.L, er ⋅ real(R) / norm(real(R)))
             for ℓ = 0:L
                 fac += _imaginarypowerofℓ(ℓ) .* (2 .* ℓ .+ 1) .* h2[ℓ.+1] .* Pℓ[ℓ.+1]
             end
-            patternout.Eθ[kk, k] *= fac
-            patternout.Eϕ[kk, k] *= fac
+            fac = C(0, -0.25) * fac / pi * getwavenumber(pattern)
+            _eθ(patternout)[kk, k] = _eθ(pattern)[kk, k] * fac
+            _eϕ(patternout)[kk, k] = _eϕ(pattern)[kk, k] * fac
         end
     end
     return patternout
@@ -180,7 +196,13 @@ function transfer(
     pattern::PlaneWaveExpansion{Radiated},
     R::AbstractVector{T},
 ) where {T<:Real}
-    tr = OnTheFlyTransfer{pattern.L,T}(SVector{3,T}(R), getwavenumber(pattern))
+    L = equivalentorder(pattern)
+    tr = OnTheFlyTransfer{typeof(pattern.samplingstrategy),T}(
+        SVector{3,T}(R),
+        getwavenumber(pattern),
+        L,
+        pattern.samplingstrategy,
+    )
     return transfer(pattern, tr)
 end
 
