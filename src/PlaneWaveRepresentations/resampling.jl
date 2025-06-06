@@ -638,6 +638,20 @@ function LinearMaps._unsafe_mul!(y, rsm::θϕResampleMap, x::AbstractVector)
 
     return y
 end
+function _muladd!(y, rsm::θϕResampleMap, x::AbstractVector)
+
+    rsm.inputbuffer .= x
+
+    mul!(rsm.θresamplemap.outputbuffer, rsm.θresamplemap, rsm.inputbuffer)
+    # rsm.θresamplemap.outputbuffer .= rsm.θresamplemap * rsm.inputbuffer
+
+    mul!(rsm.outputbuffer, rsm.ϕresamplemap, rsm.θresamplemap.outputbuffer)
+    # rsm.outputbuffer .= rsm.ϕresamplemap * rsm.θresamplemap.outputbuffer
+
+    y .+= rsm.outputbuffer
+
+    return y
+end
 
 function LinearMaps._unsafe_mul!(
     x,
@@ -666,5 +680,33 @@ function LinearMaps._unsafe_mul!(
     y::AbstractVector,
 ) where {T,L<:ResampleMap}
     return LinearMaps._unsafe_mul!(x, transpose(ad_rsm.lmap), y)
+end
+
+function _muladd!(
+    x,
+    ad_rsm::LinearMaps.TransposeMap{T,L},
+    y::AbstractVector,
+) where {T,L<:θϕResampleMap}
+    rsm = ad_rsm.lmap
+    rsm.outputbuffer .= y
+
+    mul!(rsm.θresamplemap.outputbuffer, transpose(rsm.ϕresamplemap), rsm.outputbuffer)
+
+    mul!(rsm.inputbuffer, transpose(rsm.θresamplemap), rsm.θresamplemap.outputbuffer)
+    # rsm.θresamplemap.outputbuffer .= rsm.θresamplemap * rsm.inputbuffer
+
+
+    # rsm.outputbuffer .= rsm.ϕresamplemap * rsm.θresamplemap.outputbuffer
+
+    x .+= rsm.inputbuffer
+
+    return x
+end
+function _muladd!(
+    x,
+    ad_rsm::LinearMaps.AdjointMap{T,L},
+    y::AbstractVector,
+) where {T,L<:θϕResampleMap}
+    return _muladd!(x, transpose(ad_rsm.lmap), y)
 end
 

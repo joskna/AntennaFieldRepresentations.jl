@@ -261,10 +261,16 @@ function _muladd_or_mulreset!(
     reset::Bool = false,
 )
     if reset
-        storage .= operator * summand
+        mul!(storage, operator, summand)
+        # storage .= operator * summand
     else
-        storage .+= operator * summand
+        _muladd!(storage, operator, summand)
+        # storage .+= operator * summand
     end
+    return storage
+end
+function _muladd(storage::AbstractVector, operator, summand::AbstractVector)
+    storage .+= operator * summand
     return storage
 end
 

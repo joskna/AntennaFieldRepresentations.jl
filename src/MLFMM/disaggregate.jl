@@ -109,11 +109,14 @@ function _disaggregate_children!(receivestruct::MLFMMReceive, parentnode)
 
         view(resamplemap.outputbuffermat, :, :, 1) .=
             _eθ(receivestruct.nodespectra[parentnode]) .*
-            conj.(receivestruct.phaseshifttoparent[sector, lvl+1])
+            (receivestruct.phaseshifttoparent[sector, lvl+1])
         view(resamplemap.outputbuffermat, :, :, 2) .=
             _eϕ(receivestruct.nodespectra[parentnode]) .*
-            conj.(receivestruct.phaseshifttoparent[sector, lvl+1])
+            (receivestruct.phaseshifttoparent[sector, lvl+1])
         # receivestruct.nodespectra[child] .=
+        # _adjoint_resamplematrix!(view(resamplemap.outputbuffermat, :, :, 1), _eθ(receivestruct.nodespectra[child]), resamplemap; reset=!receivestruct.nodeisfresh[child])
+        # _adjoint_resamplematrix!(view(resamplemap.outputbuffermat, :, :, 2), _eϕ(receivestruct.nodespectra[child]), resamplemap; reset=!receivestruct.nodeisfresh[child])
+
         _muladd_or_mulreset!(
             receivestruct.nodespectra[child],
             adjoint_resamplemat,
@@ -215,10 +218,10 @@ function _disaggregate_to_disaggregationslist!(receivestruct::MLFMMReceive)
     for level in eachindex(receivestruct.disaggregationlist)
         # for level in levels(receivestruct.tree)
         receivestruct.disaggregationlist[level] == [] && continue
-        # for sector in 1:8
-        #     # Threads.@threads for sector = 1:8
-        #     conj!(receivestruct.phaseshifttoparent[sector, level+1])
-        # end
+        for sector = 1:8
+            # Threads.@threads for sector = 1:8
+            conj!(receivestruct.phaseshifttoparent[sector, level+1])
+        end
 
         for node in receivestruct.disaggregationlist[level]
             # Threads.@threads for node in receivestruct.disaggregationlist[level]
@@ -226,10 +229,10 @@ function _disaggregate_to_disaggregationslist!(receivestruct::MLFMMReceive)
             _disaggregate_children!(receivestruct, node)
         end
 
-        # for sector in 1:8
-        #     # Threads.@threads for sector = 1:8
-        #     conj!(receivestruct.phaseshifttoparent[sector, level+1])
-        # end
+        for sector = 1:8
+            # Threads.@threads for sector = 1:8
+            conj!(receivestruct.phaseshifttoparent[sector, level+1])
+        end
 
     end
 
