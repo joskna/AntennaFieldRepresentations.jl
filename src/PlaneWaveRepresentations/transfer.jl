@@ -67,7 +67,8 @@ function _initialize_transfermatrix!(
     h2 = collectsphericalHankel2(L + 1, kd)
 
     Pℓ = view(Pℓstorage, 1:L+1)
-    θweights, ϕweights, θs, ϕs = weightsandsamples(sampling)
+    θweights, ϕweights, θs::Vector{Float64}, ϕs::Vector{Float64} =
+        weightsandsamples(sampling)
 
     C = Complex{T}
 
@@ -84,7 +85,7 @@ function _initialize_transfermatrix!(
 
             er .= sint .* cosp, sint .* sinp, cost
             fac = C(0.0)
-            Pℓ .= _collectPl!(Pℓ, L, udot(er, Rhat))
+            _collectPl!(Pℓ, L, udot(er, Rhat))
             for ℓ = 0:(L)
                 fac += _imaginarypowerofℓ(ℓ) .* (2 .* ℓ .+ 1) .* h2[ℓ.+1] .* Pℓ[ℓ.+1]
             end
