@@ -76,8 +76,7 @@ function _aggregate_children!(A::MLFMMSource, parentnode)
 
         sector = tree.nodes[child].data.sector + 1
 
-        resamplemap.outputbuffer .=
-            mul!(resamplemap.outputbuffer, resamplemap, A.nodefarfields[child])
+        mul!(resamplemap.outputbuffer, resamplemap, A.nodefarfields[child])
         # _eθ(A.nodefarfields[parentnode]) .= _muladd_or_mulreset!(
         #     _eθ(A.nodefarfields[parentnode]),
         #     view(resamplemap.outputbuffermat, :, :, 1),

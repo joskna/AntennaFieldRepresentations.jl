@@ -1,5 +1,5 @@
 module AntennaFieldRepresentations
-using StaticArrays
+using StaticArrays, SparseArrays
 using LinearAlgebra: norm, BLAS.dotu, ⋅, cross, rank, mul!
 
 using SpecialFunctions: hankelh1, hankelh2, besselj

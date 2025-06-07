@@ -101,9 +101,9 @@ function LocalϕResampleMap(
     inputbuffermat = reshape(inputbuffer, length(oldθs), length(oldϕs), 2)
     outputbuffermat = reshape(outputbuffer, length(newθs), length(newϕs), 2)
     storage = view(outputbuffermat, :, :, 1)
-    ϕweights, ϕindices = _planϕweightsandindices(newϕs, oldϕs, orderϕ, T)
+    ϕweights, ϕindices = _planϕweightsandindices(newϕs, oldϕs, Val(orderϕ))
 
-    return LocalϕResampleMap{Y1,Y2,orderϕ,T}(
+    return LocalϕResampleMap{Y1,Y2,orderϕ,Float64}(
         originalsamplingstrategy,
         targetsamplingstrategy,
         ϕweights,

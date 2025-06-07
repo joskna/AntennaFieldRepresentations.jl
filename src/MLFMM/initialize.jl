@@ -95,10 +95,7 @@ function _initialize_transfers(
     mintranslationlevel = typemax(Int)
     uniquetransfers = [transfertype[] for _ in levels(receivetree)]
 
-    transferplan = [
-        Vector{transfertype}(undef, length(sourcetree.nodes)) for
-        _ in eachindex(transferlist)
-    ]
+    transferplan = [spzeros(Int, length(sourcetree.nodes)) for _ in eachindex(transferlist)]
 
     Pℓstorage =
         Vector{typeof(nodefarfields[1].wavenumber)}(undef, levelcutoffparameters[1] + 1)
@@ -125,12 +122,13 @@ function _initialize_transfers(
                 transvector =
                     center(receivetree, receivenode) - center(sourcetree, sourcenode)
                 isnew = true
-                for uniquetransfer in uniquetransfers[receivelevel]
+                for (uniqueindex, uniquetransfer) in
+                    enumerate(uniquetransfers[receivelevel])
                     uniquetransfervector = gettransfervector(uniquetransfer)
                     if norm(transvector - uniquetransfervector) < 1e-3 * boxhalfsize
                         isnew = false
 
-                        transferplan[receivenode][sourcenode] = uniquetransfer
+                        transferplan[receivenode][sourcenode] = uniqueindex
                         break
                     end
                 end
@@ -161,19 +159,35 @@ function _initialize_transfers(
                     # transferplan[receivenode][sourcenode] = newtransfer 
                     # append!(uniquetransfers[receivelevel], newtransfer)
 
-                    transferplan[receivenode][sourcenode] = _initialize_plannedtransfer!(
-                        Pℓstorage,
-                        transvector,
-                        getwavenumber(nodefarfields[sourcenode]),
-                        nodefarfields[sourcenode].samplingstrategy,
-                        levelcutoffparameters[receivelevel],
-                        multiplyweights = true,
-                    )
+                    # transferplan[receivenode][sourcenode] = _initialize_plannedtransfer!(
+                    #     Pℓstorage,
+                    #     transvector,
+                    #     getwavenumber(nodefarfields[sourcenode]),
+                    #     nodefarfields[sourcenode].samplingstrategy,
+                    #     levelcutoffparameters[receivelevel],
+                    #     multiplyweights = true,
+                    # )
 
+                    # append!(
+                    #     uniquetransfers[receivelevel],
+                    #     [transferplan[receivenode][sourcenode]],
+                    # )
                     append!(
                         uniquetransfers[receivelevel],
-                        [transferplan[receivenode][sourcenode]],
+                        [
+                            _initialize_plannedtransfer!(
+                                Pℓstorage,
+                                transvector,
+                                getwavenumber(nodefarfields[sourcenode]),
+                                nodefarfields[sourcenode].samplingstrategy,
+                                levelcutoffparameters[receivelevel],
+                                multiplyweights = true,
+                            ),
+                        ],
                     )
+                    transferplan[receivenode][sourcenode] =
+                        length(uniquetransfers[receivelevel])
+
                 end
             end
 

@@ -209,18 +209,18 @@ function map_θrange!(iθrange, Nθ::Integer)
     return iθrange
 end
 """
-    map_ϕrange!(iϕrange, Nθ)
+    map_ϕrange!(iϕrange, Nθ, ::Val(leniϕrange))
 
 Map the index range `iϕrange` to values between `1` and  `Nϕ`.
 """
-function map_ϕrange!(iϕrange, Nϕ::Integer)
+function map_ϕrange!(iϕrange, Nϕ::Integer, ::Val{leniϕrange}) where {leniϕrange}
     iϕrange_vector = mod.(iϕrange, Nϕ)
     for (kϕ, iϕ) in enumerate(iϕrange_vector)
         if iϕ == 0
             iϕrange_vector[kϕ] = Nϕ
         end
     end
-    return iϕrange_vector
+    return SVector{leniϕrange}(iϕrange_vector)
 end
 
 
@@ -240,8 +240,8 @@ end
 function lagrange_interpolation_weights_from_barycentric(
     X,
     t::T,
-    barycentric_weights::Vector{<:Number},
-) where {T<:Number}
+    barycentric_weights::Vector{T2},
+) where {T<:Number,T2<:Number}
     w = zeros(T, length(barycentric_weights))
     for (k, b) in enumerate(barycentric_weights)
         if t ≈ X[k]
@@ -390,7 +390,11 @@ function extract_single_entry!(
     return udot(wϕ, storage)
 end
 
-function _planϕweightsandindices(newϕs, oldϕs, orderϕ::I, T) where {I<:Integer}
+function _planϕweightsandindices(
+    newϕs::AbstractVector{T},
+    oldϕs,
+    ::Val{orderϕ},
+) where {T,orderϕ}
     ϕweights = Vector{SVector{orderϕ,T}}(undef, length(newϕs))
     ϕindices = Vector{SVector{orderϕ,Int64}}(undef, length(newϕs))
     Δϕ = oldϕs[2] - oldϕs[1]
@@ -399,16 +403,16 @@ function _planϕweightsandindices(newϕs, oldϕs, orderϕ::I, T) where {I<:Integ
         iϕ₀ = find_next_smaller_ϕind(Δϕ, newϕ)
         iϕrange = ((iϕ₀-orderϕ+1):iϕ₀) .+ div(orderϕ, 2)
 
-        ϕweights[k] = SVector{orderϕ}(
-            T.(
-                lagrange_interpolation_weights_from_barycentric(
-                    (collect(iϕrange) .- 1) * Δϕ,
-                    newϕ,
-                    bϕ,
-                )
+        ϕweights[k] = SVector{orderϕ,T}(
+            lagrange_interpolation_weights_from_barycentric(
+                (collect(iϕrange) .- 1) * Δϕ,
+                newϕ,
+                bϕ,
             ),
         )
-        ϕindices[k] = SVector{orderϕ}(map_ϕrange!(iϕrange, length(oldϕs)))
+        # ϕindices[k] = SVector{orderϕ,Int64}(map_ϕrange!(iϕrange, length(oldϕs)))
+        ϕindices[k] =
+            SVector{orderϕ,Int64}(map_ϕrange!(iϕrange, length(oldϕs), Val(orderϕ)))
 
     end
     return ϕweights, ϕindices
@@ -527,11 +531,11 @@ function initialize_interpolation(
     storage = zeros(Complex{T}, 1, orderϕ)
 
 
-    ϕweights, ϕindices = _planϕweightsandindices([ϕnew], ϕvec, orderϕ, T)
+    ϕweights, ϕindices = _planϕweightsandindices([T(ϕnew)], ϕvec, Val(orderϕ))
     wϕ, iϕrange = ϕweights[1], ϕindices[1]
 
     Nϕ = length(ϕvec)
-    ϕindicesopposite = SVector{orderϕ}(map_ϕrange!(Vector(iϕrange) .+ (Nϕ ÷ 2), Nϕ))
+    ϕindicesopposite = map_ϕrange!(Vector(iϕrange) .+ (Nϕ ÷ 2), Nϕ, Val(length(iϕrange)))
 
     return storage, θinds, posθrange, negθrange, wθ, iϕrange, ϕindicesopposite, wϕ
 end

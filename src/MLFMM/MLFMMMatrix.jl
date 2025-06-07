@@ -167,7 +167,7 @@ struct MLFMMTransmitMap{
     receivestruct::MLFMMReceive{M,Y,C,X}
     transferlist::Vector{Vector{Int}}
     adjoint_transferlist::Vector{Vector{Int}}
-    transferplan::Vector{Vector{TP}}
+    transferplan::Vector{SparseVector{Int,Int}}
     uniquetransfers::Vector{Vector{TP}}
     firetranslationnodes::Vector{Int}
     mintranslationlevel::Int
@@ -214,6 +214,7 @@ function MLFMMTransmitMap(
     end
 
 
+
     levelcutoffparameters =
         _initializelevelcutoffparameters(sourcetree, expectedaccuracy, wavenumber)
 
@@ -254,6 +255,9 @@ function MLFMMTransmitMap(
         " contains all probes",
     )
     verbose && @info message
+    memory_tree = Base.summarysize(sourcetree) + Base.summarysize(receivetree)
+    # message = string(Base.format_bytes(memory_tree), " in memory")
+    # verbose && @info message
 
 
     verbose && println()
@@ -266,10 +270,11 @@ function MLFMMTransmitMap(
         transmitnodeisoccupied,
         wavenumber,
     )
-    message = string(Base.format_bytes(Base.summarysize(nodefarfields)), " in memory")
-    verbose && @info message
+    memory_nodefarfields = Base.summarysize(nodefarfields)
+    # message = string(Base.format_bytes(memory_nodefarfield), " in memory")
+    # verbose && @info message
 
-    verbose && println()
+    # verbose && println()
     verbose && @info "Allocate node  spectra"
 
     nodespectra = _allocatenodepattern(
@@ -279,10 +284,11 @@ function MLFMMTransmitMap(
         receivenodeisoccupied,
         wavenumber,
     )
-    message = string(Base.format_bytes(Base.summarysize(nodespectra)), " in memory")
-    verbose && @info message
+    memory_nodesprectra = Base.summarysize(nodespectra)
+    # message = string(Base.format_bytes(memory_nodesprectra), " in memory")
+    # verbose && @info message
 
-    verbose && println()
+    # verbose && println()
     verbose && @info "Compute basis patterns"
 
     L = levelcutoffparameters[end]
@@ -299,12 +305,12 @@ function MLFMMTransmitMap(
     inputbuffer .= basisfunctions
     message = string(length(inputbuffer), " basis functions")
     verbose && @info message
-    message =
-        string(Base.format_bytes(Base.summarysize(basisfunctionfarfields)), " in memory")
-    verbose && @info message
+    memory_basispatterns = Base.summarysize(basisfunctionfarfields)
+    # message = string(Base.format_bytes(memory_basispatterns), " in memory")
+    # verbose && @info message
 
     outputbuffer = deepcopy(asvector(fieldsampling))
-    verbose && println()
+    # verbose && println()
     verbose && @info "Compute probe patterns"
     message = string(length(fieldsampling), " sampling positions")
     verbose && @info message
@@ -315,11 +321,12 @@ function MLFMMTransmitMap(
         samplingstrategy,
         verbose,
     )
-    message =
-        string(Base.format_bytes(Base.summarysize(testfunctionfarfields)), " in memory")
-    verbose && @info message
+    memory_testfunctionfarfields = Base.summarysize(testfunctionfarfields)
+    # message =
+    # string(Base.format_bytes(memory_testfunctionfarfields), " in memory")
+    # verbose && @info message
 
-    verbose && println()
+    # verbose && println()
     verbose && @info "Assemble resample maps"
     levelresamplemaps = _initializelevelresamplemaps(
         T,
@@ -335,11 +342,19 @@ function MLFMMTransmitMap(
         T(wavenumber);
         samplingtype = samplingtype,
     )
-    sumsize = Base.summarysize(levelresamplemaps) + Base.summarysize(phaseshifttoparent)
-    message = string(Base.format_bytes(sumsize), " in memory")
-    verbose && @info message
 
-    verbose && println()
+    memory_resamplemaps = Base.summarysize(levelresamplemaps)
+    memory_phaseshifttoparent = Base.summarysize(phaseshifttoparent)
+
+
+    # sumsize = memory_resamplemaps + memory_phaseshifttoparent
+    # message = string(Base.format_bytes(sumsize), " in memory")
+    # verbose && @info message
+
+    # message = string(Base.format_bytes(memory_transfers), " in memory")
+    # verbose && @info message
+
+    # verbose && println()
     verbose && @info "Initialize   transfers"
 
     transferlist,
@@ -372,13 +387,21 @@ function MLFMMTransmitMap(
         message = string(length(uniquetransfers[k]), " unique transfers on level ", k)
         verbose && @info message
     end
-    message = string(Base.format_bytes(Base.summarysize(uniquetransfers)), " in memory")
-    verbose && @info message
+    memory_transfers = Base.summarysize(uniquetransfers)
+    # message = string(Base.format_bytes(memory_transfers), " in memory")
+    # verbose && @info message
 
     aggregationlist =
         _initialize_aggregationlist(sourcetree, transferlist, transmitnodeisoccupied)
     disaggregationlist =
         _initialize_disaggregationlist(receivetree, transferlist, receivenodeisoccupied)
+
+    memorylists =
+        Base.summarysize(aggregationlist) +
+        Base.summarysize(disaggregationlist) +
+        Base.summarysize(transferlist) +
+        Base.summarysize(adjoint_transferlist)
+
 
     sampling = nodefarfields[sourcerootnode].samplingstrategy
     θs, ϕs = samples(sampling)
@@ -386,8 +409,6 @@ function MLFMMTransmitMap(
     R = center(sourcetree, sourcerootnode)
     globalphaseshift = Matrix{Complex{T}}(undef, nθ, nϕ)
     _phaseshiftmatrix!(globalphaseshift, -R, wavenumber, sampling)
-
-    verbose && println("------------------------------")
 
     sourcestruct =
         MLFMMSource{typeof(levelresamplemaps[end]),samplingtype,C,typeof(sourcetree)}(
@@ -453,6 +474,128 @@ function MLFMMTransmitMap(
         # tmpmatrix::Matrix{C}
     )
 
+    memory_globalphaseshift = Base.summarysize(globalphaseshift)
+    memorylists += Base.summarysize(transferplan)
+
+    memory_total =
+        memory_globalphaseshift +
+        memory_tree +
+        memory_nodesprectra +
+        memory_basispatterns +
+        memory_testfunctionfarfields +
+        memory_nodefarfields +
+        memory_resamplemaps +
+        memory_phaseshifttoparent +
+        memory_transfers +
+        memorylists
+    exact_memory = Base.summarysize(transmap)
+
+    verbose && println()
+    verbose && println("-----   Used Memory  ---------")
+    message = string(
+        "    Exact  total   memory: ",
+        Base.format_bytes(exact_memory),
+        " ( ",
+        exact_memory,
+        " bytes )",
+    )
+    verbose && @info message
+    message = string(
+        "Estimated  total   memory: ",
+        Base.format_bytes(memory_total),
+        " ( ",
+        memory_total,
+        " bytes, ",
+        round(memory_total / exact_memory * 100, digits = 2),
+        " % )",
+    )
+    verbose && @info message
+    message = string(
+        "Memory  for  tree  struct: ",
+        Base.format_bytes(memory_tree),
+        " ( ",
+        round(memory_tree / memory_total * 100, digits = 2),
+        " % of total )",
+    )
+    verbose && @info message
+    message = string(
+        "Memory for node farfields: ",
+        Base.format_bytes(memory_nodefarfields),
+        " ( ",
+        round(memory_nodefarfields / memory_total * 100, digits = 2),
+        " % of total )",
+    )
+    verbose && @info message
+    message = string(
+        "Memory  for node  spectra: ",
+        Base.format_bytes(memory_nodesprectra),
+        " ( ",
+        round(memory_nodesprectra / memory_total * 100, digits = 2),
+        " % of total )",
+    )
+    verbose && @info message
+    message = string(
+        "Memory for basis patterns: ",
+        Base.format_bytes(memory_basispatterns),
+        " ( ",
+        round(memory_basispatterns / memory_total * 100, digits = 2),
+        " % of total )",
+    )
+    verbose && @info message
+    message = string(
+        "Memory for test functions: ",
+        Base.format_bytes(memory_testfunctionfarfields),
+        " ( ",
+        round(memory_testfunctionfarfields / memory_total * 100, digits = 2),
+        " % of total )",
+    )
+    verbose && @info message
+    message = string(
+        "Memory for  resample maps: ",
+        Base.format_bytes(memory_resamplemaps),
+        " ( ",
+        round(memory_resamplemaps / memory_total * 100, digits = 2),
+        " % of total )",
+    )
+    verbose && @info message
+    message = string(
+        "Memory for phase to parent: ",
+        Base.format_bytes(memory_phaseshifttoparent),
+        " ( ",
+        round(memory_phaseshifttoparent / memory_total * 100, digits = 2),
+        " % of total )",
+    )
+    verbose && @info message
+    message = string(
+        "Memory for translation ops: ",
+        Base.format_bytes(memory_transfers),
+        " ( ",
+        round(memory_transfers / memory_total * 100, digits = 2),
+        " % of total )",
+    )
+    verbose && @info message
+    message = string(
+        "Memory  for  global  phase: ",
+        Base.format_bytes(memory_globalphaseshift),
+        " ( ",
+        round(memory_globalphaseshift / memory_total * 100, digits = 2),
+        " % of total )",
+    )
+    verbose && @info message
+    message = string(
+        "Memory  for  control  flow: ",
+        Base.format_bytes(memorylists),
+        " ( ",
+        round(memorylists / memory_total * 100, digits = 2),
+        " % of total )",
+    )
+    verbose && @info message
+
+
+
+
+    verbose && println("------------------------------")
+
     return transmap
 
 end
@@ -486,7 +629,7 @@ function _transfer!(A::MLFMMTransmitMap)
             transfer!(
                 receivestruct.nodespectra[receivenode],
                 sourcestruct.nodefarfields[transfernode],
-                transferplan[receivenode][transfernode],
+                A.uniquetransfers[level(A.sourcestruct.tree, transfernode)][transferplan[receivenode][transfernode]],
                 reset = !receivestruct.nodeisfresh[receivenode],
             )
             receivestruct.nodeisfresh[receivenode] = true
@@ -518,7 +661,7 @@ function _adjoint_transfer!(A::MLFMMTransmitMap)
             _adjoint_transfer!(
                 receivestruct.nodespectra[receivenode],
                 sourcestruct.nodefarfields[transfernode],
-                transferplan[receivenode][transfernode],
+                A.uniquetransfers[level(A.sourcestruct.tree, transfernode)][transferplan[receivenode][transfernode]],
                 reset = !sourcestruct.nodeisfresh[transfernode],
             )
             sourcestruct.nodeisfresh[transfernode] = true
@@ -551,7 +694,7 @@ function _transpose_transfer!(A::MLFMMTransmitMap)
             _transpose_transfer!(
                 receivestruct.nodespectra[receivenode],
                 sourcestruct.nodefarfields[transfernode],
-                transferplan[receivenode][transfernode],
+                A.uniquetransfers[level(A.sourcestruct.tree, transfernode)][transferplan[receivenode][transfernode]],
                 reset = !sourcestruct.nodeisfresh[transfernode],
             )
             sourcestruct.nodeisfresh[transfernode] = true
@@ -664,3 +807,5 @@ function LinearMaps._unsafe_mul!(
     _transpose_forward!(A, x)
     y .= A.inputbuffer
 end
+
+readablesize(x) = Base.format_bytes(Base.summarysize(x))

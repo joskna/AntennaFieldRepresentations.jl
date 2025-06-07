@@ -145,19 +145,18 @@ function _transpose_disaggregate_children!(A, parentnode)
 
         sector = tree.nodes[child].data.sector + 1
 
-        resamplemap.outputbuffer .=
-            mul!(resamplemap.outputbuffer, resamplemap, A.nodespectra[child])
+        mul!(resamplemap.outputbuffer, resamplemap, A.nodespectra[child])
 
         _muladd_or_mulreset!(
             _eθ(A.nodespectra[parentnode]),
             view(resamplemap.outputbuffermat, :, :, 1),
-            conj.(A.phaseshifttoparent[sector, level+1]),
+            (A.phaseshifttoparent[sector, level+1]),
             reset = reset,
         )
         _muladd_or_mulreset!(
             _eϕ(A.nodespectra[parentnode]),
             view(resamplemap.outputbuffermat, :, :, 2),
-            conj.(A.phaseshifttoparent[sector, level+1]),
+            (A.phaseshifttoparent[sector, level+1]),
             reset = reset,
         )
 
@@ -185,8 +184,7 @@ function _adjoint_disaggregate_children!(A, parentnode)
 
         sector = tree.nodes[child].data.sector + 1
 
-        resamplemap.outputbuffer .=
-            mul!(resamplemap.outputbuffer, resamplemap, A.nodespectra[child])
+        mul!(resamplemap.outputbuffer, resamplemap, A.nodespectra[child])
 
         _muladd_or_mulreset!(
             _eθ(A.nodespectra[parentnode]),
@@ -292,9 +290,9 @@ function _transpose_disaggregate_to_disaggregationslist!(A::MLFMMReceive)
         A.disaggregationlist[level] == [] && continue
 
         # Threads.@threads for sector = 1:8
-        # for sector = 1:8
-        #     conj!(A.phaseshifttoparent[sector, level+1])
-        # end
+        for sector = 1:8
+            conj!(A.phaseshifttoparent[sector, level+1])
+        end
 
 
         # Threads.@threads for node in A.disaggregationlist[level]
@@ -304,9 +302,9 @@ function _transpose_disaggregate_to_disaggregationslist!(A::MLFMMReceive)
         end
 
         # Threads.@threads for sector = 1:8
-        # for sector = 1:8
-        #     conj!(A.phaseshifttoparent[sector, level+1])
-        # end
+        for sector = 1:8
+            conj!(A.phaseshifttoparent[sector, level+1])
+        end
 
     end
 

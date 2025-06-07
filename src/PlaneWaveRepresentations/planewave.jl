@@ -318,23 +318,23 @@ function _phaseshiftmatrix!(
     k₀::Number,
     sampling::Y,
 ) where {Y<:SphereSamplingStrategy}
-    T = Float64
+    # T = Float64
     a, b = size(storagematrix)
-    θvec, ϕvec = samples(sampling)
+    θvec::Vector{Float64}, ϕvec::Vector{Float64} = samples(sampling)
     L = a - 1
     @assert length(θvec) == a
     @assert length(ϕvec) == b
 
-    sp = T.(sin.(ϕvec))
-    cp = T.(cos.(ϕvec))
-    st = T.(sin.(θvec))
-    ct = T.(cos.(θvec))
-    eᵣ = zeros(T, 3)
+    sp = sin.(ϕvec)
+    cp = cos.(ϕvec)
+    st = sin.(θvec)
+    ct = cos.(θvec)
+    eᵣ = zeros(Float64, 3)
     for kϕ in eachindex(ϕvec)
         sinp, cosp = sp[kϕ], cp[kϕ]
         for kθ in eachindex(θvec)
             sint, cost = st[kθ], ct[kθ]
-            eᵣ .= cosp * sint, sinp * sint, cost
+            eᵣ .= cosp .* sint, sinp .* sint, cost
             ejkr = cis(-k₀ * udot(R, eᵣ))
             storagematrix[kθ, kϕ] = ejkr
         end

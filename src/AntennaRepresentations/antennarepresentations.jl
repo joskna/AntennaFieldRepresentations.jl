@@ -115,7 +115,7 @@ function weightsandsamples(samplingstrategy::RegularθRegularϕSampling)
     ϕweights = fill!(Vector{Float64}(undef, nϕ), dϕ)
     θweights = sin.(θs)
 
-    return θweights, ϕweights, θs, ϕs
+    return Float64.(θweights), Float64.(ϕweights), Float64.(θs), Float64.(ϕs)
 end
 function weightsandsamples(samplingstrategy::GaussLegendreθRegularϕSampling)
     xs::Vector{Float64}, θweights::Vector{Float64} = gausslegendre(samplingstrategy.Nθ)
@@ -125,7 +125,7 @@ function weightsandsamples(samplingstrategy::GaussLegendreθRegularϕSampling)
     ϕs = dϕ * collect(0:(nphi-1))
     ϕweights = fill!(Vector{Float64}(undef, nphi), dϕ)
 
-    return θweights, ϕweights, Float64.(θs), Float64.(ϕs)
+    return Float64.(θweights), Float64.(ϕweights), Float64.(θs), Float64.(ϕs)
 end
 """
     samples(samplingstrategy::SphereSamplingStrategy) -> ( θs::Array{Float64,1}, ϕs::Array{Float64,1} )
@@ -139,12 +139,12 @@ function samples(samplingstrategy::RegularθRegularϕSampling)
     ϕs = dϕ * collect(0:(nϕ-1))
     θs = dθ * collect(0:(nθ-1))
 
-    return θs, ϕs
+    return Float64.(θs), Float64.(ϕs)
 end
 function samples(samplingstrategy::GaussLegendreθRegularϕSampling)
     xs::Vector{Float64}, θweights::Vector{Float64} = gausslegendre(samplingstrategy.Nθ)
     θs = acos.(-xs)
-    nphi = samplingstrategy.Jϕ
+    nphi::Int64 = samplingstrategy.Jϕ
     dϕ = 2 * pi / (nphi)
     ϕs = dϕ * collect(0:(nphi-1))
 
