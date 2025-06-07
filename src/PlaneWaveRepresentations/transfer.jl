@@ -57,7 +57,7 @@ function _initialize_transfermatrix!(
     k0::T,
     sampling::S,
     L::Integer;
-    multiplyweights::Bool=false,
+    multiplyweights::Bool = false,
 ) where {T<:Real,S<:SphereSamplingStrategy}
 
     # R = SVector{3,T}(Rin)
@@ -67,7 +67,10 @@ function _initialize_transfermatrix!(
     h2 = collectsphericalHankel2(L + 1, kd)
 
     Pℓ = view(Pℓstorage, 1:L+1)
-    θweights::Vector{Float64}, ϕweights::Vector{Float64}, θs::Vector{Float64}, ϕs::Vector{Float64} = weightsandsamples(sampling)
+    θweights::Vector{Float64},
+    ϕweights::Vector{Float64},
+    θs::Vector{Float64},
+    ϕs::Vector{Float64} = weightsandsamples(sampling)
 
     C = Complex{T}
 
@@ -105,7 +108,7 @@ function _initialize_plannedtransfer!(
     k0::T,
     sampling::S,
     L::Integer;
-    multiplyweights::Bool=false,
+    multiplyweights::Bool = false,
 ) where {T<:Real,S<:SphereSamplingStrategy}
     transfermatrix = _initialize_transfermatrix!(
         Pℓstorage,
@@ -113,7 +116,7 @@ function _initialize_plannedtransfer!(
         k0,
         sampling,
         L;
-        multiplyweights=multiplyweights,
+        multiplyweights = multiplyweights,
     )
 
     return PlannedTransfer{S,Complex{T},T}(Rin, k0, L, sampling, transfermatrix)
@@ -222,20 +225,20 @@ function transfer!(
     incidentfield::P,
     farfield::F,
     tr::PlannedTransfer{C};
-    reset::Bool=true,
+    reset::Bool = true,
 ) where {C,F<:PlaneWaveExpansion{Radiated},P<:PlaneWaveExpansion{Incident}}
 
     _muladd_or_mulreset!(
         _eθ(incidentfield),
         _eθ(farfield),
         tr.transfermatrix;
-        reset=reset,
+        reset = reset,
     )
     _muladd_or_mulreset!(
         _eϕ(incidentfield),
         _eϕ(farfield),
         tr.transfermatrix;
-        reset=reset,
+        reset = reset,
     )
     return incidentfield
 end
@@ -247,10 +250,10 @@ function transfer!(
     incidentfield::PlaneWaveExpansion{Incident},
     farfield::PlaneWaveExpansion{Radiated},
     R::AbstractVector{T};
-    reset::Bool=true,
+    reset::Bool = true,
 ) where {T<:Real}
     transfer = OnTheFlyTransfer{pattern.L,T}(SVector{3,T}(R), getwavenumber(farfield))
-    return transfer!(incidentfield, farfield, transfer, reset=reset)
+    return transfer!(incidentfield, farfield, transfer, reset = reset)
 end
 
 
@@ -258,7 +261,7 @@ function _adjoint_transfer!(
     incidentfield::P,
     farfield::F,
     tr::PlannedTransfer{C};
-    reset::Bool=true,
+    reset::Bool = true,
 ) where {C,F<:PlaneWaveExpansion{Radiated},P<:PlaneWaveExpansion{Incident}}
     conj!(tr.transfermatrix)
 
@@ -266,13 +269,13 @@ function _adjoint_transfer!(
         _eθ(farfield),
         _eθ(incidentfield),
         tr.transfermatrix;
-        reset=reset,
+        reset = reset,
     )
     _muladd_or_mulreset!(
         _eϕ(farfield),
         _eϕ(incidentfield),
         tr.transfermatrix;
-        reset=reset,
+        reset = reset,
     )
 
     conj!(tr.transfermatrix)
@@ -283,20 +286,20 @@ function _transpose_transfer!(
     incidentfield::P,
     farfield::F,
     tr::PlannedTransfer{C};
-    reset::Bool=true,
+    reset::Bool = true,
 ) where {C,F<:PlaneWaveExpansion{Radiated},P<:PlaneWaveExpansion{Incident}}
 
     _muladd_or_mulreset!(
         _eθ(farfield),
         _eθ(incidentfield),
         tr.transfermatrix;
-        reset=reset,
+        reset = reset,
     )
     _muladd_or_mulreset!(
         _eϕ(farfield),
         _eϕ(incidentfield),
         tr.transfermatrix;
-        reset=reset,
+        reset = reset,
     )
     return incidentfield
 end
