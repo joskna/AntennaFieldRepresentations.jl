@@ -346,7 +346,7 @@ function _aggregate_to_farfield!(A::MLFMMSource, x)
     _aggregate_to_farfield!(A)
 end
 function _aggregate_to_farfield!(A::MLFMMSource)
-    _aggregate_to_minlevel!(A)
+    _aggregate_to_minlevel!(A, min_aggregationlevel = level(A.tree, A.rootnode))
     _eθ(A.nodefarfields[A.rootnode]) .=
         _eθ(A.nodefarfields[A.rootnode]) .* A.globalphaseshift
     _eϕ(A.nodefarfields[A.rootnode]) .=
@@ -362,7 +362,7 @@ function _adjoint_aggregate_to_farfield!(A::MLFMMSource)
         _eθ(A.nodefarfields[A.rootnode]) .* conj.(A.globalphaseshift)
     _eϕ(A.nodefarfields[A.rootnode]) .=
         _eϕ(A.nodefarfields[A.rootnode]) .* conj.(A.globalphaseshift)
-    _adjoint_aggregate_to_minlevel!(A)
+    _adjoint_aggregate_to_minlevel!(A, min_aggregationlevel = level(A.tree, A.rootnode))
 end
 """
     _transpose_aggregate_to_farfield!(A::MLFMMSource; min_aggregationlevel::Integer=0)
@@ -374,7 +374,7 @@ function _transpose_aggregate_to_farfield!(A::MLFMMSource)
         _eθ(A.nodefarfields[A.rootnode]) .* A.globalphaseshift
     _eϕ(A.nodefarfields[A.rootnode]) .=
         _eϕ(A.nodefarfields[A.rootnode]) .* A.globalphaseshift
-    _transpose_aggregate_to_minlevel!(A)
+    _transpose_aggregate_to_minlevel!(A, min_aggregationlevel = level(A.tree, A.rootnode))
 end
 
 function equivalentorder(A::MLFMMSource)

@@ -328,12 +328,17 @@ struct SimpleMLFMMSourceToPlaneWaveMap{M<:MLFMMSource,W<:PlaneWaveExpansion,C<:C
     targetrepresentation::W
 end
 function Base.size(crm::SimpleMLFMMSourceToPlaneWaveMap)
-    return (length(crm.mlfmmsource.nodefarfields[1]), length(crm.mlfmmsource.buffer))
+    sourceroot = crm.mlfmmsource.rootnode
+    return (
+        length(crm.mlfmmsource.nodefarfields[sourceroot]),
+        length(crm.mlfmmsource.buffer),
+    )
 end
 
 function LinearMaps._unsafe_mul!(y, crm::SimpleMLFMMSourceToPlaneWaveMap, x::AbstractVector)
     _aggregate_to_farfield!(crm.mlfmmsource, x)
-    return y .= crm.mlfmmsource.nodefarfields[1]
+    sourceroot = crm.mlfmmsource.rootnode
+    return y .= crm.mlfmmsource.nodefarfields[sourceroot]
 end
 
 function LinearMaps._unsafe_mul!(
@@ -342,7 +347,8 @@ function LinearMaps._unsafe_mul!(
     x::AbstractVector,
 ) where {C,S<:SimpleMLFMMSourceToPlaneWaveMap}
     crm = crm_ad.lmap
-    crm.mlfmmsource.nodefarfields[1] .= x
+    sourceroot = crm.mlfmmsource.rootnode
+    crm.mlfmmsource.nodefarfields[sourceroot] .= x
     _adjoint_aggregate_to_farfield!(crm.mlfmmsource)
     y .= crm.mlfmmsource.buffer
 
@@ -355,7 +361,8 @@ function LinearMaps._unsafe_mul!(
     x::AbstractVector,
 ) where {C,S<:SimpleMLFMMSourceToPlaneWaveMap}
     crm = crm_tr.lmap
-    crm.mlfmmsource.nodefarfields[1] .= x
+    sourceroot = crm.mlfmmsource.rootnode
+    crm.mlfmmsource.nodefarfields[sourceroot] .= x
     _transpose_aggregate_to_farfield!(crm.mlfmmsource)
     y .= crm.mlfmmsource.buffer
 
@@ -363,7 +370,8 @@ function LinearMaps._unsafe_mul!(
 end
 
 function SimpleMLFMMSourceToPlaneWaveMap(originalrepresentation::M) where {M<:MLFMMSource}
-    targetrepresentation = originalrepresentation.nodefarfields[1]
+    sourceroot = originalrepresentation.rootnode
+    targetrepresentation = originalrepresentation.nodefarfields[sourceroot]
     W = typeof(targetrepresentation)
     C = eltype(targetrepresentation)
     return SimpleMLFMMSourceToPlaneWaveMap{M,W,C}(
@@ -407,7 +415,10 @@ function MLFMMSourceToPlaneWaveMap(
     orderϕ = 12,
 ) where {W<:PlaneWaveExpansion{Radiated},M<:MLFMMSource}
 
-    originalsamplingstrategy = originalrepresentation.nodefarfields[1].samplingstrategy
+    sourceroot = originalrepresentation.rootnode
+
+    originalsamplingstrategy =
+        originalrepresentation.nodefarfields[sourceroot].samplingstrategy
     targetsamplingstrategy = targetrepresentation.samplingstrategy
     resamplemap = ResampleMap(
         targetsamplingstrategy,
