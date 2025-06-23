@@ -73,6 +73,9 @@ function _initialize_disaggregationlist(receivetree, transferlist, receivenodeis
 
 end
 
+function _firstdefinedpattern(nodespectra)
+    return nodespectra[findfirst(i -> isassigned(nodespectra, i), 1:length(nodespectra))]
+end
 
 function _initialize_transfers(
     sourcetree,
@@ -83,10 +86,11 @@ function _initialize_transfers(
     nodefarfields,
     nodespectra,
     levelcutoffparameters;
+    mintranslationlevel = 3,
     transfertype::P = PlannedTransfer{
-        typeof(nodespectra[3].sampling),
-        eltype(nodespectra[3].EθEϕ),
-        typeof(nodespectra[3].k0),
+        typeof(_firstdefinedpattern(nodespectra).samplingstrategy),
+        eltype(_firstdefinedpattern(nodespectra).EθEϕ),
+        typeof(getwavenumber(_firstdefinedpattern(nodespectra))),
     },
     verbose::Bool = false,
 ) where {P<:Type{<:AbstractTransfer}}
@@ -94,13 +98,15 @@ function _initialize_transfers(
 
     transferlist = [Int[] for _ = 1:numberofnodes(receivetree)]
     adjoint_transferlist = [Int[] for _ = 1:numberofnodes(sourcetree)]
-    mintranslationlevel = typemax(Int)
+    # mintranslationlevel = typemax(Int)
     uniquetransfers = [transfertype[] for _ in levels(receivetree)]
 
     transferplan = [spzeros(Int, length(sourcetree.nodes)) for _ in eachindex(transferlist)]
 
-    Pℓstorage =
-        Vector{typeof(nodespectra[3].wavenumber)}(undef, levelcutoffparameters[1] + 1)
+    Pℓstorage = Vector{typeof(_firstdefinedpattern(nodespectra).wavenumber)}(
+        undef,
+        levelcutoffparameters[1] + 1,
+    )
 
 
     for receivenode in DepthFirstIterator(receivetree, root(receivetree))
@@ -116,10 +122,11 @@ function _initialize_transfers(
                 receivenode,
                 sourcetree,
                 numbufferboxes = numbufferboxes,
+                mintranslationlevel = mintranslationlevel,
             )
                 append!(transferlist[receivenode], sourcenode)
                 append!(adjoint_transferlist[sourcenode], receivenode)
-                mintranslationlevel = minimum([Int(receivelevel), mintranslationlevel])
+                # mintranslationlevel = minimum([Int(receivelevel), mintranslationlevel])
                 boxhalfsize = halfsize(receivetree, receivenode)
                 transvector =
                     center(receivetree, receivenode) - center(sourcetree, sourcenode)
@@ -234,12 +241,20 @@ Inputs:
 - `numbufferboxes` : minimum number of empty boxes between `sourcenode` and `receivenode` to count as far from each other.  
 
 """
-function _transfercanhappen(sourcenode, receivenode, tree; numbufferboxes = 1)
+function _transfercanhappen(
+    sourcenode,
+    receivenode,
+    tree;
+    numbufferboxes::Int = 1,
+    mintranslationlevel::Int = 3,
+)
     numbufferboxes = maximum([one(typeof(numbufferboxes)), numbufferboxes])
     sourcelevel = level(tree, sourcenode)
     receivelevel = level(tree, receivenode)
     sourcelevel < 3 && return false
     sourcelevel != receivelevel && return false
+
+    sourcelevel < mintranslationlevel && return false
 
     isnearmlfmmbox(
         center(tree, sourcenode),
@@ -252,11 +267,13 @@ function _transfercanhappen(sourcenode, receivenode, tree; numbufferboxes = 1)
     receiveparent = parent(tree, receivenode)
 
     isfarmlfmmbox(
-        center(tree, sourceparent),
-        center(tree, receiveparent),
-        halfsize(tree, sourceparent),
-        numbufferboxes,
-    ) && return false
+            center(tree, sourceparent),
+            center(tree, receiveparent),
+            halfsize(tree, sourceparent),
+            numbufferboxes,
+        ) &&
+        sourcelevel > mintranslationlevel &&
+        return false
 
     return true
 
@@ -496,7 +513,6 @@ function _allocatenodepattern(
     minlevel::Integer = 1,
     verbose::Bool = false,
 ) where {P<:PropagationType,S<:SphereSamplingStrategy,C}
-    verbose && println()
     verbose && @info string("Allocate node patterns of type ", W)
     nodepattern = Vector{W}(undef, length(tree.nodes))
 
@@ -829,7 +845,9 @@ function _initializephaseshifttoparent(
     k0::T;
     minlevel::Int = 0,
     samplingtype::Type{Y} = GaussLegendreθRegularϕSampling,
+    verbose::Bool = false,
 ) where {Y,T<:Real,I<:Integer}
+    verbose && @info "Assemble phase to parents"
     levels = AntennaFieldRepresentations.levels(tree)
     phaseshifttoparent = Array{Matrix{Complex{T}}}(undef, 8, length(levels))
     for level in levels[2:end]

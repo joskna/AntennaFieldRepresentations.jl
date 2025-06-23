@@ -182,20 +182,22 @@ function MLFMMTransmitMap(
     basisfunctions, #Can be ::SurfaceCurrentDensity, ::DipoleArray, NamedTuple(:points,:sourcefunctions)
     fieldsampling::IrregularFieldSampling,
     wavenumber::T;
-    expectedaccuracy = T(1e-3),
+    expectedaccuracy::T = T(1e-3),
     verbose = false,
     minhalfsize = π / (2 * wavenumber),
     orderθ = 8,
     orderϕ = 8,
     samplingtype::Type{S} = GaussLegendreθRegularϕSampling,
     num_bufferboxes::Integer = 1,
-    transfertype = PlannedTransfer{samplingtype,Complex{T},T},
-) where {T<:Real,S<:SphereSamplingStrategy}
+    transfertype::Type{AT} = PlannedTransfer{samplingtype,Complex{T},T},
+    mintranslationlevel::Integer = 0,
+) where {T<:Real,S<:SphereSamplingStrategy,AT<:AbstractTransfer}
     C = Complex{T}
 
     sourcepoints = _getpoints(basisfunctions)
     receivepoints = _getpoints(fieldsampling)
-    points = [sourcepoints; receivepoints]
+
+    # points = [sourcepoints; receivepoints]
     # sourcetree = _initialize_tree(points, minhalfsize, verbose=verbose)
     sourcetree =
         _initialize_trees(sourcepoints, receivepoints, minhalfsize, verbose = verbose)
@@ -245,37 +247,10 @@ function MLFMMTransmitMap(
         "Receive root node ",
         receiverootnode,
         " at level ",
-        level(receivetree, receiverootnode),
+        minreceivelevel,
         " contains all probes",
     )
     verbose && @info message
-
-
-
-    transmitnodeisfresh = [false for k = 1:length(sourcetree.nodes)]
-    receivenodeisfresh = [false for k = 1:length(receivetree.nodes)]
-
-
-    nodefarfields = _allocatenodepattern(
-        PlaneWaveExpansion{Radiated,samplingtype,Complex{T}},
-        sourcetree,
-        levelcutoffparameters,
-        transmitnodeisoccupied,
-        wavenumber,
-        minlevel = minimum([3, minsourcelevel]),
-        verbose = verbose,
-    )
-
-    nodespectra = _allocatenodepattern(
-        PlaneWaveExpansion{Incident,samplingtype,Complex{T}},
-        receivetree,
-        levelcutoffparameters,
-        receivenodeisoccupied,
-        wavenumber,
-        minlevel = 3,
-        verbose = verbose,
-    )
-
 
     L = levelcutoffparameters[end]
     samplingstrategy = _standardsampling(S, L)
@@ -290,12 +265,7 @@ function MLFMMTransmitMap(
     inputbuffer = Vector{Complex{T}}(undef, length(basisfunctions))
     inputbuffer .= basisfunctions
 
-    # message = string(Base.format_bytes(memory_basispatterns), " in memory")
-    # verbose && @info message
-
     outputbuffer = deepcopy(asvector(fieldsampling))
-    # verbose && println()
-
 
     testfunctionfarfields = _initializebasisfunctionweightingpatterns(
         receivetree,
@@ -319,9 +289,37 @@ function MLFMMTransmitMap(
         levelcutoffparameters,
         T(wavenumber);
         samplingtype = samplingtype,
+        verbose = verbose,
     )
 
+    if mintranslationlevel < 3
+        mintranslationlevel = maximum([minsourcelevel, minreceivelevel])
+    else
+        mintranslationlevel = maximum([3, mintranslationlevel])
+    end
 
+    transmitnodeisfresh = [false for k = 1:length(sourcetree.nodes)]
+    receivenodeisfresh = [false for k = 1:length(receivetree.nodes)]
+
+    nodefarfields = _allocatenodepattern(
+        PlaneWaveExpansion{Radiated,samplingtype,Complex{T}},
+        sourcetree,
+        levelcutoffparameters,
+        transmitnodeisoccupied,
+        wavenumber,
+        minlevel = minimum([3, minsourcelevel]),
+        verbose = verbose,
+    )
+
+    nodespectra = _allocatenodepattern(
+        PlaneWaveExpansion{Incident,samplingtype,Complex{T}},
+        receivetree,
+        levelcutoffparameters,
+        receivenodeisoccupied,
+        wavenumber,
+        minlevel = mintranslationlevel,
+        verbose = verbose,
+    )
 
     transferlist,
     adjoint_transferlist,
@@ -338,7 +336,7 @@ function MLFMMTransmitMap(
         nodefarfields,
         nodespectra,
         levelcutoffparameters;
-        transfertype = transfertype,
+        mintranslationlevel = mintranslationlevel,
         verbose = verbose,
     )
 

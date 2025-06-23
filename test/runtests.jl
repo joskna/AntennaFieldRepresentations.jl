@@ -90,6 +90,10 @@ using Test
         @testset "MLFMMSource" begin
             include(joinpath("test_MLFMM", "test_mlfmm_far.jl"))
             include(joinpath("test_MLFMM", "test_mlfmm_far_surfacecurrents.jl"))
+            include(joinpath("test_MLFMM", "test_mlfmm_far.jl"))
+        end
+        @testset "MLFMM inverse" begin
+            include(joinpath("test_MLFMM", "test_mlfmm_inversetrafo.jl"))
         end
 
         # @testset "Conversions Dipole -> Spherical" begin 

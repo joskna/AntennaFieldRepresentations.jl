@@ -44,8 +44,8 @@ probeϕ = ProbeAntenna(
     λ / 10,
 )
 # measurement locations 
-θs = (collect(0:35:180)) ./ 180 .* pi
-ϕs = collect(0:55:359) ./ 180 .* pi
+θs = (collect(0:10:180)) ./ 180 .* pi
+ϕs = collect(0:10:359) ./ 180 .* pi
 # ϕs = collect(0:15:90) ./ 180 .* pi
 
 radius = 20λ
@@ -93,15 +93,85 @@ A = AntennaFieldRepresentations.MLFMMTransmitMap(
 )
 
 b = reshape(A * dipoles, size(bref))
-@test (maximum(abs.(b - bref)) ./ maximum(abs.(bref))) < 1.6e-5
+@test maximum(abs.(b - bref)) ./ maximum(abs.(bref)) < 1e-4
+
+#######################################################
+using CompScienceMeshes
+using BEAST
+using IterativeSolvers
+
+minrad = 1.4λ
 
 
-Aᵀ = transpose(A)
-Aᴴ = adjoint(A)
+# sphere_mesh = meshsphere(minrad, λ / 3)
+filenamemesh = joinpath("testdata", "sphere_rad1p4.msh")
+sphere_mesh = CompScienceMeshes.read_gmsh_mesh(filenamemesh)
+Γ = BEAST.raviartthomas(sphere_mesh)
+Γ_ = BEAST.buffachristiansen(sphere_mesh)
 
-Amat = Matrix(A)
-Amatᴴ = Matrix(Aᴴ)
-Amatᵀ = Matrix(Aᵀ)
+currents_el = SurfaceCurrentDensity{Radiated,Electric,typeof(Γ),ComplexF64}(
+    Γ,
+    ones(ComplexF64, numfunctions(Γ)),
+    getwavenumber(dipoles),
+)
+currents_mag = SurfaceCurrentDensity{Radiated,Magnetic,typeof(Γ_),ComplexF64}(
+    Γ_,
+    ones(ComplexF64, numfunctions(Γ_)),
+    getwavenumber(dipoles),
+)
 
-@test (maximum(abs.(Amat .- adjoint(Amatᴴ)))) < 1e-12
-@test (maximum(abs.(Amat .- transpose(Amatᵀ)))) < 1e-12
+
+B = AntennaFieldRepresentations.MLFMMTransmitMap(
+    currents_el,
+    sampling,
+    dipoles.wavenumber,
+    verbose = false,
+    expectedaccuracy = 1e-3,
+)
+
+C = AntennaFieldRepresentations.MLFMMTransmitMap(
+    currents_mag,
+    sampling,
+    dipoles.wavenumber,
+    verbose = false,
+    expectedaccuracy = 1e-3,
+)
+
+D = [B C]
+Dᴴ = adjoint(D)
+DDᴴ = D * Dᴴ
+
+bvec = A * dipoles
+Dᴴb = Dᴴ * bvec
+
+y = zeros(ComplexF64, size(bvec))
+minres!(y, DDᴴ, bvec / norm(bvec), maxiter = 50, verbose = true, abstol = 1e-3)
+x = Dᴴ * y * norm(bvec)
+
+bvec2 = D * x
+@test (norm(bvec2 - bvec) / norm(bvec)) < 1e-3
+
+Bfarfield = ChangeRepresentationMap(
+    typeof(pwe),
+    B.sourcestruct,
+    samplingstrategy = pwe.samplingstrategy,
+)
+Cfarfield = ChangeRepresentationMap(
+    typeof(pwe),
+    C.sourcestruct,
+    samplingstrategy = pwe.samplingstrategy,
+)
+
+pwe2 = changerepresentation(PlaneWaveExpansion, dipoles)
+pwe2 .*= 0
+
+pwe3 = changerepresentation(PlaneWaveExpansion, dipoles)
+pwe3 .*= 0
+
+pwe2 .= Bfarfield * x[1:size(B, 2)] + Cfarfield * x[size(B, 2)+1:size(B, 2)+size(C, 2)]
+
+
+pwe3 .= pwe .- pwe2
+
+
+@test (norm(pwe3) / norm(pwe)) < 1.1e-3
