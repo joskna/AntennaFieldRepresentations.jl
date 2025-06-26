@@ -51,7 +51,11 @@ Depending on the concrete types of the `aut_field` and the `fieldsampling`, diff
 
 [^1]: A direct (non-iterative) inverse transmit map is available using the `inverse()` command.
 
-As explained in the [`OperationMaps` Chapter of this documentation](@ref operationmaps_linmap), each `TransmitMap` operates as linear map and its `adjoint`, `transpose` and `inverse` map can be constructed via
+!!! note
+    Not all types of `TransmitMap` allow to setup an inverse efficiently. In most cases, a direct inverse is not available but the inverse map is implemented via an iterative solver.  The types of `TransmitMap` which have a direct inverse available, are annotated with a superscript [^1] in the table above.  
+---
+
+As explained in the [`OperationMaps` Chapter of this documentation](@ref operationmaps_linmap), each `TransmitMap` operates as linear map and its `adjoint`, `transpose` and `inverse` (if available) map can be constructed via
 
 ```jldoctest transmitmaps
 julia>  Aᴴ = adjoint(A)
@@ -66,22 +70,16 @@ julia> A⁻¹ = inverse(A)
 16×30 AntennaFieldRepresentations.InverseSphericalTransmitMap{ComplexF64}
 ```
 
-!!! note
-    Not all types of `TransmitMap` allow to setup an inverse efficiently. In most cases, a direct inverse is not available but the inverse map is implemented via an iterative solver.  The types of `TransmitMap` which have a direct inverse available, are annotated with a superscript [^1] in the table above.  
----
 
-Since the different types of `TransmitMap` represent different algorithms for the computation of the transmission, they have different parameters which may be tuned by the user. The parameters of the `TransmitMaps` can be changed after an instance of the `TransmitMap` has been created using the command
-```julia
-changeparameters(A::TransmitMap; kwargs...)
-```
-where the available keyword arguments depend on the concrete type of the `TransmitMap`
 
-Each concrete type of `TransmitMap` is explained in more detail. The sections briefly describe the underlying algorithms and specify the available keyword arguments to tune the parameters of the underlying algorithms.
+Since the different types of `TransmitMap` represent different algorithms for the computation of the transmission, they have different parameters which may be tuned by the user. The parameters of the `TransmitMaps` can be controlled by the user through several keyword arguments in the respective constructor, where the available keyword arguments depend on the concrete type of the `TransmitMap`
+
+The following sections briefly describe the underlying algorithms and specify the available keyword arguments to tune the parameters of the underlying algorithms.
 
 ## `SphericalTransmitMap`
 The `SphericalTransmitMap` type calculates the transmission between a `SphericalWaveExpansion` and a `SphericalFieldSampling`. It implements the spherical Wacker algorithm which is described in more detail [in the electromagnetic theory section](@ref fastsphericalS12).
 
-The keyword arguments for `changeparameters(A::SphericalTransmitMap; kwargs...)` are described in the following table
+The keyword arguments for the construction of a `SphericalTransmitMap` are described in the following table
 
 |Keyword Argument   | Short Description |
 |:----------------- |:----------------- |
@@ -93,7 +91,7 @@ The keyword arguments for `changeparameters(A::SphericalTransmitMap; kwargs...)`
 The `PlaneWaveSphericalTransmitMap` type calculates the transmission between a `PlaneWaveExpansion` and a `SphericalFieldSampling`.
 It is implemented as a concatination of a `PlaneWaveToSphericalMap` and a `SphericalTransmitMap`, i.e., the `PlanewaveExpansion` is converted into a `SphericalWaveExpansion` and the transmission is executed as a `SphericalTransmitMap`.
 
-The keyword arguments for `changeparameters(A::PlaneWaveSphericalTransmitMap; kwargs...)` are described in the following table
+The keyword arguments for the construction of a `PlaneWaveSphericalTransmitMap` are described in the following table
 
 |Keyword Argument   | Short Description |
 |:----------------- |:----------------- |
@@ -102,13 +100,44 @@ The keyword arguments for `changeparameters(A::PlaneWaveSphericalTransmitMap; kw
 |`incidentcoefficients::AbstractVector`| Replace the spherical coefficients of the incident probe field by the entries of the input vector. If the `SphericalTransmitMap` is `firstorder`, all entries of the input vector which correspond to non-first-order modes are ignored.|
 
 ## `MLFMMTransmitMap`
+The `MLFMMTransmitMap` type calculates the transmission between a `MLFMMsource` and an `IrregularFieldSampling`.
+The `MLFMMSource` is a hierarchically organized datastructure which splits the source volume into multiple box shaped domains. The source contributions of each box are aggregated and translated towards the observation locations defined in the `IrregularFieldSampling` according to the [Multilevel Fast Multipole Method](@ref mlfmm_interactions). 
+
+The keyword arguments for the construction of a `MLFMMTransmitMap` are described in the following table
+
+|Keyword Argument   | Short Description |
+|:----------------- |:----------------- |
+|`expectedaccuracy::Real` | Defines the desired approximation accuracy for all operations involving the `MLFMMsource`. Mainly affects the number of samples used to store the `PlaneWaveRepresentation`s for each box.|
+|`verbose = false`| Determines if (debug) text should be printed to console for all operations involving the `MLFMMSource`.|
+|`minboxlength = π / (2 * wavenumber)`| Side length of the smallest box, defaults to half a wavelength. All larger box side lengths are a ``2^n``-multiple of the `minboxlength`.|
+|`orderθ=8`| Interpolation order along ``\theta`` for the `ResampleMap`s used to intrpolate from one box level to the next. Only affects `ResampleMaps` with local interpolation strategies.|
+|`orderϕ=8`| Interpolation order along ``\phi`` for the `ResampleMap`s used to intrpolate from one box level to the next. Only affects `ResampleMaps` with local interpolation strategies.|
+|`samplingtype::Type{SphereSamplingStrategy} = GaussLegendreθRegularϕSampling`| Type of the sampling strategy of the `PlaneWaveRepresentation`s used to represent the accumulated field contributions of each box|
+|`num_bufferboxes::Integer = 1`||
+
+
+MLFMMTransmitMap(
+    basisfunctions, #Can be ::SurfaceCurrentDensity, ::DipoleArray, NamedTuple(:points,:sourcefunctions)
+    fieldsampling::IrregularFieldSampling,
+    wavenumber::T;
+    expectedaccuracy::T = T(1e-3),
+    verbose = false,
+    minhalfsize = π / (2 * wavenumber),
+    orderθ = 8,
+    orderϕ = 8,
+    samplingtype::Type{S} = GaussLegendreθRegularϕSampling,
+    
+    transfertype::Type{AT} = PlannedTransfer{samplingtype,Complex{T},T},
+    mintranslationlevel::Integer = 0,
+) where {T<:Real,S<:SphereSamplingStrategy,AT<:AbstractTransfer}
+    C = Complex{T}
 
 ## `MLFMMSphericalTransmitMap`
 The `MLFMMSphericalTransmitMap`type calculates the transmission between an `AntennaFieldRepresentation` based on equivalent currents and a `SphericalFieldSampling`.
 In its implementation, the far-field pattern (i.e., a `PlaneWaveExpansion`) is calculated from the equivalent current representation first. For maximum efficiencyc the source region is hierrchically divided into boxes arranged in an octree. The overall far-field pattern is calculated by aggregating the far-fields of sources in smaller boxes in a [MLFMM-scheme](@ref mlfmm_aggregation).
 In the second step, the transmission between the calculated `PlaneWaveExpansion` and the `Spherical FieldSampling` is calculated through a `PlaneWaveSphericalTransmitMap`.
 
-The keyword arguments for `changeparameters(A::MLFMMSphericalTransmitMap; kwargs...)` are described in the following table
+The keyword arguments for the construction of a `MLFMMSphericalTransmitMap` are described in the following table
 
 |Keyword Argument   | Short Description |
 |:----------------- |:----------------- |

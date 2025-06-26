@@ -16,9 +16,10 @@ A comprehensive list of all operation maps provided by `AntennaFieldRepresentati
 | :---------------------------- | :------------------------ | :-------------------------------------------------------- |
 | `TransmitMap`                 | `transmit`                | Transmission operator between an `AntennaFieldRepresentation` and a `Fieldsampling` |
 | `RotateMap`                   | `rotate`                  | Rotation operator for a certain `AntennaFieldRepresentation` around fixed Euler angles ``\vartheta``, ``\varphi``,  and ``\chi``|
-| `SpatialShiftMap`             | `spatialshift`            | Translation operator for a certain `AntennaFieldRepresentation` into a translated coordinate system|
+| `SpatialShiftMap`             | `spatialshift`            | Shift operator for a certain `AntennaFieldRepresentation` which moves the `AntennaFieldRepresentation` along a vector `R` |
+| `TransferMap`                 | `transfer`                | Transfer operator which transfers a certain `AntennaFieldRepresentation` of `Radiated` type into a corresponding `Incident` representation in a different coordinate system which is shifted by a vector `R` from the original coordinate system |
 | `ChangeRepresentationMap`     | `changerepresentation`    | Conversion operator from one type of `AntennaFieldrepresentation` into another|
-| `InterpolateMap`              | `interpolate`             | Interpolation operator of a `PlaneWaveExpansion` into a `PlaneWaveExpansion` with a different `SphereSamplingStrategy`|
+| `ResampleMap`              | `resample`             | Resample operator of a `PlaneWaveExpansion` into a `PlaneWaveExpansion` with a different `SphereSamplingStrategy`|
 
 ## [Operation Maps as Linear Operators](@id operationmaps_linmap)
 The abstract type `OperationMap{C} <: LinearMaps.LinearMap{C}` is a subtype of [`LinearMaps.LinearMap`](https://julialinearalgebra.github.io/LinearMaps.jl/stable/generated/custom/) which means that the operations represented by an `OperationMap{C}` are strictly linear operations.

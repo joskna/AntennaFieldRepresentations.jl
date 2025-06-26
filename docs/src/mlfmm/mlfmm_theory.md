@@ -1,4 +1,4 @@
-# Fast Computation of Field Interactions with the Multilevel Fast Multipole Method
+# [Fast Computation of Field Interactions with the Multilevel Fast Multipole Method](@id mlfmm_interactions)
 In usual measurement scenarios, the probe antennas are much smaller than the antenna under test. The geometry of an exemplary measurement scenario is depicted below.
 ```@raw html
 <figure>

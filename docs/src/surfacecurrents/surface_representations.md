@@ -59,16 +59,45 @@ meshsize = 0.1
 sidelengthA = 1.0
 sidelengthB = 1.0
 
-Γ = CompScienceMeshes.meshrectangle(sidelengthA, sidelengthB, triangle_sidelength)
+mesh = CompScienceMeshes.meshrectangle(sidelengthA, sidelengthB, meshsize)
 ```
+```@raw html
+<figure>
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="../assets/currents_plate.png" width="800">
+  <source media="(prefers-color-scheme: light)" srcset="../assets/currents_plate.png" width="800" >
+  <img alt="" src="" width="200">
+</picture>
+
+  <figcaption>
+    Mesh of a rectangular plate. 
+  </figcaption>
+</figure>
+<br/>
+```
+
 or 
 ```julia 
 using CompScienceMeshes
 
 radius = 1.0
-meshsize = 0.1
+meshsize = 0.4
 
-Γ = CompScienceMeshes.meshsphere(radius, meshsize)
+mesh = CompScienceMeshes.meshsphere(radius, meshsize)
+```
+```@raw html
+<figure>
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="../assets/currents_sphere.png" width="800">
+  <source media="(prefers-color-scheme: light)" srcset="../assets/currents_sphere.png" width="800" >
+  <img alt="" src="" width="200">
+</picture>
+
+  <figcaption>
+    Mesh of a sphere. 
+  </figcaption>
+</figure>
+<br/>
 ```
 
 
@@ -76,7 +105,7 @@ More elaborate meshes can be created with a meshing tool like [`gmsh`](https://g
 ```julia 
 using CompScienceMeshes
 
-Γ = CompScienceMeshes.read_gmsh_mesh("example_box.msh")
+mesh = CompScienceMeshes.read_gmsh_mesh("example_box.msh")
 ```
 
 [^1]: The API of `gmsh` can be accessed via the `julia` package [Gmsh.jl](https://github.com/JuliaFEM/Gmsh.jl?tab=readme-ov-file). 
@@ -88,8 +117,23 @@ To create a set of [Rao-Wilton-Glisson basis functions](@ref rwgbasis) on a prev
 ```julia 
 using BEAST
 
-β = BEAST.raviartthomas(Γ)
+β = BEAST.raviartthomas(mesh)
 ```
+```@raw html
+<figure>
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="../assets/currents_sphere.png" width="800">
+  <source media="(prefers-color-scheme: light)" srcset="../assets/currents_sphere.png" width="800" >
+  <img alt="" src="" width="200">
+</picture>
+
+  <figcaption>
+    RWG-functions are defined on pairs of triangles on the mesh.
+  </figcaption>
+</figure>
+<br/>
+```
+
 ---
 At the moment, Rao-Wilton-Glisson (RWG) basis functions are the only type of Finite Element space which is tested to work with `AntennaFieldRepresentations.jl`. However, many more Finite Element spaces are defined by `BEAST.jl` which might just "work out of the box" (go ahead and try if you dare and let us know how it worked out for you):
 
@@ -97,17 +141,37 @@ At the moment, Rao-Wilton-Glisson (RWG) basis functions are the only type of Fin
 ```julia 
 using BEAST
 
-β = BEAST.n × BEAST.raviartthomas(Γ)
+β = BEAST.n × BEAST.raviartthomas(mesh)
 ```
 ---
 - For [Buffa-Christiansen basis functions](https://comptes-rendus.academie-sciences.fr/mathematique/articles/10.1016/j.crma.2004.12.022/) use
  ```julia 
 using BEAST
 
-β = BEAST.buffachristiansen(Γ)
+β_buffa = BEAST.buffachristiansen(mesh)
 ```
----
+```@raw html
+<figure>
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="../assets/currents_sphere_buffa.png" width="800">
+  <source media="(prefers-color-scheme: light)" srcset="../assets/currents_sphere_buffa.png" width="800" >
+  <img alt="" src="" width="200">
+</picture>
+
+  <figcaption>
+    Buffa-Christiansen-functions are defined on a refined mesh. 
+  </figcaption>
+</figure>
+<br/>
+```
 - More Finite Element spaces can be found by consulting the [source code of BEAST.jl](https://github.com/krcools/BEAST.jl/tree/master/src/bases).
+
+
+### Defining the `SurfaceCurrentDensity`
+```julia 
+currents_el = SurfaceCurrentDensity{Radiated,Electric,typeof(β_buffa),ComplexF64}(β_buffa, ones(ComplexF64, numfunctions(β_buffa)), k0)
+currents_mag = SurfaceCurrentDensity{Radiated,Magnetic,typeof(β_buffa),ComplexF64}(β_buffa, ones(ComplexF64, numfunctions(β_buffa)), k0)
+```
 
 [^2]: Rao-Wilton-Glisson basis functions are sometimes called Raviat-Thomas basis functions [(https://en.wikipedia.org/wiki/Raviart%E2%80%93Thomas_basis_functions)](https://en.wikipedia.org/wiki/Raviart%E2%80%93Thomas_basis_functions).
 

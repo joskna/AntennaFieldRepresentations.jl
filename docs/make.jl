@@ -1,12 +1,12 @@
 using Documenter, AntennaFieldRepresentations
 
 makedocs(;
-    modules = [AntennaFieldRepresentations],
-    authors = "Josef Knapp <josef.knapp@tum.de>, Danijel Jukic, and Simon B. Adrian",
-    sitename = "AntennaFieldRepresentations.jl",
-    remotes = nothing,
-    checkdocs = :exports,
-    pages = [
+    modules=[AntennaFieldRepresentations],
+    authors="Josef Knapp <josef.knapp@tum.de>, Danijel Jukic, and Simon B. Adrian",
+    sitename="AntennaFieldRepresentations.jl",
+    remotes=nothing,
+    checkdocs=:exports,
+    pages=[
         "Home" => "index.md",
         "Antenna Field Representations" => Any[
             "General Field Representation Interface"=>"fieldrepresentations.md",
@@ -14,7 +14,7 @@ makedocs(;
             "Spherical Mode Representations"=>"spherical/spherical_representations.md",
             "Plane Wave Representations"=>"planewaves/planewave_representations.md",
             "Equivalent Surface Currents"=>"surfacecurrents/surface_representations.md",
-        ],
+            "MLFMM Representation"=>"mlfmm/mlfmm_source.md",],
         "Field Samplings" => Any[
             "General Field Sampling Interface"=>"sampling/fieldsamplings.md",
             "Irregularly Distributed Field Samplings"=>"sampling/irregularsampling.md",
@@ -43,4 +43,4 @@ makedocs(;
         "API" => "api.md",
     ],
 )
-deploydocs(repo = "github.com/joskna/AntennaFieldRepresentations.jl.git")
+deploydocs(repo="github.com/joskna/AntennaFieldRepresentations.jl.git")
