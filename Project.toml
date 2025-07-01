@@ -1,7 +1,7 @@
 name = "AntennaFieldRepresentations"
 uuid = "28938b31-3778-4757-998f-436de032caa4"
 authors = ["Josef Knapp <josef.knapp@tum.de>, Danijel Jukic, and Simon B.Adrian"]
-version = "0.0.1"
+version = "0.0.2"
 
 [deps]
 BEAST = "bb4162c7-ba94-5a20-af32-d8ec4428bdd1"

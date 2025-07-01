@@ -1,4 +1,4 @@
-# Operation Maps for Operations on Antenna Field Representations
+# [Operation Maps for Operations on Antenna Field Representations](@id operationmaps)
 In `AntennaFieldRepresentations.jl`, an operation map is a [function-like object](https://docs.julialang.org/en/v1/manual/methods/#Function-like-objects-1) which corresponds to a certain method.
 All operation maps  in `AntennaFieldRepresentations.jl` subtype the abstract type `OperationMap{C}`. 
 The idea behind these `OperationMap`s is to reuse allocated memory and save redundant operations for repeated method calls.
