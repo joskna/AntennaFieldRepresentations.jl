@@ -29,13 +29,13 @@ makedocs(;
             "transmission/planewavesphericalmap.md",
             "transmission/mlfmmsphericalmap.md",
         ],
-        "Spherically Sampled Data Structures" => "sampleddata.md",
         "Operations" => Any[
             "OperationMaps"=>"operations/operationmaps.md",
             "Coordinate Transformations"=>"operations/coordinate_trafos.md",
             "Conversion into Other Field Representations"=>"operations/conversions.md",
             "Interpolation"=>"operations/interpolation.md",
         ],
+        "Spherically Sampled Data Structures" => "sampleddata.md",
         "Examples" => "examples.md",
         "(Electromagnetic) Theory" => Any[
             "Dipoles"=>"dipoles/dipole_theory.md",

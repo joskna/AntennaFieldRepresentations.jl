@@ -52,3 +52,5 @@ With `AntennaFieldRepresentations.jl` the user can (besides other useful things)
 
 - Resampling works only if for every sampling point in the target `SphereSamplingStrategy` the point on the opposite side of the sphere is also included in the sampling.
 - Resampling only works if the original `SphereSamplingStrategy` is a `GaussLegendreθRegularϕSampling` with an even number of `ϕ`-samples
+- `ChangeRepresentationMap`s and `changerepresentation` methods not completely implemented
+- `MLFMMSource` does not completely implement the `AntennaRepresentations` API

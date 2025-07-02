@@ -1,135 +1,6 @@
 include("beastglue.jl")
 include("MLFMMTree.jl")
-# TODD: docstrings
-struct MLFMMSource{M<:ResampleMap,Y<:SphereSamplingStrategy,C,X<:MLFMMTree} <:
-       AntennaFieldRepresentation{Radiated,C}
-    tree::X
-    expectedaccuracy::Real
-    wavenumber::Real
-    nodefarfields::Vector{PlaneWaveExpansion{Radiated,Y,C}}
-    basisfunctionfarfields::Vector{PlaneWaveExpansion{Radiated,Y,C}}
-    levelcutoffparameters::Vector{Int}
-    levelresamplemaps::Vector{M}
-    phaseshifttoparent::Array{Matrix{C},2}
-    globalphaseshift::Matrix{C}
-    nodeisfresh::Vector{Bool}
-    nodeisoccupied::Vector{Bool}
-    leafnodeindices::Vector{Int}
-    aggregationlist::Vector{Vector{Int}}
-    rootnode::Int
-    buffer::Vector{C}
-    outputbuffer::Vector{C}
-    verbose::Bool
-end
-function asvector(p::MLFMMSource)
-    return p.buffer
-end
-Base.size(p::MLFMMSource) = size(asvector(p))
-Base.getindex(p::MLFMMSource, i) = Base.getindex(asvector(p), i)
-Base.setindex!(p::MLFMMSource, i, v) = Base.setindex!(asvector(p), i, v)
-function Base.similar(p::MLFMMSource)
-    return deepcopy(p)
-end
-
-function MLFMMSource(
-    basisfunctions, #Can be ::SurfaceCurrentDensity, ::DipoleArray, NamedTuple(:points,:sourcefunctions) 
-    wavenumber::T;
-    expectedaccuracy = T(1e-3),
-    verbose = false,
-    minhalfsize = π / (2 * wavenumber),
-    orderθ = 8,
-    orderϕ = 8,
-    samplingtype::Type{S} = GaussLegendreθRegularϕSampling,
-) where {T<:Real,S<:SphereSamplingStrategy}
-    verbose &&
-        @info "----------------------\n   Assemble MLFMM source \n----------------------------"
-
-    verbose && @info "Initialize source tree"
-    points = _getpoints(basisfunctions)
-    tree = _initialize_tree(points, minhalfsize)
-    levelcutoffparameters =
-        _initializelevelcutoffparameters(tree, expectedaccuracy, wavenumber)
-    nodeisfresh = [false for _ = 1:length(tree.nodes)]
-
-    verbose && @info "Allocate  node buffers"
-    nodeisoccupied = _findoccupiednodes(tree)
-    rootnode = _findrootnode(tree, nodeisoccupied)
-
-    min_aggregationlevel = level(tree, rootnode)
-
-    nodefarfields = _allocatenodepattern(
-        PlaneWaveExpansion{Radiated,samplingtype,Complex{T}},
-        tree,
-        levelcutoffparameters,
-        nodeisoccupied,
-        wavenumber,
-    )
-    sourceoutputbuffer = nodefarfields[rootnode].buffer
-
-    verbose && @info "Assemble leaf patterns"
-    leafnodeindices = leafs(tree)
-    basisfunctionfarfields = _initializebasisfunctionfarfields(
-        tree,
-        basisfunctions,
-        levelcutoffparameters[end],
-        wavenumber;
-        verbose = verbose,
-        samplingtype = samplingtype,
-    )
-    inputbuffer = Vector{Complex{T}}(undef, length(basisfunctions))
-    inputbuffer .= basisfunctions
-
-    verbose && @info "Assemble resample maps"
-    levelresamplemaps = _initializelevelresamplemaps(
-        T,
-        tree,
-        orderθ,
-        orderϕ,
-        levelcutoffparameters;
-        samplingtype = samplingtype,
-    )
-    phaseshifttoparent = _initializephaseshifttoparent(
-        tree,
-        levelcutoffparameters,
-        T(wavenumber);
-        samplingtype = samplingtype,
-    )
-    L = levelcutoffparameters[min_aggregationlevel]
-
-    sampling = _standardsampling(samplingtype, L)
-    θs, ϕs = samples(sampling)
-    nθ, nϕ = length(θs), length(ϕs)
-    R = center(tree, rootnode)
-    globalphaseshift = Matrix{Complex{T}}(undef, nθ, nϕ)
-    _phaseshiftmatrix!(globalphaseshift, -R, wavenumber, sampling)
-
-    numlevels = length(levels(tree))
-    # aggregationlist = Vector{Vector{Int}}(undef, numlevels)
-    aggregationlist = [Vector{Int}([]) for _ = 1:numlevels]
-
-    verbose && println("------------------------------")
-
-    return MLFMMSource{eltype(levelresamplemaps),samplingtype,Complex{T},typeof(tree)}(
-        tree,
-        expectedaccuracy,
-        wavenumber,
-        nodefarfields,
-        basisfunctionfarfields,
-        levelcutoffparameters,
-        levelresamplemaps,
-        phaseshifttoparent,
-        globalphaseshift,
-        nodeisfresh,
-        nodeisoccupied,
-        leafnodeindices,
-        aggregationlist,
-        rootnode,
-        inputbuffer,
-        sourceoutputbuffer,
-        verbose,
-    )
-
-end
+include("MLFMMSource.jl")
 
 # TODD: docstrings
 struct MLFMMReceive{M<:ResampleMap,Y<:SphereSamplingStrategy,C,X<:MLFMMTree}
@@ -151,7 +22,8 @@ struct MLFMMReceive{M<:ResampleMap,Y<:SphereSamplingStrategy,C,X<:MLFMMTree}
 end
 
 
-# TODD: docstrings
+# TODO: docstrings
+# TODO: Keep original representation in inputbuffer for later reference
 struct MLFMMTransmitMap{
     A<:AntennaFieldRepresentation,
     F<:FieldSampling,
@@ -182,15 +54,15 @@ function MLFMMTransmitMap(
     basisfunctions, #Can be ::SurfaceCurrentDensity, ::DipoleArray, NamedTuple(:points,:sourcefunctions)
     fieldsampling::IrregularFieldSampling,
     wavenumber::T;
-    expectedaccuracy::T = T(1e-3),
-    verbose = false,
-    minhalfsize = π / (2 * wavenumber),
-    orderθ = 8,
-    orderϕ = 8,
-    samplingtype::Type{S} = GaussLegendreθRegularϕSampling,
-    num_bufferboxes::Integer = 1,
-    transfertype::Type{AT} = PlannedTransfer{samplingtype,Complex{T},T},
-    mintranslationlevel::Integer = 0,
+    expectedaccuracy::T=T(1e-3),
+    verbose=false,
+    minhalfsize=π / (2 * wavenumber),
+    orderθ=8,
+    orderϕ=8,
+    samplingtype::Type{S}=GaussLegendreθRegularϕSampling,
+    num_bufferboxes::Integer=1,
+    transfertype::Type{AT}=PlannedTransfer{samplingtype,Complex{T},T},
+    mintranslationlevel::Integer=0,
 ) where {T<:Real,S<:SphereSamplingStrategy,AT<:AbstractTransfer}
     C = Complex{T}
 
@@ -200,7 +72,7 @@ function MLFMMTransmitMap(
     # points = [sourcepoints; receivepoints]
     # sourcetree = _initialize_tree(points, minhalfsize, verbose=verbose)
     sourcetree =
-        _initialize_trees(sourcepoints, receivepoints, minhalfsize, verbose = verbose)
+        _initialize_trees(sourcepoints, receivepoints, minhalfsize, verbose=verbose)
 
     leafnodeindices = leafs(sourcetree)
     receivetree = deepcopy(sourcetree)
@@ -260,7 +132,7 @@ function MLFMMTransmitMap(
         basisfunctions,
         samplingstrategy,
         wavenumber;
-        verbose = verbose,
+        verbose=verbose,
     )
     inputbuffer = Vector{Complex{T}}(undef, length(basisfunctions))
     inputbuffer .= basisfunctions
@@ -271,7 +143,7 @@ function MLFMMTransmitMap(
         receivetree,
         fieldsampling,
         samplingstrategy,
-        verbose = verbose,
+        verbose=verbose,
     )
 
 
@@ -281,15 +153,15 @@ function MLFMMTransmitMap(
         orderθ,
         orderϕ,
         levelcutoffparameters;
-        samplingtype = samplingtype,
-        verbose = verbose,
+        samplingtype=samplingtype,
+        verbose=verbose,
     )
     phaseshifttoparent = _initializephaseshifttoparent(
         sourcetree,
         levelcutoffparameters,
         T(wavenumber);
-        samplingtype = samplingtype,
-        verbose = verbose,
+        samplingtype=samplingtype,
+        verbose=verbose,
     )
 
     if mintranslationlevel < 3
@@ -307,8 +179,8 @@ function MLFMMTransmitMap(
         levelcutoffparameters,
         transmitnodeisoccupied,
         wavenumber,
-        minlevel = minimum([3, minsourcelevel]),
-        verbose = verbose,
+        minlevel=minimum([3, minsourcelevel]),
+        verbose=verbose,
     )
 
     nodespectra = _allocatenodepattern(
@@ -317,8 +189,8 @@ function MLFMMTransmitMap(
         levelcutoffparameters,
         receivenodeisoccupied,
         wavenumber,
-        minlevel = mintranslationlevel,
-        verbose = verbose,
+        minlevel=mintranslationlevel,
+        verbose=verbose,
     )
 
     transferlist,
@@ -336,8 +208,8 @@ function MLFMMTransmitMap(
         nodefarfields,
         nodespectra,
         levelcutoffparameters;
-        mintranslationlevel = mintranslationlevel,
-        verbose = verbose,
+        mintranslationlevel=mintranslationlevel,
+        verbose=verbose,
     )
 
 
@@ -474,7 +346,7 @@ function _show_memory(A::MLFMMTransmitMap)
         " ( ",
         memory_total,
         " bytes, ",
-        round(memory_total / exact_memory * 100, digits = 2),
+        round(memory_total / exact_memory * 100, digits=2),
         " % )",
     )
     @info message
@@ -482,7 +354,7 @@ function _show_memory(A::MLFMMTransmitMap)
         "Memory  for  tree  struct: ",
         Base.format_bytes(memory_tree),
         " ( ",
-        round(memory_tree / memory_total * 100, digits = 2),
+        round(memory_tree / memory_total * 100, digits=2),
         " % of total )",
     )
     @info message
@@ -490,7 +362,7 @@ function _show_memory(A::MLFMMTransmitMap)
         "Memory for node farfields: ",
         Base.format_bytes(memory_nodefarfields),
         " ( ",
-        round(memory_nodefarfields / memory_total * 100, digits = 2),
+        round(memory_nodefarfields / memory_total * 100, digits=2),
         " % of total )",
     )
     @info message
@@ -498,7 +370,7 @@ function _show_memory(A::MLFMMTransmitMap)
         "Memory  for node  spectra: ",
         Base.format_bytes(memory_nodesprectra),
         " ( ",
-        round(memory_nodesprectra / memory_total * 100, digits = 2),
+        round(memory_nodesprectra / memory_total * 100, digits=2),
         " % of total )",
     )
     @info message
@@ -506,7 +378,7 @@ function _show_memory(A::MLFMMTransmitMap)
         "Memory for basis patterns: ",
         Base.format_bytes(memory_basispatterns),
         " ( ",
-        round(memory_basispatterns / memory_total * 100, digits = 2),
+        round(memory_basispatterns / memory_total * 100, digits=2),
         " % of total )",
     )
     @info message
@@ -514,7 +386,7 @@ function _show_memory(A::MLFMMTransmitMap)
         "Memory for test functions: ",
         Base.format_bytes(memory_testfunctionfarfields),
         " ( ",
-        round(memory_testfunctionfarfields / memory_total * 100, digits = 2),
+        round(memory_testfunctionfarfields / memory_total * 100, digits=2),
         " % of total )",
     )
     @info message
@@ -522,7 +394,7 @@ function _show_memory(A::MLFMMTransmitMap)
         "Memory for  resample maps: ",
         Base.format_bytes(memory_resamplemaps),
         " ( ",
-        round(memory_resamplemaps / memory_total * 100, digits = 2),
+        round(memory_resamplemaps / memory_total * 100, digits=2),
         " % of total )",
     )
     @info message
@@ -530,7 +402,7 @@ function _show_memory(A::MLFMMTransmitMap)
         "Memory for phase to parent: ",
         Base.format_bytes(memory_phaseshifttoparent),
         " ( ",
-        round(memory_phaseshifttoparent / memory_total * 100, digits = 2),
+        round(memory_phaseshifttoparent / memory_total * 100, digits=2),
         " % of total )",
     )
     @info message
@@ -538,7 +410,7 @@ function _show_memory(A::MLFMMTransmitMap)
         "Memory for translation ops: ",
         Base.format_bytes(memory_transfers),
         " ( ",
-        round(memory_transfers / memory_total * 100, digits = 2),
+        round(memory_transfers / memory_total * 100, digits=2),
         " % of total )",
     )
     @info message
@@ -546,7 +418,7 @@ function _show_memory(A::MLFMMTransmitMap)
         "Memory  for  global  phase: ",
         Base.format_bytes(memory_globalphaseshift),
         " ( ",
-        round(memory_globalphaseshift / memory_total * 100, digits = 2),
+        round(memory_globalphaseshift / memory_total * 100, digits=2),
         " % of total )",
     )
     @info message
@@ -554,7 +426,7 @@ function _show_memory(A::MLFMMTransmitMap)
         "Memory  for  control  flow: ",
         Base.format_bytes(memorylists),
         " ( ",
-        round(memorylists / memory_total * 100, digits = 2),
+        round(memorylists / memory_total * 100, digits=2),
         " % of total )",
     )
     @info message
@@ -590,7 +462,7 @@ function _transfer!(A::MLFMMTransmitMap)
                 receivestruct.nodespectra[receivenode],
                 sourcestruct.nodefarfields[transfernode],
                 A.uniquetransfers[level(A.sourcestruct.tree, transfernode)][transferplan[receivenode][transfernode]],
-                reset = !receivestruct.nodeisfresh[receivenode],
+                reset=!receivestruct.nodeisfresh[receivenode],
             )
             receivestruct.nodeisfresh[receivenode] = true
         end
@@ -622,7 +494,7 @@ function _adjoint_transfer!(A::MLFMMTransmitMap)
                 receivestruct.nodespectra[receivenode],
                 sourcestruct.nodefarfields[transfernode],
                 A.uniquetransfers[level(A.sourcestruct.tree, transfernode)][transferplan[receivenode][transfernode]],
-                reset = !sourcestruct.nodeisfresh[transfernode],
+                reset=!sourcestruct.nodeisfresh[transfernode],
             )
             sourcestruct.nodeisfresh[transfernode] = true
         end
@@ -655,7 +527,7 @@ function _transpose_transfer!(A::MLFMMTransmitMap)
                 receivestruct.nodespectra[receivenode],
                 sourcestruct.nodefarfields[transfernode],
                 A.uniquetransfers[level(A.sourcestruct.tree, transfernode)][transferplan[receivenode][transfernode]],
-                reset = !sourcestruct.nodeisfresh[transfernode],
+                reset=!sourcestruct.nodeisfresh[transfernode],
             )
             sourcestruct.nodeisfresh[transfernode] = true
         end
