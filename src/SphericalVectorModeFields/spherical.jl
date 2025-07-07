@@ -39,6 +39,9 @@ Base.setindex!(swe::SphericalCoefficients, v, s, ℓ, m) =
 function Base.similar(swe::SphericalCoefficients)
     return SphericalCoefficients(similar(swe.coefficients))
 end
+function copy(swe::SphericalCoefficients)
+    return SphericalCoefficients(copy(swe.coefficients))
+end
 function Base.size(swe::SphericalCoefficients)
     return size(swe.coefficients)
 end
@@ -117,6 +120,14 @@ function Base.similar(swe::FirstOrderSphericalCoefficients{C}) where {C}
         similar(swe.coefficients1ℓminus),
         similar(swe.coefficients2ℓplus),
         similar(swe.coefficients2ℓminus),
+    )
+end
+function Base.copy(swe::FirstOrderSphericalCoefficients{C}) where {C}
+    return FirstOrderSphericalCoefficients{C}(
+        copy(swe.coefficients1ℓplus),
+        copy(swe.coefficients1ℓminus),
+        copy(swe.coefficients2ℓplus),
+        copy(swe.coefficients2ℓminus),
     )
 end
 function asvector(swe::FirstOrderSphericalCoefficients{C}) where {C}
@@ -503,27 +514,19 @@ function _negpow1(m::Integer)
     end
 end
 
-function _dipole_spherical_innerprod(
-    dipoles::HertzArray{T,C},
-    Jmax::Integer,
-    P::PropagationType,
-    k0::Number,
-) where {C,T}
+function _dipole_spherical_innerprod(dipoles, Jmax::Integer, P::PropagationType, k0::Number)
+    C = ComplexF64
     tempcoeffs = zeros(C, Jmax)
-    for (i, position) in enumerate(dipoles.positions)
-        Fx, Fy, Fz = F_sℓm_cartesian_array(Jmax, P, position, k0)
-        tempcoeffs .+=
-            [Fx Fy Fz] * dipoles.orientations[i] * dipoles.dipolemoments[i] * k0 * sqrt(Z₀)
-    end
-    return tempcoeffs
+    return _dipole_spherical_innerprod!(tempcoeffs, dipoles, Jmax, P, k0)
 end
-function _dipole_spherical_innerprod(
+function _dipole_spherical_innerprod!(
+    tempcoeffs::AbstractVector,
     dipoles::FitzgeraldArray{T,C},
     Jmax::Integer,
     P::PropagationType,
     k0::Number,
 ) where {C,T}
-    tempcoeffs = zeros(C, Jmax)
+    fill!(tempcoeffs, zero(eltype(tempcoeffs)))
     for (i, position) in enumerate(dipoles.positions)
         Fx, Fy, Fz = curlF_sℓm_cartesian_array(Jmax, P, position, k0)
         tempcoeffs .+=
@@ -531,6 +534,21 @@ function _dipole_spherical_innerprod(
             dipoles.orientations[i] *
             dipoles.dipolemoments[i] *
             complex(0.0, -k0) / sqrt(Z₀)
+    end
+    return tempcoeffs
+end
+function _dipole_spherical_innerprod!(
+    tempcoeffs::AbstractVector,
+    dipoles::HertzArray{T,C},
+    Jmax::Integer,
+    P::PropagationType,
+    k0::Number,
+) where {C,T}
+    fill!(tempcoeffs, zero(eltype(tempcoeffs)))
+    for (i, position) in enumerate(dipoles.positions)
+        Fx, Fy, Fz = F_sℓm_cartesian_array(Jmax, P, position, k0)
+        tempcoeffs .+=
+            [Fx Fy Fz] * dipoles.orientations[i] * dipoles.dipolemoments[i] * k0 * sqrt(Z₀)
     end
     return tempcoeffs
 end

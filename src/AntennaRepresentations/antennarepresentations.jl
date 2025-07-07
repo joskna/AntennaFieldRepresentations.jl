@@ -86,7 +86,7 @@ function _countsamples(samplingstrategy::GaussLegendreθRegularϕSampling)
 end
 
 """
-    _standardsampling(Type{<:SphereSamplingStrategy}, Lmax::Integer)
+    _standardsampling([Type{<:SphereSamplingStrategy},] Lmax::Integer)
 
 Return the standard `SphereSamplingStrategy` of specified type for a `PlaneWaveExpansion` with `equivalentorder=Lmax`.
 """
@@ -96,6 +96,11 @@ function _standardsampling(::Type{RegularθRegularϕSampling}, Lmax::Integer)
     return RegularθRegularϕSampling(Jθ, Jϕ)
 end
 function _standardsampling(::Type{GaussLegendreθRegularϕSampling}, Lmax::Integer)
+    Nθ = Lmax + 1
+    Jϕ = 2Lmax + 2
+    return GaussLegendreθRegularϕSampling(Nθ, Jϕ)
+end
+function _standardsampling(Lmax::Integer)
     Nθ = Lmax + 1
     Jϕ = 2Lmax + 2
     return GaussLegendreθRegularϕSampling(Nθ, Jϕ)

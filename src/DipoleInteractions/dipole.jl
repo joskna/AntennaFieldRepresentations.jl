@@ -109,9 +109,18 @@ function Base.similar(dips::DipoleArray{P,E,T,C}) where {P,E,T,C}
         dips.wavenumber,
     )
 end
+function copy(dips::DipoleArray{P,E,T,C}) where {P,E,T,C}
+    return DipoleArray{P,E,T,C}(
+        copy(dips.positions),
+        copy(dips.orientations),
+        copy(dips.dipolemoments),
+        dips.wavenumber,
+    )
+end
+
 Base.size(dips::DipoleArray) = size(dips.dipolemoments)
 Base.getindex(dips::DipoleArray, i) = getindex(dips.dipolemoments, i)
-Base.setindex!(dips::DipoleArray, v, i) = (dips.dipolemoments, v, i)
+Base.setindex!(dips::DipoleArray, v, i) = setindex!(dips.dipolemoments, v, i)
 function setwavenumber!(dips::DipoleArray{P,E,C,T}, val::T) where {P,E,C,T}
     dips = DipoleArray{P,E,C,T}(dips.positions, dips.orientations, dips.dipolemoments, val)
     return dips

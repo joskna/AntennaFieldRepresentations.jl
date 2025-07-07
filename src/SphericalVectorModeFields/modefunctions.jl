@@ -13,11 +13,32 @@ function F_sℓm_spherical_array(
 ) where {T<:Real}
     _, Lmax, __ = j_to_sℓm(Jmaxx)
     Jmax = 2 * Lmax * (Lmax + 2)
-    kA = k0 * r
-
     Fr = zeros(Complex{T}, Jmax)
     Fϑ = zeros(Complex{T}, Jmax)
     Fφ = zeros(Complex{T}, Jmax)
+
+    return F_sℓm_spherical_array!(Fr, Fϑ, Fφ, Jmaxx, P, r, ϑ, φ, k0)
+
+end
+
+function F_sℓm_spherical_array!(
+    Fr,
+    Fϑ,
+    Fφ,
+    Jmaxx::Integer,
+    P::PropagationType,
+    r::T,
+    ϑ::Number,
+    φ::T,
+    k0::T,
+) where {T<:Real}
+    _, Lmax, __ = j_to_sℓm(Jmaxx)
+    # Jmax = 2 * Lmax * (Lmax + 2)
+    kA = k0 * r
+
+    # Fr = zeros(Complex{T}, Jmax)
+    # Fϑ = zeros(Complex{T}, Jmax)
+    # Fφ = zeros(Complex{T}, Jmax)
 
     if abs(kA < 100 * eps())
         j = sℓm_to_j(2, 1, -1)
@@ -225,6 +246,10 @@ Return normalized vector spherical wave function at coordinate origin in cartesi
 """
 function F_sℓm_cartesian_array_rzero(Jmaxx::Integer, P::Incident)
     Fcartesian = zeros(ComplexF64, Jmaxx, 3)
+    return F_sℓm_cartesian_array_rzero!(Fcartesian, Jmaxx, P)
+end
+function F_sℓm_cartesian_array_rzero!(Fcartesian, Jmaxx::Integer, P::Incident)
+    # Fcartesian = zeros(ComplexF64, Jmaxx, 3)
 
     F2m11, F201, F211 = _F2m1cartesian_at_origin(ComplexF64)
 

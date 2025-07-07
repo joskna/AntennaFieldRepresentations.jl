@@ -32,7 +32,7 @@ Returns a collection of electromagnetic plane waves propagating into various dir
 - `wavenumber`: wavenumber
 """
 function PlaneWaveExpansion(
-    propagation::P,
+    ::P,
     samplingstrategy::S,
     Eθ::AbstractMatrix{C},
     Eϕ::AbstractMatrix{C},
@@ -80,6 +80,15 @@ Base.getindex(p::PlaneWaveExpansion, i) = Base.getindex(asvector(p), i)
 Base.setindex!(p::PlaneWaveExpansion, i, v) = Base.setindex!(asvector(p), i, v)
 function Base.similar(p::PlaneWaveExpansion{P,S,C}) where {P,S,C}
     EθEϕ = similar(p.EθEϕ)
+    return PlaneWaveExpansion{P,S,C}(
+        p.samplingstrategy,
+        EθEϕ,
+        p.wavenumber,
+        reshape(EθEϕ, length(EθEϕ)),
+    )
+end
+function Base.copy(p::PlaneWaveExpansion{P,S,C}) where {P,S,C}
+    EθEϕ = copy(p.EθEϕ)
     return PlaneWaveExpansion{P,S,C}(
         p.samplingstrategy,
         EθEϕ,

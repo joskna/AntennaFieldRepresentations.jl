@@ -191,6 +191,89 @@ end
 
 ###################################################################
 
+"""
+    DipoleToSphericalMap{D,S,C} <: ChangeRepresentationMap{D,S,C}
+
+Linear map representing a `changerepresentation` operation from a `DipoleArray` into a `SphericalWaveExpansion`.
+
+# Type Parameters
+-  `D <: DipoleArray`: Type of the original representation
+- `S <: SphericalWaveExpansion`: Type of the target representation
+- `C <: Complex`
+"""
+struct DipoleToSphericalMap{S<:SphericalWaveExpansion,D<:DipoleArray,C<:Complex} <:
+       ChangeRepresentationMap{D,S,C}
+    originalrepresentation::D
+    targetrepresentation::S
+    tempcoeffs::Vector{C}
+end
+
+function Base.size(dsm::DipoleToSphericalMap)
+    return (length(dsm.targetrepresentation), length(dsm.originalrepresentation))
+end
+function ChangeRepresentationMap(
+    Tnew::Type{SphericalWaveExpansion{Psph,H,C}},
+    dipoles::DipoleArray{Pdip,E,T,C};
+    ϵ = 1e-7,
+    L = definemodeorder(Psph, dipoles, ϵ),
+) where {Psph,C,H,Pdip,E,T}
+    # Ptmp = _outputmode_dipo2sph(Psph(), Pdip())
+    k0 = getwavenumber(dipoles)
+    Jmax = sℓm_to_j(2, L, L)
+    tempcoeffs = zeros(C, Jmax)
+    coefficients = zeros(C, Jmax)
+    targetrepresentation = Tnew(SphericalCoefficients(coefficients), k0)
+    originalrepresentation = copy(dipoles)
+
+    return DipoleToSphericalMap{Tnew,typeof(dipoles),C}(
+        originalrepresentation,
+        targetrepresentation,
+        tempcoeffs,
+    )
+end
+function ChangeRepresentationMap(
+    Tnew::Type{SphericalWaveExpansion{Psph}},
+    dipoles::DipoleArray{Pdip,E,T,C};
+    ϵ = 1e-7,
+    L = definemodeorder(Psph, dipoles, ϵ),
+) where {Psph,C,Pdip,E,T}
+    return ChangeRepresentationMap(
+        SphericalWaveExpansion{Psph,SphericalCoefficients{C},C},
+        dipoles,
+        ϵ = ϵ,
+        L = L,
+    )
+end
+function ChangeRepresentationMap(
+    Tnew::Type{SphericalWaveExpansion},
+    dipoles::DipoleArray{Pdip,E,T,C};
+    ϵ = 1e-7,
+    L = definemodeorder(Pdip, dipoles, ϵ),
+) where {C,Pdip,E,T}
+    return ChangeRepresentationMap(
+        SphericalWaveExpansion{Pdip,SphericalCoefficients{C},C},
+        dipoles,
+        ϵ = ϵ,
+        L = L,
+    )
+end
+function LinearMaps._unsafe_mul!(y, crm::DipoleToSphericalMap, x::AbstractVector)
+    crm.originalrepresentation .= x
+    Ptmp = _outputmode_dipo2sph(Psph(), Pdip())
+    k0 = getwavenumber(dipoles)
+    Jmax = length(crm.tempcoeffs)
+
+    _dipole_spherical_innerprod!(tempcoeffs, dipoles, Jmax, Ptmp, k0)
+    for (j, val) in enumerate(tempcoeffs)
+        s, ℓ, m = j_to_sℓm(j)
+        crm.targetrepresentation[sℓm_to_j(s, ℓ, -m)] = (-1)^(m + 1) * val
+    end
+
+    y .= crm.targetrepresentation
+    return y
+end
+
+
 function _outputmode_dipo2sph(Psph::PropagationType, Pdip::PropagationType)
     if Pdip == Radiated()
         return _dualtype(Psph)
@@ -199,20 +282,28 @@ function _outputmode_dipo2sph(Psph::PropagationType, Pdip::PropagationType)
     end
     throw(ErrorException("Cannot perform conversion with given PropagationTypes."))
 end
+
+function definemodeorder(Psph, dipoles, ϵ)
+    k0 = getwavenumber(dipoles)
+    return (Psph() == Radiated() || Psph() == Absorbed()) ?
+           (_modeorder(2 * _rmax(dipoles), k0; ϵ = ϵ)) :
+           convert(Int64, floor(k0 * _rmin(dipoles)))
+end
 function changerepresentation(
     Tnew::Type{SphericalWaveExpansion{Psph,H,C}},
     dipoles::DipoleArray{Pdip,E,T,C};
     ϵ = 1e-7,
+    L = definemodeorder(Psph, dipoles, ϵ),
 ) where {Psph,C,H,Pdip,E,T}
     # Pdual= _dualtype(P)
     Ptmp = _outputmode_dipo2sph(Psph(), Pdip())
     k0 = getwavenumber(dipoles)
     # rsph = (Psph() == Radiated() || Psph() == Absorbed()) ? (2 * _rmax(dipoles)) : ( 0.5_rmin(dipoles))
     # L = _modeorder(rsph, getwavenumber(dipoles); ϵ = ϵ)
-    L =
-        (Psph() == Radiated() || Psph() == Absorbed()) ?
-        (_modeorder(2 * _rmax(dipoles), k0; ϵ = ϵ)) :
-        convert(Int64, floor(k0 * _rmin(dipoles)))
+    # L =
+    #     (Psph() == Radiated() || Psph() == Absorbed()) ?
+    #     (_modeorder(2 * _rmax(dipoles), k0; ϵ=ϵ)) :
+    #     convert(Int64, floor(k0 * _rmin(dipoles)))
     Jmax = sℓm_to_j(2, L, L)
     tempcoeffs = _dipole_spherical_innerprod(dipoles, Jmax, Ptmp, k0)
     coefficients = zeros(C, Jmax)
@@ -226,22 +317,26 @@ function changerepresentation(
     Tnew::Type{SphericalWaveExpansion{Psph}},
     dipoles::DipoleArray{Pdip,E,T,C};
     ϵ = 1e-7,
+    L = definemodeorder(Psph, dipoles, ϵ),
 ) where {Psph,C,Pdip,E,T}
     return changerepresentation(
         SphericalWaveExpansion{Psph,SphericalCoefficients{C},C},
         dipoles,
         ϵ = ϵ,
+        L = L,
     )
 end
 function changerepresentation(
     Tnew::Type{SphericalWaveExpansion},
     dipoles::DipoleArray{Pdip,E,T,C};
     ϵ = 1e-7,
+    L = definemodeorder(Pdip, dipoles, ϵ),
 ) where {C,Pdip,E,T}
     return changerepresentation(
         SphericalWaveExpansion{Pdip,SphericalCoefficients{C},C},
         dipoles,
         ϵ = ϵ,
+        L = L,
     )
 end
 
@@ -286,13 +381,42 @@ end
 # return PlaneWaveExpansion{P,GaussLegendreθRegularϕSampling,C}(samplingstrategy, EθEϕ, getwavenumber(swe))
 # end
 
+
+
+# function changerepresentation(
+#     Tnew::Type{SphericalWaveExpansion{Psph,H,C}},
+#     dipoles::DipoleArray{Pdip,E,T,C};
+#     ϵ=1e-7,
+#     L=definemodeorder(Psph, dipoles, ϵ)
+# ) where {Psph,C,H,Pdip,E,T}
+#     # Pdual= _dualtype(P)
+#     Ptmp = _outputmode_dipo2sph(Psph(), Pdip())
+#     k0 = getwavenumber(dipoles)
+#     # rsph = (Psph() == Radiated() || Psph() == Absorbed()) ? (2 * _rmax(dipoles)) : ( 0.5_rmin(dipoles))
+#     # L = _modeorder(rsph, getwavenumber(dipoles); ϵ = ϵ)
+#     # L =
+#     #     (Psph() == Radiated() || Psph() == Absorbed()) ?
+#     #     (_modeorder(2 * _rmax(dipoles), k0; ϵ=ϵ)) :
+#     #     convert(Int64, floor(k0 * _rmin(dipoles)))
+#     Jmax = sℓm_to_j(2, L, L)
+#     tempcoeffs = _dipole_spherical_innerprod(dipoles, Jmax, Ptmp, k0)
+#     coefficients = zeros(C, Jmax)
+#     for (j, val) in enumerate(tempcoeffs)
+#         s, ℓ, m = j_to_sℓm(j)
+#         coefficients[sℓm_to_j(s, ℓ, -m)] = (-1)^(m + 1) * val
+#     end
+#     return Tnew(SphericalCoefficients(coefficients), k0)
+# end
+
 function changerepresentation(
     ::Type{PlaneWaveExpansion},
     dipoles::DipoleArray{Pdip,E,T,C};
     ϵ = 1e-7,
+    L = definemodeorder(Pdip, dipoles, ϵ),
+    samplingstrategy = _standardsampling(L),
 ) where {C,Pdip,E,T}
-    L = equivalentorder(dipoles; ϵ = ϵ)
-    samplingstrategy = GaussLegendreθRegularϕSampling(L + 1, 2L + 2)
+    # L = equivalentorder(dipoles; ϵ=ϵ)
+    # samplingstrategy = GaussLegendreθRegularϕSampling(L + 1, 2L + 2)
     _, __, θs, ϕs = weightsandsamples(samplingstrategy)
     EθEϕ = zeros(C, length(θs), length(ϕs), 2)
     for (kθ, θ) in enumerate(θs)
@@ -300,7 +424,7 @@ function changerepresentation(
             EθEϕ[kθ, kϕ, 1], EθEϕ[kθ, kϕ, 2] = farfield(dipoles, (θ, ϕ))
         end
     end
-    return PlaneWaveExpansion{Pdip,GaussLegendreθRegularϕSampling,C}(
+    return PlaneWaveExpansion{Pdip,typeof(samplingstrategy),C}(
         samplingstrategy,
         EθEϕ,
         getwavenumber(dipoles),

@@ -113,7 +113,7 @@ dipoles = generate_AUTdips(collect(-0.25λ:λ/4:0λ), collect(-0.5λ:λ/4:0.5λ)
 
 ---
 
-Conversion into a `SphericalWaveExpansion{Radiated}`:
+## Conversion into a `SphericalWaveExpansion{Radiated}`
 ```jldoctest changeexamples ; output=false
 julia> swe = changerepresentation(SphericalWaveExpansion, dipoles)
 2046-element SphericalWaveExpansion{Radiated, SphericalCoefficients{ComplexF64}, ComplexF64}:
@@ -157,10 +157,79 @@ julia> swe = changerepresentation(SphericalWaveExpansion, dipoles)
 </figure>
 <br/>
 ```
+The order of the resulting mode expansion (i.e., the largest considered mode order ``\ell``) is chosen according to an estimate for the resulting accuracy `ϵ` (which defaults to `1e-7`):
+```jldoctest changeexamples ; output=false
+julia> equivalentorder(swe)
+31
+```
+We can tweak the resulting mode order by either specifying a new accuracy estimate `ϵ`
+```jldoctest changeexamples ; output=false
+swe_ϵ = changerepresentation(SphericalWaveExpansion, dipoles, ϵ =1e-2)
+
+# output
+
+1056-element SphericalWaveExpansion{Radiated, SphericalCoefficients{ComplexF64}, ComplexF64}:
+      372.81882940219094 - 1.138881592722361e-13im
+  2.0429498849964354e-15 + 3.9968028886505635e-14im
+                    -0.0 - 0.0im
+       -597.139457879735 - 60.148368197526686im
+      372.81882940219083 + 6.907659518598972e-14im
+  -3.819306724396686e-15 - 1.4210854715202004e-14im
+      16.656990543598212 - 372.327084704324im
+  1.9012569296705806e-14 + 2.3322611893110605e-16im
+  1.7763568394002505e-14 - 1.9884095375339e-14im
+   1.183004450936826e-13 + 534.9185258328564im
+                         ⋮
+  2.9888361977013695e-26 - 3.1082956646475002e-25im
+  -7.875987277726582e-26 - 9.033242708155426e-28im
+ -4.0834764403870996e-26 + 8.074125823881903e-12im
+ -3.4369270330878742e-12 - 3.8497293421033457e-13im
+  -5.553580772755923e-28 + 1.342658056012195e-26im
+ -1.0775839965319021e-27 + 9.992108129849917e-30im
+ -1.8698468464299812e-28 + 8.63390384807314e-14im
+   8.004313629882451e-14 + 9.887552298066218e-15im
+  -9.269115636346889e-30 - 3.886369606789213e-29im
+```
+```jldoctest changeexamples ; output=false
+julia> equivalentorder(swe_ϵ)
+22
+```
+or by specifying the modeorder `L` directly (in this case the estimate `ϵ` does not have any effect)
+```jldoctest changeexamples ; output=false
+swe_L = changerepresentation(SphericalWaveExpansion, dipoles, L=15)
+
+# output
+
+510-element SphericalWaveExpansion{Radiated, SphericalCoefficients{ComplexF64}, ComplexF64}:
+      372.81882940219094 - 1.138881592722361e-13im
+  2.0429498849964354e-15 + 3.9968028886505635e-14im
+                    -0.0 - 0.0im
+       -597.139457879735 - 60.148368197526686im
+      372.81882940219083 + 6.907659518598972e-14im
+  -3.819306724396686e-15 - 1.4210854715202004e-14im
+      16.656990543598212 - 372.327084704324im
+  1.9012569296705806e-14 + 2.3322611893110605e-16im
+  1.7763568394002505e-14 - 1.9884095375339e-14im
+   1.183004450936826e-13 + 534.9185258328564im
+                         ⋮
+  1.7686351878031282e-20 - 1.9956096237311316e-18im
+   4.354432321711454e-19 - 7.030373462210693e-20im
+    -3.19668544933544e-5 - 8.625495268927583e-5im
+    -8.45476048738482e-6 - 3.3085830471794484e-20im
+   2.437554500040577e-21 + 2.3505164286306834e-20im
+ -2.5844742680964855e-20 + 4.208694956669805e-21im
+    8.782399048595974e-7 + 3.931351355402204e-6im
+  -1.1150817611979755e-6 - 4.4032156280040725e-21im
+   8.056704687920506e-23 + 3.8422539453088135e-22im
+```
+```jldoctest changeexamples ; output=false
+julia> equivalentorder(swe_L)
+15
+```
 
 ---
 
-Conversion into a `PlaneWaveExpansion{Radiated}`:
+## Conversion into a `PlaneWaveExpansion{Radiated}`
 ```jldoctest changeexamples ; output=false
 julia> pwe = changerepresentation(PlaneWaveExpansion, dipoles)
 4096-element PlaneWaveExpansion{Radiated, GaussLegendreθRegularϕSampling, ComplexF64}:
@@ -205,10 +274,10 @@ julia> pwe = changerepresentation(PlaneWaveExpansion, dipoles)
 
 --- 
 
-Conversion into a `MLFMMSource`:
+## Conversion into a `MLFMMSource`
 ```jldoctest changeexamples ; output=false
 julia> mlfmm = changerepresentation(MLFMMSource, dipoles)
-90-element MLFMMSource{AntennaFieldRepresentations.θϕResampleMap{AntennaFieldRepresentations.LocalθResampleMap{GaussLegendreθRegularϕSampling, GaussLegendreθRegularϕSampling, 8, Float64}, AntennaFieldRepresentations.LocalϕResampleMap{GaussLegendreθRegularϕSampling, GaussLegendreθRegularϕSampling, 8, Float64}, GaussLegendreθRegularϕSampling, GaussLegendreθRegularϕSampling, 8, 8, Float64}, GaussLegendreθRegularϕSampling, ComplexF64, AntennaFieldRepresentations.MLFMMTree{AntennaFieldRepresentations.BoxData{3, Float64}, 3, Float64}}:
+90-element MLFMMSource{HertzArray{Float64, ComplexF64}, AntennaFieldRepresentations.θϕResampleMap{AntennaFieldRepresentations.LocalθResampleMap{GaussLegendreθRegularϕSampling, GaussLegendreθRegularϕSampling, 8, Float64}, AntennaFieldRepresentations.LocalϕResampleMap{GaussLegendreθRegularϕSampling, GaussLegendreθRegularϕSampling, 8, Float64}, GaussLegendreθRegularϕSampling, GaussLegendreθRegularϕSampling, 8, 8, Float64}, GaussLegendreθRegularϕSampling, ComplexF64, AntennaFieldRepresentations.MLFMMTree{AntennaFieldRepresentations.BoxData{3, Float64}, 3, Float64}}:
  3.308397447266758e-17 + 0.5403023058681398im
     0.5403023058681398 + 0.0im
  5.373643377032895e-17 + 0.8775825618903728im
