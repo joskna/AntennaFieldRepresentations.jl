@@ -249,6 +249,9 @@ Base.size(swe::SphericalWaveExpansion) = size(swe.coefficients)
 function Base.similar(swe::SphericalWaveExpansion{P,H,C}) where {P,H,C}
     return SphericalWaveExpansion{P,H,C}(similar(swe.coefficients), swe.wavenumber)
 end
+function Base.copy(swe::SphericalWaveExpansion{P,H,C}) where {P,H,C}
+    return SphericalWaveExpansion{P,H,C}(copy(swe.coefficients), swe.wavenumber)
+end
 function SphericalWaveExpansion(
     ::P,
     coefficients::AbstractVector{C},
@@ -279,7 +282,7 @@ function efield!(
     storage,
     aut_field::SphericalWaveExpansion{P,H,C},
     R;
-    reset = true,
+    reset=true,
 ) where {P<:PropagationType,C<:Number,H<:AbstractSphericalCoefficients{C}}
     sqrtZ₀ = convert(C, sqrt(Z₀))
     k0 = getwavenumber(aut_field)
@@ -313,7 +316,7 @@ function hfield!(
     storage,
     aut_field::SphericalWaveExpansion{P,H,C},
     R;
-    reset = true,
+    reset=true,
 ) where {P<:PropagationType,C<:Number,H<:AbstractSphericalCoefficients{C}}
     sqrtZ₀ = convert(C, sqrt(Z₀))
     k0 = getwavenumber(aut_field)
@@ -342,7 +345,7 @@ function ehfield!(
     storage_hfield,
     aut_field::SphericalWaveExpansion{P,H,C},
     R;
-    reset = true,
+    reset=true,
 ) where {P<:PropagationType,C<:Number,H<:AbstractSphericalCoefficients{C}}
     sqrtZ₀ = C(sqrt(Z₀))
     k0 = getwavenumber(aut_field)
@@ -600,11 +603,11 @@ function αinc_dipole(z::Real, L::Integer, wavenumber::Real)
     return αin
 end
 
-function equivalentorder(coefficients::AbstractSphericalCoefficients; ϵ = 1e-7)
+function equivalentorder(coefficients::AbstractSphericalCoefficients; ϵ=1e-7)
     _, L, __ = j_to_sℓm(length(coefficients))
     return L
 end
-function equivalentorder(swe::SphericalWaveExpansion; ϵ = 1e-7)
-    return equivalentorder(swe.coefficients, ϵ = ϵ)
+function equivalentorder(swe::SphericalWaveExpansion; ϵ=1e-7)
+    return equivalentorder(swe.coefficients, ϵ=ϵ)
 end
 

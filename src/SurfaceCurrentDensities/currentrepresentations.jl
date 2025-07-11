@@ -24,6 +24,13 @@ function Base.similar(s::SurfaceCurrentDensity{P,E,S,C}) where {P,E,S,C}
         s.wavenumber,
     )
 end
+function Base.copy(s::SurfaceCurrentDensity{P,E,S,C}) where {P,E,S,C}
+    return SurfaceCurrentDensity{P,E,S,C}(
+        deepcopy(s.functionspace),
+        copy(s.excitations),
+        s.wavenumber,
+    )
+end
 function getwavenumber(currents::SurfaceCurrentDensity)
     return currents.wavenumber
 end
@@ -47,8 +54,8 @@ function numfunctions(currentdensity::SurfaceCurrentDensity)
     return BEAST.numfunctions(functionspace(currentdensity))
 end
 
-function equivalentorder(currentdensity::SurfaceCurrentDensity; ϵ = 1e-7)
-    L = _modeorder(rsph, k0; ϵ = ϵ)
+function equivalentorder(currentdensity::SurfaceCurrentDensity; ϵ=1e-7)
+    L = _modeorder(rsph, k0; ϵ=ϵ)
     return L
 end
 
@@ -65,7 +72,7 @@ function farfield(
 
     pts = [point(cosϕ * sinθ, sinϕ * sinθ, cosθ)]
     ffd = potential(
-        MWFarField3D(; wavenumber = k₀),
+        MWFarField3D(; wavenumber=k₀),
         pts,
         currents.excitations,
         currents.functionspace,
@@ -94,7 +101,7 @@ function efield!(
     store(v, m, n) = (storage .+= v * coeffs[n])
     potential!(
         store,
-        BEAST.MWSingleLayerField3D(; wavenumber = getwavenumber(currents)),
+        BEAST.MWSingleLayerField3D(; wavenumber=getwavenumber(currents)),
         gridpoint,
         currents.excitations * Z₀,
         currents.functionspace,
@@ -110,7 +117,7 @@ function hfield!(
     store(v, m, n) = (storage .+= v * coeffs[n])
     potential!(
         store,
-        BEAST.MWDoubleLayerField3D(; wavenumber = getwavenumber(currents)),
+        BEAST.MWDoubleLayerField3D(; wavenumber=getwavenumber(currents)),
         gridpoint,
         -currents.excitations,
         currents.functionspace,

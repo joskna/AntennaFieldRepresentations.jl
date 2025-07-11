@@ -31,6 +31,24 @@ end
 Base.size(p::MLFMMSource) = size(asvector(p))
 Base.getindex(p::MLFMMSource, i) = Base.getindex(asvector(p), i)
 Base.setindex!(p::MLFMMSource, i, v) = Base.setindex!(asvector(p), i, v)
+function Base.copy(p::MLFMMSource{A,M,Y,C,X}) where {A,M,Y,C,X}
+    return deepcopy(p)
+end
+function rotate(p::MLFMMSource, χ, θ, ϕ; orderθ::Integer=12, orderϕ::Integer=12,)
+    rotated_aut = rotate(p, χ, θ, ϕ; orderθ=orderθ, orderϕ=orderϕ,)
+
+    MLFMMSource(
+        rotated_aut,
+        p.wavenumber;
+        expectedaccuracy=p.expectedaccuracy,
+        verbose=p.verbose,
+        minhalfsize=p.tree(leafs(p.tree)[1]).minhalfsize,
+        orderθ=p.orderθ,
+        orderϕ=p.orderϕ,
+        samplingtype=p.samplingtype,
+    )
+end
+
 # function Base.similar(p::MLFMMSource)
 #     return deepcopy(p)
 # end
@@ -38,79 +56,79 @@ Base.setindex!(p::MLFMMSource, i, v) = Base.setindex!(asvector(p), i, v)
 function changerepresentation(
     ::Type{MLFMMSource},
     aut_field::DipoleArray; #Can be ::SurfaceCurrentDensity, ::DipoleArray, NamedTuple(:points,:sourcefunctions) 
-    wavenumber = getwavenumber(aut_field),
-    expectedaccuracy = 1e-3,
-    verbose = false,
-    minhalfsize = π / (2 * wavenumber),
-    orderθ = 8,
-    orderϕ = 8,
-    samplingtype = GaussLegendreθRegularϕSampling,
+    wavenumber=getwavenumber(aut_field),
+    expectedaccuracy=1e-3,
+    verbose=false,
+    minhalfsize=π / (2 * wavenumber),
+    orderθ=8,
+    orderϕ=8,
+    samplingtype=GaussLegendreθRegularϕSampling,
 )
     return MLFMMSource(
         aut_field,
         wavenumber;
-        expectedaccuracy = expectedaccuracy,
-        verbose = verbose,
-        minhalfsize = minhalfsize,
-        orderθ = orderθ,
-        orderϕ = orderϕ,
-        samplingtype = samplingtype,
+        expectedaccuracy=expectedaccuracy,
+        verbose=verbose,
+        minhalfsize=minhalfsize,
+        orderθ=orderθ,
+        orderϕ=orderϕ,
+        samplingtype=samplingtype,
     )
 end
 
 function changerepresentation(
     ::Type{MLFMMSource},
     aut_field::SurfaceCurrentDensity; #Can be ::SurfaceCurrentDensity, ::DipoleArray, NamedTuple(:points,:sourcefunctions) 
-    wavenumber = getwavenumber(aut_field),
-    expectedaccuracy = 1e-3,
-    verbose = false,
-    minhalfsize = π / (2 * wavenumber),
-    orderθ = 8,
-    orderϕ = 8,
-    samplingtype = GaussLegendreθRegularϕSampling,
+    wavenumber=getwavenumber(aut_field),
+    expectedaccuracy=1e-3,
+    verbose=false,
+    minhalfsize=π / (2 * wavenumber),
+    orderθ=8,
+    orderϕ=8,
+    samplingtype=GaussLegendreθRegularϕSampling,
 )
     return MLFMMSource(
         aut_field,
         wavenumber;
-        expectedaccuracy = expectedaccuracy,
-        verbose = verbose,
-        minhalfsize = minhalfsize,
-        orderθ = orderθ,
-        orderϕ = orderϕ,
-        samplingtype = samplingtype,
+        expectedaccuracy=expectedaccuracy,
+        verbose=verbose,
+        minhalfsize=minhalfsize,
+        orderθ=orderθ,
+        orderϕ=orderϕ,
+        samplingtype=samplingtype,
     )
 end
 
 function MLFMMSource(
     basisfunctions; #Can be ::SurfaceCurrentDensity, ::DipoleArray, NamedTuple(:points,:sourcefunctions) 
-    wavenumber = getwavenumber(basisfunctions),
-    expectedaccuracy = 1e-3,
-    verbose = false,
-    minhalfsize = π / (2 * wavenumber),
-    orderθ = 8,
-    orderϕ = 8,
-    samplingtype = GaussLegendreθRegularϕSampling,
+    wavenumber=getwavenumber(basisfunctions),
+    expectedaccuracy=1e-3,
+    verbose=false,
+    minhalfsize=π / (2 * wavenumber),
+    orderθ=8,
+    orderϕ=8,
+    samplingtype=GaussLegendreθRegularϕSampling,
 )
     return MLFMMSource(
         basisfunctions,
         wavenumber;
-        expectedaccuracy = expectedaccuracy,
-        verbose = verbose,
-        minhalfsize = minhalfsize,
-        orderθ = orderθ,
-        orderϕ = orderϕ,
-        samplingtype = samplingtype,
+        expectedaccuracy=expectedaccuracy,
+        verbose=verbose,
+        minhalfsize=minhalfsize,
+        orderθ=orderθ,
+        orderϕ=orderϕ,
+        samplingtype=samplingtype,
     )
 end
 function MLFMMSource(
     basisfunctions, #Can be ::SurfaceCurrentDensity, ::DipoleArray, NamedTuple(:points,:sourcefunctions) 
     wavenumber::T;
-    expectedaccuracy = T(1e-3),
-    verbose = false,
-    minhalfsize = π / (2 * wavenumber),
-    orderθ = 8,
-    orderϕ = 8,
-    samplingtype::Type{S} = GaussLegendreθRegularϕSampling,
+    expectedaccuracy=T(1e-3),
+    verbose=false,
+    minhalfsize=π / (2 * wavenumber),
+    orderθ=8,
+    orderϕ=8,
+    samplingtype::Type{S}=GaussLegendreθRegularϕSampling,
 ) where {T<:Real,S<:SphereSamplingStrategy}
     verbose &&
         @info "----------------------\n   Assemble MLFMM source \n----------------------------"
@@ -144,8 +162,8 @@ function MLFMMSource(
         basisfunctions,
         levelcutoffparameters[end],
         wavenumber;
-        verbose = verbose,
-        samplingtype = samplingtype,
+        verbose=verbose,
+        samplingtype=samplingtype,
     )
     # inputbuffer = Vector{Complex{T}}(undef, length(basisfunctions))
     inputbuffer = similar(basisfunctions)
@@ -158,13 +176,13 @@ function MLFMMSource(
         orderθ,
         orderϕ,
         levelcutoffparameters;
-        samplingtype = samplingtype,
+        samplingtype=samplingtype,
     )
     phaseshifttoparent = _initializephaseshifttoparent(
         tree,
         levelcutoffparameters,
         T(wavenumber);
-        samplingtype = samplingtype,
+        samplingtype=samplingtype,
     )
     L = levelcutoffparameters[min_aggregationlevel]
 

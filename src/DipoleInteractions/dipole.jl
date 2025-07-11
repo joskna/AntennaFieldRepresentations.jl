@@ -109,7 +109,7 @@ function Base.similar(dips::DipoleArray{P,E,T,C}) where {P,E,T,C}
         dips.wavenumber,
     )
 end
-function copy(dips::DipoleArray{P,E,T,C}) where {P,E,T,C}
+function Base.copy(dips::DipoleArray{P,E,T,C}) where {P,E,T,C}
     return DipoleArray{P,E,T,C}(
         copy(dips.positions),
         copy(dips.orientations),
@@ -225,7 +225,7 @@ function farfield(
     Eθ = zero(C)
     Eϕ = zero(C)
 
-    return _dipolefarfield!(dipoles, eᵣ, eθ, eϕ, Eθ, Eϕ, reset = false)
+    return _dipolefarfield!(dipoles, eᵣ, eθ, eϕ, Eθ, Eϕ, reset=false)
 end
 
 function _dipolefarfield!(
@@ -235,7 +235,7 @@ function _dipolefarfield!(
     eϕ::SArray{Tuple{3},T,1,3},
     Eθ::C,
     Eϕ::C;
-    reset = true,
+    reset=true,
 ) where {C,E<:ElmagType,T}
 
     reset && (Eθ = zero(C))
@@ -334,7 +334,7 @@ function efield!(
     storage,
     dipoles::DipoleArray{P,E,T,C},
     R;
-    reset = true,
+    reset=true,
 ) where {P<:PropagationType,C,E<:ElmagType,T}
 
     k₀ = dipoles.wavenumber
@@ -352,7 +352,7 @@ function hfield!(
     storage,
     dipoles::DipoleArray{P,E,T,C},
     R;
-    reset = true,
+    reset=true,
 ) where {P<:PropagationType,C,E<:ElmagType,T}
 
     k₀ = dipoles.wavenumber
@@ -416,14 +416,14 @@ function _rmin(dipoles::DipoleArray)
     end
     return rmin
 end
-function equivalentorder(dipoles::DipoleArray{P,E,T,C}; ϵ = 1e-7) where {P,E,T,C}
+function equivalentorder(dipoles::DipoleArray{P,E,T,C}; ϵ=1e-7) where {P,E,T,C}
     k0 = getwavenumber(dipoles)
     rsph = (P() == Radiated()) ? (2 * _rmax(dipoles)) : (2 * _rmin(dipoles))
-    L = _modeorder(rsph, k0; ϵ = ϵ)
+    L = _modeorder(rsph, k0; ϵ=ϵ)
     return L
 end
 
-function _modeorder(rmax::Real, wavenumber::Real; ϵ = 1e-7)
+function _modeorder(rmax::Real, wavenumber::Real; ϵ=1e-7)
     L = maximum([
         3,
         Int(
