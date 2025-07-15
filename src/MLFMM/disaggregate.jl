@@ -1,5 +1,4 @@
 
-
 """
     _disaggregate_leafnodes!(receivestruct::MLFMMReceive)
 
@@ -21,9 +20,7 @@ function _disaggregate_leafnodes!(receivestruct::MLFMMReceive)
             # receivestruct.buffer[probeindex] = sum(pws .* ff)
         end
     end
-
 end
-
 
 """
     _adjoint_disaggregate_leafnodes!(A::MLFMMReceive)
@@ -57,7 +54,6 @@ function _adjoint_disaggregate_leafnodes!(A::MLFMMReceive)
             end
         end
     end
-
 end
 
 """
@@ -77,13 +73,12 @@ function _transpose_disaggregate_leafnodes!(A::MLFMMReceive)
             A.nodespectra[leafnode].buffer .= _muladd_or_mulreset!(
                 A.nodespectra[leafnode],
                 A.testfunctionfarfields[functionindex],
-                A.buffer[functionindex],
-                reset = reset,
+                A.buffer[functionindex];
+                reset=reset,
             )
             reset = false
         end
     end
-
 end
 
 """
@@ -92,9 +87,7 @@ end
 Disaggregate pattern of parentnode to all its children and store the resulting patterns in `receivestruct.nodespectra[child]`
 """
 function _disaggregate_children!(receivestruct::MLFMMReceive, parentnode)
-
     receivetree = receivestruct.tree
-
 
     lvl = AntennaFieldRepresentations.level(receivetree, parentnode)
 
@@ -109,10 +102,10 @@ function _disaggregate_children!(receivestruct::MLFMMReceive, parentnode)
 
         view(resamplemap.outputbuffermat, :, :, 1) .=
             _eθ(receivestruct.nodespectra[parentnode]) .*
-            (receivestruct.phaseshifttoparent[sector, lvl+1])
+            (receivestruct.phaseshifttoparent[sector, lvl + 1])
         view(resamplemap.outputbuffermat, :, :, 2) .=
             _eϕ(receivestruct.nodespectra[parentnode]) .*
-            (receivestruct.phaseshifttoparent[sector, lvl+1])
+            (receivestruct.phaseshifttoparent[sector, lvl + 1])
         # receivestruct.nodespectra[child] .=
         # _adjoint_resamplematrix!(view(resamplemap.outputbuffermat, :, :, 1), _eθ(receivestruct.nodespectra[child]), resamplemap; reset=!receivestruct.nodeisfresh[child])
         # _adjoint_resamplematrix!(view(resamplemap.outputbuffermat, :, :, 2), _eϕ(receivestruct.nodespectra[child]), resamplemap; reset=!receivestruct.nodeisfresh[child])
@@ -120,8 +113,8 @@ function _disaggregate_children!(receivestruct::MLFMMReceive, parentnode)
         _muladd_or_mulreset!(
             receivestruct.nodespectra[child],
             adjoint_resamplemat,
-            resamplemap.outputbuffer,
-            reset = !receivestruct.nodeisfresh[child],
+            resamplemap.outputbuffer;
+            reset=!receivestruct.nodeisfresh[child],
         )
         receivestruct.nodeisfresh[child] = true
     end
@@ -150,14 +143,14 @@ function _transpose_disaggregate_children!(A, parentnode)
         _muladd_or_mulreset!(
             _eθ(A.nodespectra[parentnode]),
             view(resamplemap.outputbuffermat, :, :, 1),
-            (A.phaseshifttoparent[sector, level+1]),
-            reset = reset,
+            (A.phaseshifttoparent[sector, level + 1]);
+            reset=reset,
         )
         _muladd_or_mulreset!(
             _eϕ(A.nodespectra[parentnode]),
             view(resamplemap.outputbuffermat, :, :, 2),
-            (A.phaseshifttoparent[sector, level+1]),
-            reset = reset,
+            (A.phaseshifttoparent[sector, level + 1]);
+            reset=reset,
         )
 
         reset = false
@@ -174,7 +167,6 @@ function _adjoint_disaggregate_children!(A, parentnode)
 
     level = AntennaFieldRepresentations.level(tree, parentnode)
 
-
     # resamplemap = conj.(A.levelresamplemaps[level]) -> since resamplemap is real, conj.(conj.(A.levelresamplemaps[level]) == A.levelresamplemaps[level])
     resamplemap = A.levelresamplemaps[level]
     reset = true
@@ -189,14 +181,14 @@ function _adjoint_disaggregate_children!(A, parentnode)
         _muladd_or_mulreset!(
             _eθ(A.nodespectra[parentnode]),
             view(resamplemap.outputbuffermat, :, :, 1),
-            (A.phaseshifttoparent[sector, level+1]),
-            reset = reset,
+            (A.phaseshifttoparent[sector, level + 1]);
+            reset=reset,
         )
         _muladd_or_mulreset!(
             _eϕ(A.nodespectra[parentnode]),
             view(resamplemap.outputbuffermat, :, :, 2),
-            (A.phaseshifttoparent[sector, level+1]),
-            reset = reset,
+            (A.phaseshifttoparent[sector, level + 1]);
+            reset=reset,
         )
 
         reset = false
@@ -212,13 +204,12 @@ The `receivestruct.disaggregationlist` stores all nodes at each level which shal
 function _disaggregate_to_disaggregationslist!(receivestruct::MLFMMReceive)
     receivestruct.verbose && @info "Disaggregate node spectra "
 
-
     for level in eachindex(receivestruct.disaggregationlist)
         # for level in levels(receivestruct.tree)
         receivestruct.disaggregationlist[level] == [] && continue
-        for sector = 1:8
+        for sector in 1:8
             # Threads.@threads for sector = 1:8
-            conj!(receivestruct.phaseshifttoparent[sector, level+1])
+            conj!(receivestruct.phaseshifttoparent[sector, level + 1])
         end
 
         for node in receivestruct.disaggregationlist[level]
@@ -227,15 +218,13 @@ function _disaggregate_to_disaggregationslist!(receivestruct::MLFMMReceive)
             _disaggregate_children!(receivestruct, node)
         end
 
-        for sector = 1:8
+        for sector in 1:8
             # Threads.@threads for sector = 1:8
-            conj!(receivestruct.phaseshifttoparent[sector, level+1])
+            conj!(receivestruct.phaseshifttoparent[sector, level + 1])
         end
-
     end
 
-    _disaggregate_leafnodes!(receivestruct)
-
+    return _disaggregate_leafnodes!(receivestruct)
 end
 
 """
@@ -248,7 +237,7 @@ Otherwise, `A.buffer` is overwritten by `y` before adjoint disaggregation.
 """
 function _adjoint_disaggregate_to_disaggregationslist!(A::MLFMMReceive, y::AbstractVector)
     A.buffer .= y
-    _adjoint_disaggregate_to_disaggregationslist!(A)
+    return _adjoint_disaggregate_to_disaggregationslist!(A)
 end
 function _adjoint_disaggregate_to_disaggregationslist!(A::MLFMMReceive)
     A.verbose && @info "Adjoint disaggregate node spectra "
@@ -256,14 +245,12 @@ function _adjoint_disaggregate_to_disaggregationslist!(A::MLFMMReceive)
     _adjoint_disaggregate_leafnodes!(A)
 
     for level in reverse(eachindex(A.disaggregationlist))
-
         for node in A.disaggregationlist[level]
             # Threads.@threads for node in A.disaggregationlist[level]
             !(A.nodeisoccupied[node]) && continue
             _adjoint_disaggregate_children!(A, node)
             # _transpose_disaggregate_children!(A, node)
         end
-
     end
     # _adjoint_disaggregate_leafnodes!(A)
 
@@ -279,7 +266,7 @@ Otherwise, `A.buffer` is overwritten by `y` before transposed disaggregation.
 """
 function _transpose_disaggregate_to_disaggregationslist!(A::MLFMMReceive, y::AbstractVector)
     A.buffer .= y
-    _transpose_disaggregate_to_disaggregationslist!(A)
+    return _transpose_disaggregate_to_disaggregationslist!(A)
 end
 function _transpose_disaggregate_to_disaggregationslist!(A::MLFMMReceive)
     A.verbose && @info "Transpose disaggregate node spectra "
@@ -290,10 +277,9 @@ function _transpose_disaggregate_to_disaggregationslist!(A::MLFMMReceive)
         A.disaggregationlist[level] == [] && continue
 
         # Threads.@threads for sector = 1:8
-        for sector = 1:8
-            conj!(A.phaseshifttoparent[sector, level+1])
+        for sector in 1:8
+            conj!(A.phaseshifttoparent[sector, level + 1])
         end
-
 
         # Threads.@threads for node in A.disaggregationlist[level]
         for node in A.disaggregationlist[level]
@@ -302,10 +288,8 @@ function _transpose_disaggregate_to_disaggregationslist!(A::MLFMMReceive)
         end
 
         # Threads.@threads for sector = 1:8
-        for sector = 1:8
-            conj!(A.phaseshifttoparent[sector, level+1])
+        for sector in 1:8
+            conj!(A.phaseshifttoparent[sector, level + 1])
         end
-
     end
-
 end

@@ -2,7 +2,6 @@ using AntennaFieldRepresentations
 using Test
 
 @testset verbose = true "AntennaFieldRepresentations.jl" begin
-
     @testset "Regressions" verbose = true begin
         @testset "Freeze Tests" begin
             include(joinpath("test_Regressions", "freeze_tests.jl"))
@@ -67,7 +66,6 @@ using Test
     # end
 
     @testset verbose = true "Conversions of Field Representations" begin
-
         @testset "ConvertRepresentationMaps" begin
             include(joinpath("test_Conversions", "test_convertrepresentationmaps.jl"))
         end
@@ -86,7 +84,6 @@ using Test
     end
 
     @testset verbose = true "Multilevel Fast Multipole Method" begin
-
         @testset "MLFMMSource" begin
             include(joinpath("test_MLFMM", "test_mlfmm_far.jl"))
             include(joinpath("test_MLFMM", "test_mlfmm_far_surfacecurrents.jl"))
@@ -108,7 +105,6 @@ using Test
         #     include(joinpath("test_Conversions", "test_planewave_spherical_conversion.jl"))
         # end
     end
-
 
     # @testset verbose=true "Interaction Between Field Representations" begin
 

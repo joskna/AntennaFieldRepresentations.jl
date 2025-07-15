@@ -19,24 +19,19 @@ function asvector(s::SurfaceCurrentDensity)
 end
 function Base.similar(s::SurfaceCurrentDensity{P,E,S,C}) where {P,E,S,C}
     return SurfaceCurrentDensity{P,E,S,C}(
-        deepcopy(s.functionspace),
-        similar(s.excitations),
-        s.wavenumber,
+        deepcopy(s.functionspace), similar(s.excitations), s.wavenumber
     )
 end
 function Base.copy(s::SurfaceCurrentDensity{P,E,S,C}) where {P,E,S,C}
     return SurfaceCurrentDensity{P,E,S,C}(
-        deepcopy(s.functionspace),
-        copy(s.excitations),
-        s.wavenumber,
+        deepcopy(s.functionspace), copy(s.excitations), s.wavenumber
     )
 end
 function getwavenumber(currents::SurfaceCurrentDensity)
     return currents.wavenumber
 end
 function setwavenumber!(
-    currents::SurfaceCurrentDensity{P,E,S,C},
-    val::Number,
+    currents::SurfaceCurrentDensity{P,E,S,C}, val::Number
 ) where {P,E,S,C}
     return SurfaceCurrentDensity{P,E,S,C}(currents.functionspace, currents.excitations, val)
 end
@@ -61,9 +56,7 @@ end
 
 #### Field evaluations
 function farfield(
-    currents::SurfaceCurrentDensity{P,E,B,C},
-    θϕ::Tuple{T,T},
-    k₀::Number,
+    currents::SurfaceCurrentDensity{P,E,B,C}, θϕ::Tuple{T,T}, k₀::Number
 ) where {P<:PropagationType,E<:ElmagType,B<:BEAST.Space{<:Real},C,T}
     θ, ϕ = θϕ
 
@@ -72,10 +65,7 @@ function farfield(
 
     pts = [point(cosϕ * sinθ, sinϕ * sinθ, cosθ)]
     ffd = potential(
-        MWFarField3D(; wavenumber=k₀),
-        pts,
-        currents.excitations,
-        currents.functionspace,
+        MWFarField3D(; wavenumber=k₀), pts, currents.excitations, currents.functionspace
     )[1]
     Eθ = convert.(Complex{T}, udot([cosθ * cosϕ, cosθ * sinϕ, -sinθ], ffd))
     Eϕ = convert.(Complex{T}, udot([-sinϕ, cosϕ, zero(eltype(θvec))], ffd))
@@ -93,9 +83,7 @@ function _weightedfarfieldpolarization(::Magnetic, Eθ, Eϕ)
 end
 
 function efield!(
-    storage,
-    currents::SurfaceCurrentDensity{Radiated,Electric,S,C},
-    R::AbstractVector{C},
+    storage, currents::SurfaceCurrentDensity{Radiated,Electric,S,C}, R::AbstractVector{C}
 ) where {C<:Number,S}
     gridpoint = [point(R[1], R[2], R[3])]
     store(v, m, n) = (storage .+= v * coeffs[n])
@@ -109,9 +97,7 @@ function efield!(
     return storage
 end
 function hfield!(
-    storage,
-    currents::SurfaceCurrentDensity{Radiated,Magnetic,S,C},
-    R::AbstractVector{C},
+    storage, currents::SurfaceCurrentDensity{Radiated,Magnetic,S,C}, R::AbstractVector{C}
 ) where {C<:Number,S}
     gridpoint = [point(R[1], R[2], R[3])]
     store(v, m, n) = (storage .+= v * coeffs[n])
@@ -153,8 +139,6 @@ function rotate!(
     rotated_currents.functionspace.geo.vertices .= currents.functionspace.geo.vertices
     rotated_currents.excitations .= currents.excitations
 
-
-
     if abs(χ) > 1e-16
         CompScienceMeshes.rotate!(rotated_currents.functionspace.geo, [0.0, 0.0, χ])
     end
@@ -173,9 +157,7 @@ end
 #     return newcurrents
 # end
 function spatialshift!(
-    shifted_currents::SurfaceCurrentDensity,
-    currents::SurfaceCurrentDensity,
-    R,
+    shifted_currents::SurfaceCurrentDensity, currents::SurfaceCurrentDensity, R
 )
     shifted_currents.functionspace.geo.vertices .= currents.functionspace.geo.vertices
     shifted_currents.excitations .= currents.excitations

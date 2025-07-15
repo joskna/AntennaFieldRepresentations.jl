@@ -27,7 +27,6 @@ const ε₀ = 8.854187812813e-12 # F/m
 const μ₀ = 1.2566370621219e-6 # N/A²
 const Z₀ = sqrt(μ₀ / ε₀) # Ω
 
-
 """
     udot(u::Array{<:Number,1}, v::Array{<:Number,1}) -> Number
 
@@ -57,8 +56,6 @@ function udot(u, v)
     return sumval
 end
 
-
-
 """
     sqrtdot(u::Array{<:Number,1}, v::Array{<:Number,1}) -> Number
 
@@ -67,7 +64,6 @@ Return √(u⋅v) without complex conjugation of u
 function sqrtdot(u, v)
     return sqrt(udot(u, v))
 end
-
 
 """
     cdist(R::Array{<:Number,1}) -> Number
@@ -91,7 +87,6 @@ function cdist(R)
     return sqrtdot(R, R)
 end
 
-
 """
     rot_mat_zyz(χ::Number, θ::Number, ϕ::Number)-> R::Matrix{eltype(χ, θ, ϕ)}
 
@@ -102,10 +97,9 @@ function rot_mat_zyz(χ::Number, θ::Number, ϕ::Number)
     s2, c2 = sincos(θ)
     s3, c3 = sincos(ϕ)
 
-
     return [
-        c1*c2*c3-s1*s3 -s1*c2*c3-c1*s3 s2*c3
-        c1*c2*s3+s1*c3 -s1*c2*s3+c1*c3 s2*s3
+        c1 * c2 * c3-s1 * s3 -s1 * c2 * c3-c1 * s3 s2*c3
+        c1 * c2 * s3+s1 * c3 -s1 * c2 * s3+c1 * c3 s2*s3
         -c1*s2 s1*s2 c2
     ]
 end
@@ -116,7 +110,6 @@ function rot_mat_zyx(yaw::Number, pitch::Number, roll::Number)
     sin_yaw, cos_yaw = sincos(yaw)
     sin_pitch, cos_pitch = sincos(pitch)
     sin_roll, cos_roll = sincos(roll)
-
 
     # rotation matrix
     R = zeros(Float64, 3, 3)
@@ -133,9 +126,7 @@ function rot_mat_zyx(yaw::Number, pitch::Number, roll::Number)
     ]
 
     return R
-
 end
-
 
 include(joinpath("AntennaRepresentations", "antennarepresentations.jl"))
 include(joinpath("OperationMaps", "operationmaps.jl"))
@@ -173,6 +164,5 @@ export weightsandsamples, samples
 export interpolate, InterpolateMap, LocalθLocalϕInterpolateMap
 export resample, ResampleMap, LocalθLocalϕResampleMap
 export MLFMMSource
-
 
 end

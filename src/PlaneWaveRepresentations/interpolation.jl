@@ -21,16 +21,10 @@ Abstract supertype for linear maps which performs an interpolation of predefined
 """
 abstract type InterpolateMap{Y<:SphereSamplingStrategy,T<:Real} <: OperationMap{T} end
 function InterpolateMap(
-    θϕs::AbstractVector{Tuple{T,T}},
-    originalsamplingstrategy::Y;
-    orderθ = 12,
-    orderϕ = 12,
+    θϕs::AbstractVector{Tuple{T,T}}, originalsamplingstrategy::Y; orderθ=12, orderϕ=12
 ) where {Y<:SphereSamplingStrategy,T<:Real}
     return LocalθLocalϕInterpolateMap(
-        θϕs,
-        originalsamplingstrategy;
-        orderθ = orderθ,
-        orderϕ = orderϕ,
+        θϕs, originalsamplingstrategy; orderθ=orderθ, orderϕ=orderϕ
     )
 end
 
@@ -64,12 +58,8 @@ function Base.size(im::LocalθLocalϕInterpolateMap)
     return 2 * length(im.θϕs), 2 * length(θs) * length(ϕs)
 end
 function LocalθLocalϕInterpolateMap(
-    θϕs::AbstractVector{Tuple{T,T}},
-    originalsamplingstrategy::Y;
-    orderθ = 12,
-    orderϕ = 12,
+    θϕs::AbstractVector{Tuple{T,T}}, originalsamplingstrategy::Y; orderθ=12, orderϕ=12
 ) where {Y<:SphereSamplingStrategy,T<:Real}
-
     θweights = Vector{SVector{orderθ,T}}(undef, length(θϕs))
     θindices = Vector{SVector{orderθ,Int}}(undef, length(θϕs))
     ϕweights = Vector{SVector{orderϕ,T}}(undef, length(θϕs))
@@ -79,20 +69,9 @@ function LocalθLocalϕInterpolateMap(
     negθranges = Vector{UnitRange{Int}}(undef, length(θϕs))
     intermediatestorage = zeros(Complex{T}, 1, orderϕ)
 
-
     for k in eachindex(θϕs)
-        intermediatestorage,
-        θindices[k],
-        posθranges[k],
-        negθranges[k],
-        θweights[k],
-        ϕindices[k],
-        ϕindicesopposite[k],
-        ϕweights[k] = initialize_interpolation(
-            θϕs[k],
-            originalsamplingstrategy;
-            orderθ = orderθ,
-            orderϕ = orderϕ,
+        intermediatestorage, θindices[k], posθranges[k], negθranges[k], θweights[k], ϕindices[k], ϕindicesopposite[k], ϕweights[k] = initialize_interpolation(
+            θϕs[k], originalsamplingstrategy; orderθ=orderθ, orderϕ=orderϕ
         )
     end
 
@@ -111,9 +90,7 @@ function LocalθLocalϕInterpolateMap(
         finalstorage,
         θϕs,
     )
-
 end
-
 
 # function LocalθLocalϕResampleMap(
 #     targetsamplingstrategy::Y2,
@@ -124,7 +101,6 @@ end
 #     T = Float64
 #     oldθs, oldϕs = samples(originalsamplingstrategy)
 #     newθs, newϕs = samples(targetsamplingstrategy)
-
 
 #     intermediatestorage = zeros(Complex{T}, length(newθs), length(oldϕs))
 #     finalstorage = zeros(Complex{T}, length(newθs), length(newϕs))
@@ -223,7 +199,6 @@ function map_ϕrange!(iϕrange, Nϕ::Integer, ::Val{leniϕrange}) where {leniϕr
     return SVector{leniϕrange}(iϕrange_vector)
 end
 
-
 """
     lagrange_interpolation_weights(X::Array{::Number,1},Y::Array{::Number,1},t::Number) -> w::Array{Flota64}
 
@@ -238,9 +213,7 @@ function lagrange_interpolation_weights(X, t::T) where {T<:Number}
     return lagrange_interpolation_weights_from_barycentric(X, t, b)
 end
 function lagrange_interpolation_weights_from_barycentric(
-    X,
-    t::T,
-    barycentric_weights::Vector{T2},
+    X, t::T, barycentric_weights::Vector{T2}
 ) where {T<:Number,T2<:Number}
     w = zeros(T, length(barycentric_weights))
     for (k, b) in enumerate(barycentric_weights)
@@ -266,11 +239,11 @@ function lagrange_barycentric_weights(X)
     T = eltype(X)
     b = zeros(T, length(X))
     b[1] = 1
-    for j = 2:length(X)
-        for k = 1:(j-1)
+    for j in 2:length(X)
+        for k in 1:(j - 1)
             b[k] = (X[k] - X[j]) * b[k]
         end
-        b[j] = prod((X[j] - X[k]) for k = 1:(j-1))
+        b[j] = prod((X[j] - X[k]) for k in 1:(j - 1))
     end
     return 1 ./ b
 end
@@ -292,9 +265,7 @@ function trigonometric_interpolation_weights(X, t::T) where {T<:Number}
     return trigonometric_interpolation_weights_from_barycentric(X, t, b)
 end
 function trigonometric_interpolation_weights_from_barycentric(
-    X,
-    t::T,
-    barycentric_weights::Vector{<:Number},
+    X, t::T, barycentric_weights::Vector{<:Number}
 ) where {T<:Number}
     w = zeros(T, length(barycentric_weights))
     if isodd(length(X))
@@ -333,11 +304,11 @@ function trigonometric_barycentric_weights(X)
     #     end
     # end
     b[1] = 1
-    for j = 2:length(X)
-        for k = 1:(j-1)
+    for j in 2:length(X)
+        for k in 1:(j - 1)
             b[k] = sin(T(0.5) * (X[k] - X[j])) * b[k]
         end
-        b[j] = prod(sin(T(0.5) * (X[j] - X[k])) for k = 1:(j-1))
+        b[j] = prod(sin(T(0.5) * (X[j] - X[k])) for k in 1:(j - 1))
     end
     return 1 ./ b
 end
@@ -361,17 +332,8 @@ function find_next_smaller_ϕind(Δϕ::Real, ϕnew::Real)
 end
 
 function extract_single_entry!(
-    storage,
-    Ematr,
-    iθrange,
-    posθrange,
-    negθrange,
-    wθ,
-    iϕrange,
-    ϕindicesopposite,
-    wϕ,
+    storage, Ematr, iθrange, posθrange, negθrange, wθ, iϕrange, ϕindicesopposite, wϕ
 )
-
     θinds_pos = view(iθrange, posθrange)
     θinds_neg = view(iθrange, negθrange)
 
@@ -381,19 +343,13 @@ function extract_single_entry!(
     @inbounds mul!(storage, transpose(wθ_pos), view(Ematr, θinds_pos, iϕrange))
     # storage = transpose(wθ_pos) * view(Ematr, θinds_pos, iϕrange)
     @inbounds mul!(
-        storage,
-        transpose(wθ_neg),
-        view(Ematr, θinds_neg, ϕindicesopposite),
-        1,
-        1,
+        storage, transpose(wθ_neg), view(Ematr, θinds_neg, ϕindicesopposite), 1, 1
     )
     return udot(wϕ, storage)
 end
 
 function _planϕweightsandindices(
-    newϕs::AbstractVector{T},
-    oldϕs,
-    ::Val{orderϕ},
+    newϕs::AbstractVector{T}, oldϕs, ::Val{orderϕ}
 ) where {T,orderϕ}
     ϕweights = Vector{SVector{orderϕ,T}}(undef, length(newϕs))
     ϕindices = Vector{SVector{orderϕ,Int64}}(undef, length(newϕs))
@@ -401,19 +357,17 @@ function _planϕweightsandindices(
     bϕ = lagrange_barycentric_weights((collect(1:orderϕ) .- 1) * Δϕ)
     for (k, newϕ) in enumerate(newϕs)
         iϕ₀ = find_next_smaller_ϕind(Δϕ, newϕ)
-        iϕrange = ((iϕ₀-orderϕ+1):iϕ₀) .+ div(orderϕ, 2)
+        iϕrange = ((iϕ₀ - orderϕ + 1):iϕ₀) .+ div(orderϕ, 2)
 
         ϕweights[k] = SVector{orderϕ,T}(
             lagrange_interpolation_weights_from_barycentric(
-                (collect(iϕrange) .- 1) * Δϕ,
-                newϕ,
-                bϕ,
+                (collect(iϕrange) .- 1) * Δϕ, newϕ, bϕ
             ),
         )
         # ϕindices[k] = SVector{orderϕ,Int64}(map_ϕrange!(iϕrange, length(oldϕs)))
-        ϕindices[k] =
-            SVector{orderϕ,Int64}(map_ϕrange!(iϕrange, length(oldϕs), Val(orderϕ)))
-
+        ϕindices[k] = SVector{orderϕ,Int64}(
+            map_ϕrange!(iϕrange, length(oldϕs), Val(orderϕ))
+        )
     end
     return ϕweights, ϕindices
 end
@@ -486,8 +440,6 @@ end
 #     return Eθvals, Eϕvals
 # end
 
-
-
 """
     initialize_interpolation(θnewϕnew::Tuple{T,T}, samplingstrategy::SphereSamplingStrategy; 
     orderθ::Integer = 12,
@@ -498,38 +450,32 @@ Returns parameters which will be used for interpolation.
 See also: `interpolate_single_planewave`
 """
 function initialize_interpolation(
-    θnewϕnew::Tuple{T,T},
-    samplingstrategy::S;
-    orderθ::Integer = 12,
-    orderϕ::Integer = 12,
+    θnewϕnew::Tuple{T,T}, samplingstrategy::S; orderθ::Integer=12, orderϕ::Integer=12
 ) where {T,S<:SphereSamplingStrategy}
-
     θvec, ϕvec = samples(samplingstrategy)
-    return initialize_interpolation(θnewϕnew, θvec, ϕvec; orderθ = orderθ, orderϕ = orderϕ)
+    return initialize_interpolation(θnewϕnew, θvec, ϕvec; orderθ=orderθ, orderϕ=orderϕ)
 end
 function initialize_interpolation(
     θnewϕnew::Tuple{T,T},
     θvec::AbstractVector,
     ϕvec::AbstractVector;
-    orderθ::Integer = 12,
-    orderϕ::Integer = 12,
+    orderθ::Integer=12,
+    orderϕ::Integer=12,
 ) where {T}
     θnew, ϕnew = θnewϕnew
 
     iθ₀ = find_next_smaller_θind(θvec, θnew) + orderθ ÷ 2
-    iθrange = ((iθ₀-orderθ+1):iθ₀)
+    iθrange = ((iθ₀ - orderθ + 1):iθ₀)
     wθ = lagrange_interpolation_weights(θsequence(θvec, iθrange), θnew)
-    wθ_pos, wθ_neg, θinds_pos, θinds_neg =
-        _split_θ_interpolationparams(wθ, Vector(iθrange), length(θvec))
+    wθ_pos, wθ_neg, θinds_pos, θinds_neg = _split_θ_interpolationparams(
+        wθ, Vector(iθrange), length(θvec)
+    )
     wθ = [wθ_pos; wθ_neg]
     θinds = [θinds_pos; θinds_neg]
     posθrange = 1:length(wθ_pos)
-    negθrange = length(wθ_pos)+1:length(wθ)
-
-
+    negθrange = (length(wθ_pos) + 1):length(wθ)
 
     storage = zeros(Complex{T}, 1, orderϕ)
-
 
     ϕweights, ϕindices = _planϕweightsandindices([T(ϕnew)], ϕvec, Val(orderϕ))
     wϕ, iϕrange = ϕweights[1], ϕindices[1]
@@ -548,16 +494,12 @@ Interpolate single plane wave into direction `θnew`, `ϕnew` from given `PlaneW
 function interpolate_single_planewave(
     θnewϕnew::Tuple{T,T},
     pattern::PlaneWaveExpansion;
-    orderθ::Integer = 12,
-    orderϕ::Integer = 12,
+    orderθ::Integer=12,
+    orderϕ::Integer=12,
 ) where {T}
-    storage, θinds, posθrange, negθrange, wθ, iϕrange, ϕindicesopposite, wϕ =
-        initialize_interpolation(
-            θnewϕnew,
-            pattern.samplingstrategy;
-            orderθ = orderθ,
-            orderϕ = orderϕ,
-        )
+    storage, θinds, posθrange, negθrange, wθ, iϕrange, ϕindicesopposite, wϕ = initialize_interpolation(
+        θnewϕnew, pattern.samplingstrategy; orderθ=orderθ, orderϕ=orderϕ
+    )
 
     Eθ = extract_single_entry!(
         storage,
@@ -583,7 +525,6 @@ function interpolate_single_planewave(
         wϕ,
     )
     return Eθ, Eϕ
-
 end
 
 # function interpolate_planewaves(
@@ -660,4 +601,3 @@ function LinearMaps._unsafe_mul!(y, im::LocalθLocalϕInterpolateMap, x::Abstrac
     end
     return y
 end
-

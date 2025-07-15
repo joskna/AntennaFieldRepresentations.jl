@@ -55,7 +55,6 @@ for kf in eachindex(fvec)
         FitzgeraldDipole([3 * λ, 0.0, 1.0], [0.0, 1.0, 0.0], 1.0 + 0.0im),
     ]
 
-
     # test DipoleInteractionMatrix and its adjoint
     # import.AntennaDipoleInteractions.DipoleInteractionMatrix
     A = DipoleInteractionMatrix(sourcelist, probelist, k0)
@@ -80,7 +79,6 @@ for kf in eachindex(fvec)
         end
     end
     @test b2 == b
-
 
     #check against Hansen: "Spherical Near-Field Measurements" page 328
     θvec = (0:36:180) / 180 * π
@@ -143,8 +141,6 @@ for kf in eachindex(fvec)
                     k0,
                 )
                 @test b ≈ 0.5 * F101eϕ atol = 1e-15
-
-
             end
         end
     end

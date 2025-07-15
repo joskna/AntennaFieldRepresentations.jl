@@ -1,16 +1,15 @@
 
 using LinearAlgebra
 
-
 Z₀ = 376.730313669
 f = 1.5e9
 λ = AntennaFieldRepresentations.c₀ / f
 k0 = 2 * pi / λ
 
 dipoles = generate_AUTdips(
-    collect(-0.25λ:λ/4:0λ),
-    collect(-0.5λ:λ/4:0.5λ),
-    collect(-1λ:λ/4:1λ),
+    collect((-0.25λ):(λ / 4):(0λ)),
+    collect((-0.5λ):(λ / 4):(0.5λ)),
+    collect((-1λ):(λ / 4):(1λ)),
     k0,
 )
 dipoles = rotate(dipoles, 0.0, 0.9, 1.3)
@@ -28,7 +27,7 @@ magnitudes = [complex(1.0)]
 probeθ = ProbeAntenna(
     HertzArray(
         protopositions,
-        [complex.([1.0, 0.0, 0.0]) for k = 1:length(protopositions)],
+        [complex.([1.0, 0.0, 0.0]) for k in 1:length(protopositions)],
         magnitudes,
         k0,
     ),
@@ -37,7 +36,7 @@ probeθ = ProbeAntenna(
 probeϕ = ProbeAntenna(
     HertzArray(
         protopositions,
-        [complex.([0.0, 1.0, 0.0]) for k = 1:length(protopositions)],
+        [complex.([0.0, 1.0, 0.0]) for k in 1:length(protopositions)],
         magnitudes,
         k0,
     ),
@@ -52,22 +51,21 @@ radius = 20λ
 
 positions = [
     [
-        radius * [sin(θ) * cos(ϕ), sin(θ) * sin(ϕ), cos(θ)] + [3 * λ, 0.0, 0.0] for
-        θ in θs, ϕ in ϕs
+        radius * [sin(θ) * cos(ϕ), sin(θ) * sin(ϕ), cos(θ)] + [3 * λ, 0.0, 0.0] for θ in θs,
+        ϕ in ϕs
     ]
     [
-        radius * [sin(θ) * cos(ϕ), sin(θ) * sin(ϕ), cos(θ)] + [3 * λ, 0.0, 0.0] for
-        θ in θs, ϕ in ϕs
+        radius * [sin(θ) * cos(ϕ), sin(θ) * sin(ϕ), cos(θ)] + [3 * λ, 0.0, 0.0] for θ in θs,
+        ϕ in ϕs
     ]
 ]
 
 orientationsco = [[[0.0, θ, ϕ] for θ in θs, ϕ in ϕs]; [[0.0, θ, ϕ] for θ in θs, ϕ in ϕs]]
 # orientationscross = [[pi / 2, θ, ϕ] for θ in θs, ϕ in ϕs]
 probeIDs = ones(Int64, size(positions))
-probeIDs[end÷2+1:end, :] .*= 2
+probeIDs[(end ÷ 2 + 1):end, :] .*= 2
 probes = [probeθ, probeϕ]
 # probe = probeθ.aut_field
-
 
 bref = Matrix{ComplexF64}(undef, size(positions))
 for k in eachindex(positions)
@@ -78,18 +76,12 @@ for k in eachindex(positions)
 end
 #######################
 
-
-
 sampling = IrregularFieldSampling(positions, orientationsco, probeIDs, probes)
 #########################################################
 
 ##########################################################
 A = AntennaFieldRepresentations.MLFMMTransmitMap(
-    dipoles,
-    sampling,
-    dipoles.wavenumber,
-    mintranslationlevel = 0,
-    verbose = false,
+    dipoles, sampling, dipoles.wavenumber; mintranslationlevel=0, verbose=false
 )
 
 b = reshape(A * dipoles, size(bref))
@@ -102,7 +94,6 @@ using IterativeSolvers
 
 minrad = 1.4λ
 
-
 # sphere_mesh = meshsphere(minrad, λ / 3)
 filenamemesh = joinpath("testdata", "sphere_rad1p4.msh")
 sphere_mesh = CompScienceMeshes.read_gmsh_mesh(filenamemesh)
@@ -110,31 +101,18 @@ sphere_mesh = CompScienceMeshes.read_gmsh_mesh(filenamemesh)
 Γ_ = BEAST.buffachristiansen(sphere_mesh)
 
 currents_el = SurfaceCurrentDensity{Radiated,Electric,typeof(Γ),ComplexF64}(
-    Γ,
-    ones(ComplexF64, numfunctions(Γ)),
-    getwavenumber(dipoles),
+    Γ, ones(ComplexF64, numfunctions(Γ)), getwavenumber(dipoles)
 )
 currents_mag = SurfaceCurrentDensity{Radiated,Magnetic,typeof(Γ_),ComplexF64}(
-    Γ_,
-    ones(ComplexF64, numfunctions(Γ_)),
-    getwavenumber(dipoles),
+    Γ_, ones(ComplexF64, numfunctions(Γ_)), getwavenumber(dipoles)
 )
 
-
 B = AntennaFieldRepresentations.MLFMMTransmitMap(
-    currents_el,
-    sampling,
-    dipoles.wavenumber,
-    verbose = false,
-    expectedaccuracy = 1e-3,
+    currents_el, sampling, dipoles.wavenumber; verbose=false, expectedaccuracy=1e-3
 )
 
 C = AntennaFieldRepresentations.MLFMMTransmitMap(
-    currents_mag,
-    sampling,
-    dipoles.wavenumber,
-    verbose = false,
-    expectedaccuracy = 1e-3,
+    currents_mag, sampling, dipoles.wavenumber; verbose=false, expectedaccuracy=1e-3
 )
 
 D = [B C]
@@ -145,21 +123,17 @@ bvec = A * dipoles
 Dᴴb = Dᴴ * bvec
 
 y = zeros(ComplexF64, size(bvec))
-minres!(y, DDᴴ, bvec / norm(bvec), maxiter = 50, verbose = true, abstol = 1e-3)
+minres!(y, DDᴴ, bvec / norm(bvec); maxiter=50, verbose=true, abstol=1e-3)
 x = Dᴴ * y * norm(bvec)
 
 bvec2 = D * x
 @test (norm(bvec2 - bvec) / norm(bvec)) < 1e-3
 
 Bfarfield = ChangeRepresentationMap(
-    typeof(pwe),
-    B.sourcestruct,
-    samplingstrategy = pwe.samplingstrategy,
+    typeof(pwe), B.sourcestruct; samplingstrategy=pwe.samplingstrategy
 )
 Cfarfield = ChangeRepresentationMap(
-    typeof(pwe),
-    C.sourcestruct,
-    samplingstrategy = pwe.samplingstrategy,
+    typeof(pwe), C.sourcestruct; samplingstrategy=pwe.samplingstrategy
 )
 
 pwe2 = changerepresentation(PlaneWaveExpansion, dipoles)
@@ -168,10 +142,9 @@ pwe2 .*= 0
 pwe3 = changerepresentation(PlaneWaveExpansion, dipoles)
 pwe3 .*= 0
 
-pwe2 .= Bfarfield * x[1:size(B, 2)] + Cfarfield * x[size(B, 2)+1:size(B, 2)+size(C, 2)]
-
+pwe2 .=
+    Bfarfield * x[1:size(B, 2)] + Cfarfield * x[(size(B, 2) + 1):(size(B, 2) + size(C, 2))]
 
 pwe3 .= pwe .- pwe2
-
 
 @test (norm(pwe3) / norm(pwe)) < 1.1e-3

@@ -1,6 +1,4 @@
 
-
-
 """
     DipoleArray{P, E, T, C} <: AntennaFieldRepresentation{P, C}
 
@@ -26,7 +24,6 @@ struct DipoleArray{P<:PropagationType,E<:ElmagType,T<:Number,C<:Number} <:
         dipolemoments::Vector{C},
         wavenumber::Number,
     ) where {P<:PropagationType,E<:ElmagType,T<:Number,C<:Number,V1,V2}
-
         (length(orientations) != length(positions)) && throw(
             DimensionMismatch(
                 "Input vectors `positions` and `orientations` must have the same lengths.",
@@ -39,18 +36,12 @@ struct DipoleArray{P<:PropagationType,E<:ElmagType,T<:Number,C<:Number} <:
         )
 
         return new{P,E,T,C}(
-            SVector{3,T}.(positions),
-            SVector{3,C}.(orientations),
-            dipolemoments,
-            wavenumber,
+            SVector{3,T}.(positions), SVector{3,C}.(orientations), dipolemoments, wavenumber
         )
     end
 end
 function DipoleArray{P,E}(
-    positions::Vector{V1},
-    orientations::Vector{V2},
-    dipolemoments::Vector{C},
-    wavenumber,
+    positions::Vector{V1}, orientations::Vector{V2}, dipolemoments::Vector{C}, wavenumber
 ) where {P<:PropagationType,E<:ElmagType,C,V1<:AbstractVector,V2<:AbstractVector{C}}
     return DipoleArray{P,E,eltype(V1),C}(positions, orientations, dipolemoments, wavenumber)
 end
@@ -69,10 +60,7 @@ Behaves like an `AbstractVector{C}` with extra context.
 """
 HertzArray{T,C} = DipoleArray{Radiated,Electric,T,C}
 function HertzArray(
-    positions::Vector{V1},
-    orientations::Vector{V2},
-    dipolemoments::Vector{C},
-    wavenumber,
+    positions::Vector{V1}, orientations::Vector{V2}, dipolemoments::Vector{C}, wavenumber
 ) where {C,V1<:AbstractVector,V2<:AbstractVector{C}}
     return HertzArray{eltype(V1),C}(positions, orientations, dipolemoments, wavenumber)
 end
@@ -94,10 +82,7 @@ function asvector(dips::DipoleArray)
     return dips.dipolemoments
 end
 function FitzgeraldArray(
-    positions::Vector{V1},
-    orientations::Vector{V2},
-    dipolemoments::Vector{C},
-    wavenumber,
+    positions::Vector{V1}, orientations::Vector{V2}, dipolemoments::Vector{C}, wavenumber
 ) where {C,T,V1<:AbstractVector{T},V2<:AbstractVector{C}}
     return FitzgeraldArray{T,C}(positions, orientations, dipolemoments, wavenumber)
 end
@@ -144,7 +129,6 @@ function g₀(R::Number, k₀::Number, ::Incident)
     return sinc(k₀ * R / π) / (4 * π) # sin(k₀*r)/(4*π*r) 
 end
 
-
 """
     Greensdivdiv(R, dipoledir, k₀)
 
@@ -154,7 +138,6 @@ function Greensdivdiv(R, dipoledir, k₀)
     return Greensdivdiv(R, dipoledir, k₀, Radiated())
 end
 function Greensdivdiv(R, dipoledir, k₀, ::Radiated)
-
     d = cdist(R)
     kd = (k₀ * d)
     kd² = kd^2
@@ -162,11 +145,10 @@ function Greensdivdiv(R, dipoledir, k₀, ::Radiated)
 
     return (
         g₀(d, k₀, Radiated()) *
-        ((3.0/kd²+3.0im/kd-1)*ℓeᵣeᵣ+(-1.0/kd²-1.0im/kd+1)*dipoledir)[:]
+        ((3.0 / kd² + 3.0im / kd - 1) * ℓeᵣeᵣ + (-1.0 / kd² - 1.0im / kd + 1) * dipoledir)[:]
     )
 end
 function Greensdivdiv(R, dipoledir, k₀, ::Absorbed)
-
     d = cdist(R)
     kd = (k₀ * d)
     kd² = kd^2
@@ -174,7 +156,7 @@ function Greensdivdiv(R, dipoledir, k₀, ::Absorbed)
 
     return (
         g₀(d, k₀, Absorbed()) *
-        ((3.0/kd²-3.0im/kd-1)*ℓeᵣeᵣ+(-1.0/kd²+1.0im/kd+1)*dipoledir)[:]
+        ((3.0 / kd² - 3.0im / kd - 1) * ℓeᵣeᵣ + (-1.0 / kd² + 1.0im / kd + 1) * dipoledir)[:]
     )
 end
 function Greensdivdiv(R, dipoledir, k₀, ::Incident)
@@ -183,7 +165,6 @@ function Greensdivdiv(R, dipoledir, k₀, ::Incident)
         Greensdivdiv(R, dipoledir, k₀, Radiated())
     ) ./ 2
 end
-
 
 """
   Greensrot(R, dipoledir, k₀)
@@ -194,13 +175,11 @@ function Greensrot(R, dipoledir, k₀)
     return Greensrot(R, dipoledir, k₀, Radiated())
 end
 function Greensrot(R, dipoledir, k₀, ::Radiated)
-
     d = cdist(R)
     eᵣ = real(R) / norm(real(R))
     return cross(eᵣ, dipoledir) * g₀(d, k₀, Radiated()) * (-1im * k₀ - 1 / d)
 end
 function Greensrot(R, dipoledir, k₀, ::Absorbed)
-
     d = cdist(R)
     eᵣ = real(R) / norm(real(R))
     return cross(eᵣ, dipoledir) * g₀(d, k₀, Absorbed) * (1im * k₀ - 1 / d)
@@ -212,8 +191,7 @@ function Greensrot(R, dipoledir, k₀, ::Incident)
 end
 
 function farfield(
-    dipoles::DipoleArray{Radiated,E,T,C},
-    θϕ::Tuple{R,R},
+    dipoles::DipoleArray{Radiated,E,T,C}, θϕ::Tuple{R,R}
 ) where {C,E<:ElmagType,T,R<:Real}
     θ, ϕ = θϕ
     st, ct = sincos(θ)
@@ -225,7 +203,7 @@ function farfield(
     Eθ = zero(C)
     Eϕ = zero(C)
 
-    return _dipolefarfield!(dipoles, eᵣ, eθ, eϕ, Eθ, Eϕ, reset=false)
+    return _dipolefarfield!(dipoles, eᵣ, eθ, eϕ, Eθ, Eϕ; reset=false)
 end
 
 function _dipolefarfield!(
@@ -237,12 +215,10 @@ function _dipolefarfield!(
     Eϕ::C;
     reset=true,
 ) where {C,E<:ElmagType,T}
-
     reset && (Eθ = zero(C))
     reset && (Eϕ = zero(C))
 
     k₀ = dipoles.wavenumber
-
 
     E_FF =
         C(0.0, -k₀) * _dipolefarfieldscalingfactor(E()) / (4π) * dipoles.dipolemoments .*
@@ -331,12 +307,8 @@ function GreensH(R, dipoledir, k₀, ::Magnetic, ::Incident)
 end
 
 function efield!(
-    storage,
-    dipoles::DipoleArray{P,E,T,C},
-    R;
-    reset=true,
+    storage, dipoles::DipoleArray{P,E,T,C}, R; reset=true
 ) where {P<:PropagationType,C,E<:ElmagType,T}
-
     k₀ = dipoles.wavenumber
 
     reset && fill!(storage, zero(C))
@@ -349,12 +321,8 @@ function efield!(
     return storage
 end
 function hfield!(
-    storage,
-    dipoles::DipoleArray{P,E,T,C},
-    R;
-    reset=true,
+    storage, dipoles::DipoleArray{P,E,T,C}, R; reset=true
 ) where {P<:PropagationType,C,E<:ElmagType,T}
-
     k₀ = dipoles.wavenumber
 
     reset && fill!(storage, zero(C))
@@ -368,13 +336,8 @@ function hfield!(
 end
 
 function rotate!(
-    rotated_dipoles::DipoleArray{P,E,T,C},
-    dipoles::DipoleArray{P,E,T,C},
-    χ,
-    θ,
-    ϕ,
+    rotated_dipoles::DipoleArray{P,E,T,C}, dipoles::DipoleArray{P,E,T,C}, χ, θ, ϕ
 ) where {P<:PropagationType,C,E<:ElmagType,T}
-
     R = rot_mat_zyz(χ, θ, ϕ)
     for k in eachindex(dipoles.positions)
         rotated_dipoles.positions[k] = SVector{3}(R * dipoles.positions[k])
@@ -385,9 +348,7 @@ function rotate!(
 end
 
 function spatialshift!(
-    shifted_dipoles::DipoleArray{P,E,T,C},
-    dipoles::DipoleArray{P,E,T,C},
-    R,
+    shifted_dipoles::DipoleArray{P,E,T,C}, dipoles::DipoleArray{P,E,T,C}, R
 ) where {P<:PropagationType,C,E<:ElmagType,T}
     for k in eachindex(shifted_dipoles.positions)
         shifted_dipoles.positions[k] .= dipoles.positions[k] .+ R

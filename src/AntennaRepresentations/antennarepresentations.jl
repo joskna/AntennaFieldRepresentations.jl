@@ -2,7 +2,6 @@ using BEAST
 using StaticArrays
 using LinearAlgebra
 
-
 #################################################################
 #
 # Definition of Auxiliary types
@@ -64,7 +63,6 @@ function _countsamples(samplingstrategy::RegularθRegularϕSampling)
     return Jθ ÷ 2 + 1, Jϕ
 end
 
-
 """
     GaussLegendreθRegularϕSampling <: SphereSamplingStrategy
 
@@ -115,8 +113,8 @@ function weightsandsamples(samplingstrategy::RegularθRegularϕSampling)
     nθ, nϕ = _countsamples(samplingstrategy)
     dϕ = 2 * pi / (samplingstrategy.Jϕ)
     dθ = 2 * pi / (samplingstrategy.Jθ)
-    ϕs = dϕ * collect(0:(nϕ-1))
-    θs = dθ * collect(0:(nθ-1))
+    ϕs = dϕ * collect(0:(nϕ - 1))
+    θs = dθ * collect(0:(nθ - 1))
     ϕweights = fill!(Vector{Float64}(undef, nϕ), dϕ)
     θweights = sin.(θs)
 
@@ -127,7 +125,7 @@ function weightsandsamples(samplingstrategy::GaussLegendreθRegularϕSampling)
     θs = acos.(-xs)
     nphi = samplingstrategy.Jϕ
     dϕ = 2 * pi / (nphi)
-    ϕs = dϕ * collect(0:(nphi-1))
+    ϕs = dϕ * collect(0:(nphi - 1))
     ϕweights = fill!(Vector{Float64}(undef, nphi), dϕ)
 
     return Float64.(θweights), Float64.(ϕweights), Float64.(θs), Float64.(ϕs)
@@ -141,8 +139,8 @@ function samples(samplingstrategy::RegularθRegularϕSampling)
     nθ, nϕ = _countsamples(samplingstrategy)
     dϕ = 2 * pi / (samplingstrategy.Jϕ)
     dθ = 2 * pi / (samplingstrategy.Jθ)
-    ϕs = dϕ * collect(0:(nϕ-1))
-    θs = dθ * collect(0:(nθ-1))
+    ϕs = dϕ * collect(0:(nϕ - 1))
+    θs = dθ * collect(0:(nθ - 1))
 
     return Float64.(θs), Float64.(ϕs)
 end
@@ -151,7 +149,7 @@ function samples(samplingstrategy::GaussLegendreθRegularϕSampling)
     θs = acos.(-xs)
     nphi::Int64 = samplingstrategy.Jϕ
     dϕ = 2 * pi / (nphi)
-    ϕs = dϕ * collect(0:(nphi-1))
+    ϕs = dϕ * collect(0:(nphi - 1))
 
     return Float64.(θs), Float64.(ϕs)
 end
@@ -161,8 +159,6 @@ end
 #
 #
 #################################################################
-
-
 
 #################################################################
 #
@@ -202,7 +198,6 @@ Return sampled antenna field according to the sampling defined by `measurement_s
 """
 function transmit end
 # must be defined for each sensible combination of instances of AntennaFieldRepresentation and FieldMeasurement
-
 
 """
     rotate(aut_field :: AntennaFieldRepresentation, χ::Number, θ::Number, ϕ::Number) -> rotated_aut_field :: AntennaFieldRepresentation
@@ -286,8 +281,7 @@ Return the E-field vector (in cartesian coordinates) of the field representation
 See also: [`efield!`](@ref), [`ehfield`](@ref)
 """
 function efield(
-    aut_field::AntennaFieldRepresentation{P,C},
-    R,
+    aut_field::AntennaFieldRepresentation{P,C}, R
 ) where {C<:Number,P<:PropagationType}
     storage = Vector{C}(undef, 3)
     return efield!(storage, aut_field, R)
@@ -312,8 +306,7 @@ Return the H-field vector (in cartesian coordinates) of the field representation
 See also: [`hfield!`](@ref), [`ehfield`](@ref)
 """
 function hfield(
-    aut_field::AntennaFieldRepresentation{P,C},
-    R,
+    aut_field::AntennaFieldRepresentation{P,C}, R
 ) where {C<:Number,P<:PropagationType}
     storage = Vector{C}(undef, 3)
     return hfield!(storage, aut_field, R)
@@ -341,8 +334,7 @@ calling `ehfield` may be slightly more performant than calling `efield` and `hfi
 See also: [`efield`](@ref), [`hfield`](@ref), [`ehfield!`](@ref)
 """
 function ehfield(
-    aut_field::AntennaFieldRepresentation{P,C},
-    R,
+    aut_field::AntennaFieldRepresentation{P,C}, R
 ) where {C<:Number,P<:PropagationType}
     storage_efield = Vector{C}(undef, 3)
     storage_hfield = Vector{C}(undef, 3)
@@ -360,9 +352,9 @@ calling `ehfield!` may be slightly more performant than calling `efield!` and `h
 
 See also: [`efield!`](@ref), [`hfield!`](@ref), [`ehfield`](@ref)
 """
-function ehfield!(storage_efield, storage_hfield, aut_field, R; reset = true)
-    return efield!(storage_efield, aut_field, R; reset = reset),
-    hfield!(storage_hfield, aut_field, R; reset = reset)
+function ehfield!(storage_efield, storage_hfield, aut_field, R; reset=true)
+    return efield!(storage_efield, aut_field, R; reset=reset),
+    hfield!(storage_hfield, aut_field, R; reset=reset)
 end
 
 """
@@ -374,16 +366,13 @@ Return Eθ,Eϕ-far-field tuple for radiating field representation into direction
 See also: [`efield`](@ref), [`hfield`](@ref)
 """
 function farfield(
-    aut_field::AntennaFieldRepresentation{Radiated,C},
-    θϕ::Tuple{<:Number,<:Real},
+    aut_field::AntennaFieldRepresentation{Radiated,C}, θϕ::Tuple{<:Number,<:Real}
 ) where {C}
     θ, ϕ = θϕ
     return farfield(aut_field, θ, ϕ)
 end
 function farfield(
-    aut_field::AntennaFieldRepresentation{Radiated,C},
-    θ::Number,
-    ϕ::Real,
+    aut_field::AntennaFieldRepresentation{Radiated,C}, θ::Number, ϕ::Real
 ) where {C}
     throw(MethodError())
 end
@@ -406,9 +395,11 @@ function setwavenumber! end
 # must be defined for each type which implements the interface of an AntennaFieldRepresentation
 
 """
-    changerepresentation(Tnew::Type{<:AntennaFieldRepresentation}, aut_field::AntennaFieldRepresentation)
+    changerepresentation(Tnew::Type{<:AntennaFieldRepresentation}, aut_field::AntennaFieldRepresentation; kwargs...)
 
 Return an `AntennaFieldRepresentation` of type `Tnew` which represents the same antenna fields as `aut_field`.
+
+The available keyword arguments `kwargs` depend on `Tnew`
 
 # Examples
 
@@ -417,9 +408,16 @@ Return an `AntennaFieldRepresentation` of type `Tnew` which represents the same 
 shifted_hdipole=HertzArray([[0.1,0.2,0.3]], [complex.([0.0, 0.0, 1.0])],[complex(1.0)], k0)
 shifted_hspherical=changerepresentation(SphericalWaveExpansion{Radiated}, shifted_hdipole)
 ```
+
+# Keyword arguments
+
+`Tnew <: SphericalWaveExpansion`:
+
+- `ϵ=1e-7` : Estimated accuracy of the new representation. Will be overwriten if `Lmax` is defined.
+- `Lmax=definemodeorder(Pdip, aut_field, ϵ)` : Equivalent mode order of the resulting spherical expansion.
+
 """
 function changerepresentation end
-
 
 """
     equivalentorder(aut_field::AntennaFieldRepresentation; ϵ= 1e-7)
@@ -460,4 +458,3 @@ function resample end
 # End of definition of AntennaFieldRepresentation Interface
 #
 #################################################################
-

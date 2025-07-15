@@ -2,7 +2,6 @@ using AntennaFieldRepresentations
 using LinearAlgebra
 using Serialization
 
-
 # include("setup_functions.jl")
 
 Z₀ = 376.730313669
@@ -38,10 +37,7 @@ swe .= sphcoeffs
 
 αincext = AntennaFieldRepresentations.αinc_planewave(Lmax + 5)
 
-for Jextraθ = 0:1, Jextraϕ = 0:1
-
-
-
+for Jextraθ in 0:1, Jextraϕ in 0:1
     Jθ = 2 * Lmax + 1 + Jextraθ
     Jϕ = 2 * Lmax + 1 + Jextraϕ
 
@@ -70,7 +66,7 @@ for Jextraθ = 0:1, Jextraϕ = 0:1
     a, b = size(A)
 
     Aᴴ = similar(A')
-    Threads.@threads for k = 1:a
+    Threads.@threads for k in 1:a
         local y = zeros(ComplexF64, a)
         stm_ad_tmp = deepcopy(stm_ad)
         y[k] = 1
@@ -96,7 +92,7 @@ for Jextraθ = 0:1, Jextraϕ = 0:1
     a, b = size(A)
 
     Aᴴ = similar(A')
-    Threads.@threads for k = 1:a
+    Threads.@threads for k in 1:a
         local y = zeros(ComplexF64, a)
         stm_ad_tmp = deepcopy(stmarborder_ad)
         y[k] = 1
@@ -105,13 +101,10 @@ for Jextraθ = 0:1, Jextraϕ = 0:1
 
     @test norm(A' .- Aᴴ) / norm(A) < 1e-15
 
-
-
-
-    gausssamplingstrategy =
-        GaussLegendreθRegularϕSampling(Lmax + 1 + Jextraθ, 2Lmax + 2 + Jextraϕ)
+    gausssamplingstrategy = GaussLegendreθRegularϕSampling(
+        Lmax + 1 + Jextraθ, 2Lmax + 2 + Jextraϕ
+    )
     fsgauss = SphericalFieldSampling(gausssamplingstrategy, αincext)
-
 
     stmgauss = AntennaFieldRepresentations.SphericalTransmitMap(swe, fsgauss)
     stmgauss_ad = adjoint(stmgauss)
@@ -128,9 +121,8 @@ for Jextraθ = 0:1, Jextraϕ = 0:1
 
     a, b = size(A)
 
-
     Aᴴ = similar(A')
-    Threads.@threads for k = 1:a
+    Threads.@threads for k in 1:a
         local y = zeros(ComplexF64, a)
         stm_ad_tmp = deepcopy(stmgauss_ad)
         y[k] = 1
@@ -138,5 +130,4 @@ for Jextraθ = 0:1, Jextraϕ = 0:1
     end
 
     @test norm(A' .- Aᴴ) / norm(A) < 1e-15
-
 end

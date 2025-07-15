@@ -1,5 +1,5 @@
 # Conversions Between Field Representations
-We can convert an `AntennaRepresentation` into an `AntennaRepresentation` of a different type by the [`changerepresentation(Tnew::Type{<:AntennaFieldRepresentation}, aut_field::AntennaFieldRepresentation)`](@ref) command.
+We can convert an `AntennaRepresentation` into an `AntennaRepresentation` of a different type by the [`changerepresentation(Tnew::Type{<:AntennaFieldRepresentation}, aut_field::AntennaFieldRepresentation; kwargs...)`](@ref) command.
 
 See the following examples which convert the `HertzArray{Float64, ComplexF64}` stored in the variable `dipoles` (expand "Setup Code" to see how the dipole array has been created) into various other field representations. 
 ```@raw html

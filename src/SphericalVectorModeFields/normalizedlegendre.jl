@@ -17,7 +17,7 @@ function sphPlm_deriv_array(Lmax::I, m::I, x::T) where {I<:Integer} where {T<:Nu
     Pℓℓ = √(1 / T(π)) / 2
     # Pℓℓ= √T(1//2)
     # Pℓℓ=√(1/T(π))
-    for ℓ = 1:m
+    for ℓ in 1:m
         Pℓℓ = -√(1 + 1 / (2 * ℓ)) * y * Pℓℓ
     end
 
@@ -36,18 +36,17 @@ function sphPlm_deriv_array(Lmax::I, m::I, x::T) where {I<:Integer} where {T<:Nu
                 √((2 * ℓ + 1) * (ℓsquared - msquared) / (2 * ℓ - 1)) * sphPlm[1]
             ) / ysquared
 
-
-        for k = 3:(Lmax-m+1)
+        for k in 3:(Lmax - m + 1)
             ℓ = (m + k - 1)
             ℓsquared = ℓ^2
             ℓm1squared = (ℓ - 1)^2
             aℓm = √((4 * ℓsquared - 1) / (ℓsquared - msquared))
             bℓm = -√((ℓm1squared - msquared) / (4 * ℓm1squared - 1))
-            sphPlm[k] = aℓm * (x * sphPlm[k-1] + bℓm * sphPlm[k-2])
+            sphPlm[k] = aℓm * (x * sphPlm[k - 1] + bℓm * sphPlm[k - 2])
             sphPlmderiv[k] =
                 (
                     -ℓ * x * sphPlm[k] +
-                    √((2 * ℓ + 1) * (ℓsquared - msquared) / (2 * ℓ - 1)) * sphPlm[k-1]
+                    √((2 * ℓ + 1) * (ℓsquared - msquared) / (2 * ℓ - 1)) * sphPlm[k - 1]
                 ) / ysquared
         end
     end
@@ -71,7 +70,7 @@ function Plm_deriv_array(Lmax::I, m::I, x::T) where {I<:Integer} where {T<:Numbe
     # Pℓℓ=0.70710678118654757273731092936941422522068023681640625 # √0.5
     # Pℓℓ=0.282094791773878139640174822488916106522083282470703125 # 0.5*√(1/π)
     Pℓℓ = one(T)
-    for ℓ = 1:m
+    for ℓ in 1:m
         Pℓℓ = -(2 * ℓ - 1) * y * Pℓℓ
     end
 
@@ -85,10 +84,10 @@ function Plm_deriv_array(Lmax::I, m::I, x::T) where {I<:Integer} where {T<:Numbe
         Plm[2] = x * (2 * ℓ + 1) * Plm[1]
         Plmderiv[2] = (ℓ * x * Plm[2] - (ℓ + m) * Plm[2]) / ysquared
 
-        for k = 2:(Lmax-m)
+        for k in 2:(Lmax - m)
             ℓ = (m + k - 1)
-            Plm[k+1] = ((2ℓ + 1)x * Plm[k] - (ℓ + m) * Plm[k-1]) / (ℓ - m + 1)
-            Plmderiv[k+1] = ((ℓ) * x * Plm[k+1] - (ℓ + m) * Plm[k]) / ysquared
+            Plm[k + 1] = ((2ℓ + 1)x * Plm[k] - (ℓ + m) * Plm[k - 1]) / (ℓ - m + 1)
+            Plmderiv[k + 1] = ((ℓ) * x * Plm[k + 1] - (ℓ + m) * Plm[k]) / ysquared
         end
     end
 
@@ -111,7 +110,6 @@ function legendre_deps_array(m::Integer, Lmax::Integer, ϑ::T) where {T<:Number}
     P3 = Pℓm
     P1 = m * P3 / sint
     P2 = -Pℓmderiv
-
 
     return P1, P2, P3
 end

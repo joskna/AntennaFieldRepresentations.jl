@@ -9,9 +9,7 @@ Supertype for linear map which corresponds to a `changerepresentation` method.
 - `C <: Complex`
 """
 abstract type ChangeRepresentationMap{
-    A<:AntennaFieldRepresentation,
-    B<:AntennaFieldRepresentation,
-    C<:Complex,
+    A<:AntennaFieldRepresentation,B<:AntennaFieldRepresentation,C<:Complex
 } <: OperationMap{C} end
 
 """
@@ -25,9 +23,7 @@ Linear map representing a `changerepresentation` operation from a `SphericalWave
 - `C <: Complex`
 """
 struct SphericalToPlaneWaveMap{
-    S<:SphericalWaveExpansion,
-    W<:PlaneWaveExpansion,
-    C<:Complex,
+    S<:SphericalWaveExpansion,W<:PlaneWaveExpansion,C<:Complex
 } <: ChangeRepresentationMap{S,W,C}
     originalrepresentation::S
     targetrepresentation::W
@@ -58,12 +54,9 @@ end
 function SphericalToPlaneWaveMap(
     ::Type{PlaneWaveExpansion{P,Y,C}},
     swe::SphericalWaveExpansion{P,H,C};
-    samplingstrategy=_standardsampling(Y, equivalentorder(swe))
+    samplingstrategy=_standardsampling(Y, equivalentorder(swe)),
 ) where {
-    P<:PropagationType,
-    C<:Number,
-    H<:AbstractSphericalCoefficients,
-    Y<:SphereSamplingStrategy,
+    P<:PropagationType,C<:Number,H<:AbstractSphericalCoefficients,Y<:SphereSamplingStrategy
 }
     Lmax = equivalentorder(swe)
     αinc = αinc_planewave(Lmax)
@@ -78,45 +71,33 @@ function SphericalToPlaneWaveMap(
     return SphericalToPlaneWaveMap{typeof(swe),typeof(pwe),C}(swe, pwe, stm)
 end
 function SphericalToPlaneWaveMap(
-    ::Type{PlaneWaveExpansion{P,Y}},
-    swe::SphericalWaveExpansion{P,H,C},
-    samplingstrategy=_standardsampling(equivalentorder(swe))
+    ::Type{PlaneWaveExpansion{P,Y}}, swe::SphericalWaveExpansion{P,H,C}; kwargs...
 ) where {P<:PropagationType,Y,C<:Number,H<:AbstractSphericalCoefficients}
-    return SphericalToPlaneWaveMap(
-        PlaneWaveExpansion{P,Y,C},
-        swe;
-        samplingstrategy=samplingstrategy
-    )
+    return SphericalToPlaneWaveMap(PlaneWaveExpansion{P,Y,C}, swe; kwargs...)
 end
 function SphericalToPlaneWaveMap(
     ::Type{PlaneWaveExpansion{P}},
-    swe::SphericalWaveExpansion{P,H,C},
-    samplingstrategy=_standardsampling(equivalentorder(swe))
+    swe::SphericalWaveExpansion{P,H,C};
+    samplingstrategy=_standardsampling(equivalentorder(swe)),
+    kwargs...,
 ) where {P<:PropagationType,C<:Number,H<:AbstractSphericalCoefficients}
     return SphericalToPlaneWaveMap(
         PlaneWaveExpansion{P,typeof(samplingstrategy)},
         swe;
-        samplingstrategy=samplingstrategy
+        samplingstrategy=_standardsampling(equivalentorder(swe)),
+        kwargs...,
     )
 end
 function SphericalToPlaneWaveMap(
-    ::Type{PlaneWaveExpansion},
-    swe::SphericalWaveExpansion{P,H,C},
-    samplingstrategy=_standardsampling(equivalentorder(swe))
+    ::Type{PlaneWaveExpansion}, swe::SphericalWaveExpansion{P,H,C}; kwargs...
 ) where {P<:PropagationType,C<:Number,H<:AbstractSphericalCoefficients}
-    return SphericalToPlaneWaveMap(
-        PlaneWaveExpansion{P},
-        swe;
-        samplingstrategy=samplingstrategy
-    )
+    return SphericalToPlaneWaveMap(PlaneWaveExpansion{P}, swe; kwargs...)
 end
 
 function ChangeRepresentationMap(
-    ::Type{W},
-    swe::SphericalWaveExpansion;
-    samplingstrategy=_standardsampling(equivalentorder(swe))
+    ::Type{W}, swe::SphericalWaveExpansion; kwargs...
 ) where {W<:PlaneWaveExpansion}
-    return SphericalToPlaneWaveMap(W, swe; samplingstrategy=samplingstrategy)
+    return SphericalToPlaneWaveMap(W, swe; kwargs...)
 end
 
 """
@@ -130,22 +111,16 @@ Linear map representing a `changerepresentation` operation from a `SphericalWave
 - `C <: Complex`
 """
 struct PlaneWaveToSphericalMap{
-    W<:PlaneWaveExpansion,
-    S<:SphericalWaveExpansion,
-    C<:Complex,
+    W<:PlaneWaveExpansion,S<:SphericalWaveExpansion,C<:Complex
 } <: ChangeRepresentationMap{W,S,C}
     originalrepresentation::W
     targetrepresentation::S
     lmap::InverseSphericalTransmitMap
 end
 function PlaneWaveToSphericalMap(
-    ::Type{SphericalWaveExpansion{P,H,C}},
-    pwe::PlaneWaveExpansion{P,Y,C},
+    ::Type{SphericalWaveExpansion{P,H,C}}, pwe::PlaneWaveExpansion{P,Y,C}; kwargs...
 ) where {
-    P<:PropagationType,
-    C<:Number,
-    H<:AbstractSphericalCoefficients,
-    Y<:SphereSamplingStrategy,
+    P<:PropagationType,C<:Number,H<:AbstractSphericalCoefficients,Y<:SphereSamplingStrategy
 }
     Lmax = equivalentorder(pwe)
     coefficients = H(zeros(C, sℓm_to_j(2, Lmax, Lmax)))
@@ -156,46 +131,35 @@ function PlaneWaveToSphericalMap(
     return PlaneWaveToSphericalMap{typeof(pwe),typeof(swe),C}(pwe, swe, istm)
 end
 function PlaneWaveToSphericalMap(
-    ::Type{SphericalWaveExpansion{P,H}},
-    pwe::PlaneWaveExpansion{P,Y,C},
+    ::Type{SphericalWaveExpansion{P,H}}, pwe::PlaneWaveExpansion{P,Y,C}; kwargs...
+) where {P<:PropagationType,H,C<:Number,Y<:SphereSamplingStrategy}
+    return PlaneWaveToSphericalMap(SphericalWaveExpansion{P,H,C}, pwe; kwargs...)
+end
+function PlaneWaveToSphericalMap(
+    ::Type{SphericalWaveExpansion{P}}, pwe::PlaneWaveExpansion{P,Y,C}; kwargs...
 ) where {P<:PropagationType,C<:Number,Y<:SphereSamplingStrategy}
     return PlaneWaveToSphericalMap(
-        SphericalWaveExpansion{P,H,C},
-        pwe,
+        SphericalWaveExpansion{P,SphericalCoefficients{C}}, pwe; kwargs...
     )
 end
 function PlaneWaveToSphericalMap(
-    ::Type{SphericalWaveExpansion{P}},
-    pwe::PlaneWaveExpansion{P,Y,C},
+    ::Type{SphericalWaveExpansion}, pwe::PlaneWaveExpansion{P,Y,C}; kwargs...
 ) where {P<:PropagationType,C<:Number,Y<:SphereSamplingStrategy}
-    return PlaneWaveToSphericalMap(
-        SphericalWaveExpansion{P,SphericalCoefficients{C}},
-        pwe,
-    )
-end
-function PlaneWaveToSphericalMap(
-    ::Type{SphericalWaveExpansion},
-    pwe::PlaneWaveExpansion{P,Y,C},
-) where {P<:PropagationType,C<:Number,Y<:SphereSamplingStrategy}
-    return PlaneWaveToSphericalMap(
-        SphericalWaveExpansion{P},
-        pwe,
-    )
+    return PlaneWaveToSphericalMap(SphericalWaveExpansion{P}, pwe; kwargs...)
 end
 function ChangeRepresentationMap(
-    ::Type{S},
-    pwe::PlaneWaveExpansion,
+    ::Type{S}, pwe::PlaneWaveExpansion; kwargs...
 ) where {S<:SphericalWaveExpansion}
-    return PlaneWaveToSphericalMap(S, pwe)
+    return PlaneWaveToSphericalMap(S, pwe; kwargs...)
 end
 
 function _inversetype(
-    ::Type{PlaneWaveToSphericalMap{W,S,C}},
+    ::Type{PlaneWaveToSphericalMap{W,S,C}}
 ) where {W<:PlaneWaveExpansion,S<:SphericalWaveExpansion,C<:Complex}
     return SphericalToPlaneWaveMap{S,W,C}
 end
 function _inversetype(
-    ::Type{SphericalToPlaneWaveMap{S,W,C}},
+    ::Type{SphericalToPlaneWaveMap{S,W,C}}
 ) where {W<:PlaneWaveExpansion,S<:SphericalWaveExpansion,C<:Complex}
     return PlaneWaveToSphericalMap{W,S,C}
 end
@@ -207,12 +171,12 @@ function _linearmap(crm::ChangeRepresentationMap)
     return crm.lmap
 end
 function _linearmap(
-    crm_ad::LinearMaps.AdjointMap{C,CRM},
+    crm_ad::LinearMaps.AdjointMap{C,CRM}
 ) where {C,CRM<:ChangeRepresentationMap}
     return crm_ad.lmap.lmap
 end
 function _linearmap(
-    crm_tr::LinearMaps.TransposeMap{C,CRM},
+    crm_tr::LinearMaps.TransposeMap{C,CRM}
 ) where {C,CRM<:ChangeRepresentationMap}
     return crm_tr.lmap.lmap
 end
@@ -223,16 +187,12 @@ function LinearMaps._unsafe_mul!(y, crm::ChangeRepresentationMap, x::AbstractVec
     return LinearMaps._unsafe_mul!(y, _linearmap(crm), x)
 end
 function LinearMaps._unsafe_mul!(
-    y,
-    crm_ad::LinearMaps.AdjointMap{C,CRM},
-    x::AbstractVector,
+    y, crm_ad::LinearMaps.AdjointMap{C,CRM}, x::AbstractVector
 ) where {C,CRM<:ChangeRepresentationMap}
     return LinearMaps._unsafe_mul!(y, adjoint(_linearmap(crm_ad)), x)
 end
 function LinearMaps._unsafe_mul!(
-    y,
-    crm_tr::LinearMaps.TransposeMap{C,CRM},
-    x::AbstractVector,
+    y, crm_tr::LinearMaps.TransposeMap{C,CRM}, x::AbstractVector
 ) where {C,CRM<:ChangeRepresentationMap}
     return LinearMaps._unsafe_mul!(y, transpose(_linearmap(crm_tr)), x)
 end
@@ -267,60 +227,36 @@ function ChangeRepresentationMap(
     Tnew::Type{SphericalWaveExpansion{Psph,H,C}},
     dipoles::DipoleArray{Pdip,E,T,C};
     ϵ=1e-7,
-    L=definemodeorder(Psph, dipoles, ϵ),
+    Lmax=definemodeorder(Psph, dipoles, ϵ),
 ) where {Psph,C,H,Pdip,E,T}
     # Ptmp = _outputmode_dipo2sph(Psph(), Pdip())
     k0 = getwavenumber(dipoles)
-    Jmax = sℓm_to_j(2, L, L)
+    Jmax = sℓm_to_j(2, Lmax, Lmax)
     tempcoeffs = zeros(C, Jmax)
     coefficients = zeros(C, Jmax)
     targetrepresentation = Tnew(SphericalCoefficients(coefficients), k0)
     originalrepresentation = copy(dipoles)
 
     return DipoleToSphericalMap{Tnew,typeof(dipoles),C}(
-        originalrepresentation,
-        targetrepresentation,
-        tempcoeffs,
+        originalrepresentation, targetrepresentation, tempcoeffs
     )
 end
 function ChangeRepresentationMap(
-    ::Type{SphericalWaveExpansion{Psph,H}},
-    dipoles::DipoleArray{Pdip,E,T,C};
-    ϵ=1e-7,
-    L=definemodeorder(Psph, dipoles, ϵ),
+    ::Type{SphericalWaveExpansion{Psph,H}}, dipoles::DipoleArray{Pdip,E,T,C}; kwargs...
 ) where {Psph,H,C,Pdip,E,T}
-    return ChangeRepresentationMap(
-        SphericalWaveExpansion{Psph,H,C},
-        dipoles,
-        ϵ=ϵ,
-        L=L,
-    )
+    return ChangeRepresentationMap(SphericalWaveExpansion{Psph,H,C}, dipoles; kwargs...)
 end
 function ChangeRepresentationMap(
-    ::Type{SphericalWaveExpansion{Psph}},
-    dipoles::DipoleArray{Pdip,E,T,C};
-    ϵ=1e-7,
-    L=definemodeorder(Psph, dipoles, ϵ),
+    ::Type{SphericalWaveExpansion{Psph}}, dipoles::DipoleArray{Pdip,E,T,C}; kwargs...
 ) where {Psph,C,Pdip,E,T}
     return ChangeRepresentationMap(
-        SphericalWaveExpansion{Psph,SphericalCoefficients{C}},
-        dipoles,
-        ϵ=ϵ,
-        L=L,
+        SphericalWaveExpansion{Psph,SphericalCoefficients{C}}, dipoles; kwargs...
     )
 end
 function ChangeRepresentationMap(
-    ::Type{SphericalWaveExpansion},
-    dipoles::DipoleArray{Pdip,E,T,C};
-    ϵ=1e-7,
-    L=definemodeorder(Pdip, dipoles, ϵ),
+    ::Type{SphericalWaveExpansion}, dipoles::DipoleArray{Pdip,E,T,C}; kwargs...
 ) where {C,Pdip,E,T}
-    return ChangeRepresentationMap(
-        SphericalWaveExpansion{Pdip},
-        dipoles,
-        ϵ=ϵ,
-        L=L,
-    )
+    return ChangeRepresentationMap(SphericalWaveExpansion{Pdip}, dipoles; kwargs...)
 end
 function LinearMaps._unsafe_mul!(y, crm::DipoleToSphericalMap, x::AbstractVector)
     crm.originalrepresentation .= x
@@ -338,7 +274,6 @@ function LinearMaps._unsafe_mul!(y, crm::DipoleToSphericalMap, x::AbstractVector
     return y
 end
 
-
 function _outputmode_dipo2sph(Psph::PropagationType, Pdip::PropagationType)
     if Pdip == Radiated()
         return _dualtype(Psph)
@@ -350,9 +285,11 @@ end
 
 function definemodeorder(Psph, dipoles, ϵ)
     k0 = getwavenumber(dipoles)
-    return (Psph() == Radiated() || Psph() == Absorbed()) ?
-           (_modeorder(2 * _rmax(dipoles), k0; ϵ=ϵ)) :
-           convert(Int64, floor(k0 * _rmin(dipoles)))
+    return if (Psph() == Radiated() || Psph() == Absorbed())
+        (_modeorder(2 * _rmax(dipoles), k0; ϵ=ϵ))
+    else
+        convert(Int64, floor(k0 * _rmin(dipoles)))
+    end
 end
 function changerepresentation(
     Tnew::Type{SphericalWaveExpansion{Psph,H,C}},
@@ -385,10 +322,7 @@ function changerepresentation(
     L=definemodeorder(Psph, dipoles, ϵ),
 ) where {Psph,C,Pdip,E,T}
     return changerepresentation(
-        SphericalWaveExpansion{Psph,SphericalCoefficients{C},C},
-        dipoles,
-        ϵ=ϵ,
-        L=L,
+        SphericalWaveExpansion{Psph,SphericalCoefficients{C},C}, dipoles; ϵ=ϵ, L=L
     )
 end
 function changerepresentation(
@@ -398,10 +332,7 @@ function changerepresentation(
     L=definemodeorder(Pdip, dipoles, ϵ),
 ) where {C,Pdip,E,T}
     return changerepresentation(
-        SphericalWaveExpansion{Pdip,SphericalCoefficients{C},C},
-        dipoles,
-        ϵ=ϵ,
-        L=L,
+        SphericalWaveExpansion{Pdip,SphericalCoefficients{C},C}, dipoles; ϵ=ϵ, L=L
     )
 end
 
@@ -419,10 +350,9 @@ end
 # return map.targetrepresentation
 # end
 function changerepresentation(
-    T::Type{A},
-    originalrepresentation::A2,
+    T::Type{A}, originalrepresentation::A2; kwargs...
 ) where {A<:AntennaFieldRepresentation,A2<:AntennaFieldRepresentation}
-    map = ChangeRepresentationMap(T, originalrepresentation)
+    map = ChangeRepresentationMap(T, originalrepresentation; kwargs...)
 
     map.targetrepresentation .= map * deepcopy(asvector(originalrepresentation))
 
@@ -445,8 +375,6 @@ end
 # end
 # return PlaneWaveExpansion{P,GaussLegendreθRegularϕSampling,C}(samplingstrategy, EθEϕ, getwavenumber(swe))
 # end
-
-
 
 # function changerepresentation(
 #     Tnew::Type{SphericalWaveExpansion{Psph,H,C}},
@@ -490,14 +418,9 @@ function changerepresentation(
         end
     end
     return PlaneWaveExpansion{Pdip,typeof(samplingstrategy),C}(
-        samplingstrategy,
-        EθEϕ,
-        getwavenumber(dipoles),
-        vec(EθEϕ),
+        samplingstrategy, EθEϕ, getwavenumber(dipoles), vec(EθEϕ)
     )
-
 end
-
 
 """
     SimpleMLFMMSourceToPlaneWaveMap{M,W,C} <: ChangeRepresentationMap{M,W,C}
@@ -519,8 +442,7 @@ end
 function Base.size(crm::SimpleMLFMMSourceToPlaneWaveMap)
     sourceroot = crm.mlfmmsource.rootnode
     return (
-        length(crm.mlfmmsource.nodefarfields[sourceroot]),
-        length(crm.mlfmmsource.buffer),
+        length(crm.mlfmmsource.nodefarfields[sourceroot]), length(crm.mlfmmsource.buffer)
     )
 end
 
@@ -531,9 +453,7 @@ function LinearMaps._unsafe_mul!(y, crm::SimpleMLFMMSourceToPlaneWaveMap, x::Abs
 end
 
 function LinearMaps._unsafe_mul!(
-    y,
-    crm_ad::LinearMaps.AdjointMap{C,S},
-    x::AbstractVector,
+    y, crm_ad::LinearMaps.AdjointMap{C,S}, x::AbstractVector
 ) where {C,S<:SimpleMLFMMSourceToPlaneWaveMap}
     crm = crm_ad.lmap
     sourceroot = crm.mlfmmsource.rootnode
@@ -545,9 +465,7 @@ function LinearMaps._unsafe_mul!(
 end
 
 function LinearMaps._unsafe_mul!(
-    y,
-    crm_tr::LinearMaps.TransposeMap{C,S},
-    x::AbstractVector,
+    y, crm_tr::LinearMaps.TransposeMap{C,S}, x::AbstractVector
 ) where {C,S<:SimpleMLFMMSourceToPlaneWaveMap}
     crm = crm_tr.lmap
     sourceroot = crm.mlfmmsource.rootnode
@@ -564,8 +482,7 @@ function SimpleMLFMMSourceToPlaneWaveMap(originalrepresentation::M) where {M<:ML
     W = typeof(targetrepresentation)
     C = eltype(targetrepresentation)
     return SimpleMLFMMSourceToPlaneWaveMap{M,W,C}(
-        originalrepresentation,
-        targetrepresentation,
+        originalrepresentation, targetrepresentation
     )
 end
 
@@ -584,10 +501,7 @@ The resulting `PlaneWaveExpansion` has an arbitrary samplingstrategy. Its sample
 - `C <: Complex`
 """
 struct MLFMMSourceToPlaneWaveMap{
-    M<:MLFMMSource,
-    W<:PlaneWaveExpansion,
-    RM<:ResampleMap,
-    C<:Complex,
+    M<:MLFMMSource,W<:PlaneWaveExpansion,RM<:ResampleMap,C<:Complex
 } <: ChangeRepresentationMap{M,W,C}
     originalrepresentation::M
     targetrepresentation::W
@@ -595,25 +509,16 @@ struct MLFMMSourceToPlaneWaveMap{
     lmap::Any
 end
 
-
-
 function MLFMMSourceToPlaneWaveMap(
-    targetrepresentation::W,
-    originalrepresentation::M;
-    orderθ=12,
-    orderϕ=12,
+    targetrepresentation::W, originalrepresentation::M; orderθ=12, orderϕ=12
 ) where {W<:PlaneWaveExpansion{Radiated},M<:MLFMMSource}
-
     sourceroot = originalrepresentation.rootnode
 
     originalsamplingstrategy =
         originalrepresentation.nodefarfields[sourceroot].samplingstrategy
     targetsamplingstrategy = targetrepresentation.samplingstrategy
     resamplemap = ResampleMap(
-        targetsamplingstrategy,
-        originalsamplingstrategy;
-        orderθ=orderθ,
-        orderϕ=orderϕ,
+        targetsamplingstrategy, originalsamplingstrategy; orderθ=orderθ, orderϕ=orderϕ
     )
     RM = typeof(resamplemap)
     C = eltype(originalrepresentation.buffer)
@@ -621,28 +526,19 @@ function MLFMMSourceToPlaneWaveMap(
     lmap = resamplemap * SimpleMLFMMSourceToPlaneWaveMap(originalrepresentation)
 
     return MLFMMSourceToPlaneWaveMap{M,W,RM,C}(
-        originalrepresentation,
-        targetrepresentation,
-        resamplemap,
-        lmap,
+        originalrepresentation, targetrepresentation, resamplemap, lmap
     )
 end
 
 function MLFMMSourceToPlaneWaveMap(
-    targetsampling::Y,
-    originalrepresentation::M;
-    orderθ=12,
-    orderϕ=12,
+    targetsampling::Y, originalrepresentation::M; orderθ=12, orderϕ=12
 ) where {Y<:SphereSamplingStrategy,M<:MLFMMSource}
-
-    targetrepresentation =
-        PlaneWaveExpansion(Radiated(), targetsampling, originalrepresentation.wavenumber)
+    targetrepresentation = PlaneWaveExpansion(
+        Radiated(), targetsampling, originalrepresentation.wavenumber
+    )
 
     return MLFMMSourceToPlaneWaveMap(
-        targetrepresentation,
-        originalrepresentation;
-        orderθ=orderθ,
-        orderϕ=orderϕ,
+        targetrepresentation, originalrepresentation; orderθ=orderθ, orderϕ=orderϕ
     )
 end
 
@@ -654,10 +550,7 @@ function MLFMMSourceToPlaneWaveMap(
     orderϕ=12,
 ) where {C<:Number,Y<:SphereSamplingStrategy}
     return MLFMMSourceToPlaneWaveMap(
-        samplingstrategy,
-        originalrepresentation;
-        orderθ=orderθ,
-        orderϕ=orderϕ,
+        samplingstrategy, originalrepresentation; orderθ=orderθ, orderϕ=orderϕ
     )
 end
 function ChangeRepresentationMap(
@@ -676,22 +569,15 @@ function ChangeRepresentationMap(
     )
 end
 function ChangeRepresentationMap(
-    ::Type{PlaneWaveExpansion},
-    originalrepresentation::MLFMMSource;
+    ::Type{PlaneWaveExpansion}, originalrepresentation::MLFMMSource;
 )
     return SimpleMLFMMSourceToPlaneWaveMap(originalrepresentation)
 end
 
 function ChangeRepresentationMap(
-    ::Type{W},
-    originalrepresentation::MLFMMSource;
-    orderθ=12,
-    orderϕ=12,
+    ::Type{W}, originalrepresentation::MLFMMSource; orderθ=12, orderϕ=12
 ) where {W<:PlaneWaveExpansion}
     return MLFMMSourceToPlaneWaveMap(
-        W,
-        originalrepresentation;
-        orderθ=orderθ,
-        orderϕ=orderϕ,
+        W, originalrepresentation; orderθ=orderθ, orderϕ=orderϕ
     )
 end

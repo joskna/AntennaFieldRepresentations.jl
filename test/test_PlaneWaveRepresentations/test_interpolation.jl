@@ -9,7 +9,7 @@ Lmax = 10
 Jmax = sℓm_to_j(2, Lmax, Lmax)
 α = RadiatingSphericalExpansion(zeros(ComplexF64, Jmax))
 
-for ℓ = 1:Lmax
+for ℓ in 1:Lmax
     α.coefficients[sℓm_to_j(1, ℓ, -1)] = complex(0.25)
     α.coefficients[sℓm_to_j(1, ℓ, 1)] = complex(0.25)
     α.coefficients[sℓm_to_j(2, ℓ, -1)] = complex(0.25)
@@ -27,7 +27,6 @@ for kθ in eachindex(θvec)
     end
 end
 
-
 storedPattern = FarfieldPattern(Lpattern, Fθ, Fϕ)
 orderθ, orderϕ = 14, 14
 
@@ -35,11 +34,7 @@ Lpatternnew = Lpattern + 20
 interpattern = resample(
     storedPattern,
     AntennaFieldRepresentations.LocalInterpolation{
-        Lpattern,
-        Lpatternnew,
-        orderθ,
-        orderϕ,
-        Float64,
+        Lpattern,Lpatternnew,orderθ,orderϕ,Float64
     }(),
 )
 _, θvec, ϕvec = samplingrule(Lpatternnew)
@@ -56,5 +51,3 @@ largepattern = FarfieldPattern(Lpattern, Fθ, Fϕ)
 
 @test interpattern.Eθ ≈ largepattern.Eθ rtol = 5e-4
 @test interpattern.Eϕ ≈ largepattern.Eϕ rtol = 5e-4
-
-

@@ -9,7 +9,7 @@ Lmax = 10
 Jmax = sℓm_to_j(2, Lmax, Lmax)
 α = RadiatingSphericalExpansion(zeros(ComplexF64, Jmax))
 
-for ℓ = 1:Lmax
+for ℓ in 1:Lmax
     α.coefficients[sℓm_to_j(1, ℓ, -1)] = complex(0.25)
     α.coefficients[sℓm_to_j(1, ℓ, 1)] = complex(0.25)
     α.coefficients[sℓm_to_j(2, ℓ, -1)] = complex(0.25)
@@ -27,17 +27,16 @@ for kθ in eachindex(θvec)
     end
 end
 
-
 storedPattern = FarfieldPattern(Lpattern, Fθ, Fϕ)
 
 convertedPattern = converttype(PlaneWaveSpectrum{elementtype(storedPattern)}, storedPattern)
-reconvertedPattern =
-    converttype(FarfieldPattern{elementtype(convertedPattern)}, convertedPattern)
+reconvertedPattern = converttype(
+    FarfieldPattern{elementtype(convertedPattern)}, convertedPattern
+)
 
 @test all(storedPattern.Eθ == convertedPattern.Eθ)
 @test all(storedPattern.Eϕ == convertedPattern.Eϕ)
 @test isa(convertedPattern, PlaneWaveSpectrum)
-
 
 @test all(storedPattern.Eθ == reconvertedPattern.Eθ)
 @test all(storedPattern.Eϕ == reconvertedPattern.Eϕ)
@@ -45,17 +44,21 @@ reconvertedPattern =
 
 revertedPattern = revertdirection(storedPattern)
 
-for k = 1:(storedPattern.L+1)  # loop over half of ϕ
+for k in 1:(storedPattern.L + 1)  # loop over half of ϕ
 
     # first half of ϕ values
-    for kk = 1:(storedPattern.L+1) # loop over θ
-        @test revertedPattern.Eθ[kk, k] == storedPattern.Eθ[end-kk+1, k+storedPattern.L+1]
-        @test revertedPattern.Eϕ[kk, k] == -storedPattern.Eϕ[end-kk+1, k+storedPattern.L+1]
+    for kk in 1:(storedPattern.L + 1) # loop over θ
+        @test revertedPattern.Eθ[kk, k] ==
+            storedPattern.Eθ[end - kk + 1, k + storedPattern.L + 1]
+        @test revertedPattern.Eϕ[kk, k] ==
+            -storedPattern.Eϕ[end - kk + 1, k + storedPattern.L + 1]
     end
 
     # second half of ϕ values
-    for kk = 1:(storedPattern.L+1) # loop over θ
-        @test revertedPattern.Eθ[kk, k+storedPattern.L+1] == storedPattern.Eθ[end-kk+1, k]
-        @test revertedPattern.Eϕ[kk, k+storedPattern.L+1] == -storedPattern.Eϕ[end-kk+1, k]
+    for kk in 1:(storedPattern.L + 1) # loop over θ
+        @test revertedPattern.Eθ[kk, k + storedPattern.L + 1] ==
+            storedPattern.Eθ[end - kk + 1, k]
+        @test revertedPattern.Eϕ[kk, k + storedPattern.L + 1] ==
+            -storedPattern.Eϕ[end - kk + 1, k]
     end
 end

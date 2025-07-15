@@ -4,7 +4,7 @@ import AntennaFieldRepresentations.collectPl
 Lmax = 10
 
 xlist = [1e-4, 0.3, 0.5, 0.777, 1 - 1e-4, 1.00]
-for k = 1:length(xlist)
+for k in 1:length(xlist)
     x = xlist[k]
     Pℓ = collectPl(Lmax, x)
 

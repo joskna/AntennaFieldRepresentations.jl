@@ -14,18 +14,12 @@ for kf in eachindex(fvec)
             exc = -√π * √6 / (sqrt(Z₀) * k0) # unit excitation to radiate power of 1/2 W
             K201eθ = -1.0im * √6 / 2 * sin(θ) * (√Z₀) / (sqrt(4 * pi))
             Eθ, Eϕ = farfield(
-                HertzDipole([0.0, 0.0, 0.0], [0.0, 0.0, 1.0], complex(exc)),
-                θ,
-                ϕ,
-                k0,
+                HertzDipole([0.0, 0.0, 0.0], [0.0, 0.0, 1.0], complex(exc)), θ, ϕ, k0
             )
             @test Eθ ≈ K201eθ #atol=1.0e-14
             @test Eϕ ≈ 0 atol = 1.0e-14
             Eθ, Eϕ = farfield(
-                FitzgeraldDipole([0.0, 0.0, 0.0], [0.0, 0.0, 1.0], exc * Z₀),
-                θ,
-                ϕ,
-                k0,
+                FitzgeraldDipole([0.0, 0.0, 0.0], [0.0, 0.0, 1.0], exc * Z₀), θ, ϕ, k0
             )
             K101eϕ = complex(0.0, 1.0) * √6 / 2 * sin(θ) * (√Z₀) / (sqrt(4 * pi))
             @test Eϕ ≈ K101eϕ atol = 1.0e-14

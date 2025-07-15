@@ -27,13 +27,11 @@ using AntennaFieldRepresentations
 #             mag = complex(cos(dy) * exp(1im * dx * k0))
 #             for k = 1:nz
 
-
 #                 index = (k - 1) * ny * nx + (kk - 1) * nx + kkk # dipole along z-axis
 #                 # println(index)
 #                 positions[index] = [xvec[kkk], yvec[kk], zvec[k]]
 #                 magnitudes[index] = mag
 #                 # println(pos)
-
 
 #             end
 #         end
@@ -54,9 +52,9 @@ k0 = 2 * pi / λ
 
 dipoles = rotate(
     generate_AUTdips(
-        collect(-0.5λ:λ/4:0.5λ),
-        collect(-0.5λ:λ/4:0λ),
-        collect(-1λ:λ/4:1λ),
+        collect((-0.5λ):(λ / 4):(0.5λ)),
+        collect((-0.5λ):(λ / 4):(0λ)),
+        collect((-1λ):(λ / 4):(1λ)),
         k0,
     ),
     0.7,
@@ -65,7 +63,7 @@ dipoles = rotate(
 )
 # dipoles= generate_AUTdips(collect(-0.5λ: λ/4: 0.5λ), collect(-0.5λ: λ/4: 0λ), collect(-1λ: λ/4: 1λ), k0)
 
-stuff = MLFMMSource(dipoles, dipoles.wavenumber, verbose = false)
+stuff = MLFMMSource(dipoles, dipoles.wavenumber; verbose=false)
 
 samplingtype = GaussLegendreθRegularϕSampling
 
@@ -81,7 +79,6 @@ AntennaFieldRepresentations._aggregate_to_farfield!(stuff, dipoles)
 
 swe = changerepresentation(SphericalWaveExpansion, dipoles)
 
-
 begin
     AntennaFieldRepresentations._aggregate_to_farfield!(stuff, dipoles)
     swe2 = changerepresentation(SphericalWaveExpansion, stuff.nodefarfields[1])
@@ -89,7 +86,7 @@ end
 
 @test norm(swe .- swe2[1:length(swe)]) / norm(swe) < 3e-5
 
-crm = ChangeRepresentationMap(typeof(pwe), stuff, samplingstrategy = pwe.samplingstrategy)
+crm = ChangeRepresentationMap(typeof(pwe), stuff; samplingstrategy=pwe.samplingstrategy)
 crm2 = ChangeRepresentationMap(SphericalWaveExpansion, pwe)
 
 CRM = crm2 * crm
@@ -99,7 +96,7 @@ swe2 = CRM * dipoles
 
 # Also adjoint and transpose operations should work: 
 
-A = ChangeRepresentationMap(typeof(pwe), stuff, samplingstrategy = pwe.samplingstrategy)
+A = ChangeRepresentationMap(typeof(pwe), stuff; samplingstrategy=pwe.samplingstrategy)
 Aᴴ = adjoint(A)
 
 AAᴴ = A * Aᴴ
@@ -113,7 +110,6 @@ Aᴴb = Aᴴ * b
 
 x = zeros(ComplexF64, size(b))
 
-minres!(x, AAᴴ, b / norm(b), maxiter = 100, verbose = true, abstol = 1e-3)
-
+minres!(x, AAᴴ, b / norm(b); maxiter=100, verbose=true, abstol=1e-3)
 
 @test norm(b - AAᴴ * x * norm(b)) / norm(b) < 1e-3

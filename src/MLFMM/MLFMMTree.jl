@@ -31,10 +31,7 @@ function MLFMMTree(center::SVector{N,T}, halfsize::T) where {N,T}
 end
 
 function MLFMMTree(
-    center::SVector{N,T},
-    points::AbstractArray{SVector{N,T},1},
-    halfsize::T,
-    minhalfsize::T,
+    center::SVector{N,T}, points::AbstractArray{SVector{N,T},1}, halfsize::T, minhalfsize::T
 ) where {N,T}
 
     #ensure that halfsize is 2ᴺ ⋅ minhalfsize
@@ -45,7 +42,7 @@ function MLFMMTree(
     addpoints!(tree, points, center, halfsize, minhalfsize)
     calculatenodesatlevel!(tree)
 
-    for level ∈ tree.nodesatlevel
+    for level in tree.nodesatlevel
         sort!(level)
     end
 
@@ -53,9 +50,9 @@ function MLFMMTree(
 end
 
 function calculatenodesatlevel!(tree::MLFMMTree)
-    for node ∈ ClusterTrees.DepthFirstIterator(tree, root(tree))
+    for node in ClusterTrees.DepthFirstIterator(tree, root(tree))
         if level(tree, node) > length(nodesatlevel(tree))
-            for i ∈ 1:(level(tree, node)-length(nodesatlevel(tree))-1)
+            for i in 1:(level(tree, node) - length(nodesatlevel(tree)) - 1)
                 push!(tree.nodesatlevel, Int[])
             end
             push!(tree.nodesatlevel, [node])
@@ -73,7 +70,7 @@ function addpoints!(
     rootsize::T,
     smallestboxsize::T,
 ) where {N,T}
-    for i ∈ eachindex(points)
+    for i in eachindex(points)
         router = ClusterTrees.Octrees.Router(smallestboxsize, points[i])
         root_state = root(tree), rootcenter, rootsize, 1, 1
         ClusterTrees.update!(tree, root_state, i, router) do tree, node, datacontent
@@ -102,10 +99,11 @@ function route!(tree::MLFMMTree, state, destination)
 
     nodeid, center, size, sfc_state, level = state
     size <= smallest_box_size && return state
-    target_sector, target_center, target_size =
-        ClusterTrees.Octrees.sector_center_size(point, center, size)
-    target_pos = ClusterTrees.Octrees.hilbert_positions[sfc_state][target_sector+1] + 1
-    target_sfc_state = ClusterTrees.Octrees.hilbert_states[sfc_state][target_sector+1] + 1
+    target_sector, target_center, target_size = ClusterTrees.Octrees.sector_center_size(
+        point, center, size
+    )
+    target_pos = ClusterTrees.Octrees.hilbert_positions[sfc_state][target_sector + 1] + 1
+    target_sfc_state = ClusterTrees.Octrees.hilbert_states[sfc_state][target_sector + 1] + 1
     target_level = level + 1
 
     chds = ClusterTrees.children(tree, nodeid)
@@ -114,7 +112,7 @@ function route!(tree::MLFMMTree, state, destination)
     while !ClusterTrees.done(chds, pos)
         child, newpos = ClusterTrees.next(chds, pos)
         child_sector = AntennaFieldRepresentations.data(tree, child).sector
-        child_pos = ClusterTrees.Octrees.hilbert_positions[sfc_state][child_sector+1] + 1
+        child_pos = ClusterTrees.Octrees.hilbert_positions[sfc_state][child_sector + 1] + 1
         child_level = AntennaFieldRepresentations.data(tree, child).level
         target_pos < child_pos && break
         if child_sector == target_sector
@@ -122,7 +120,6 @@ function route!(tree::MLFMMTree, state, destination)
         end
         pos = newpos
     end
-
 
     data = BoxData(Int[], target_center, target_size, target_sector, target_level)
     child = insert!(chds, data, pos)
@@ -134,9 +131,7 @@ function ClusterTrees.route!(tree::MLFMMTree, state, destination)
 end
 
 function Base.insert!(
-    chd_itr::ClusterTrees.ChildIterator{M},
-    item,
-    state,
+    chd_itr::ClusterTrees.ChildIterator{M}, item, state
 ) where {M<:MLFMMTree}
     prev, next = state
     parent = chd_itr.node
@@ -189,12 +184,8 @@ function level(tree::MLFMMTree, nodeid::Integer)
     return tree(nodeid).data.level
 end
 
-
 function isnear(
-    center_a::AbstractVector,
-    center_b::AbstractVector,
-    halfsize::T,
-    bufferboxes::Integer,
+    center_a::AbstractVector, center_b::AbstractVector, halfsize::T, bufferboxes::Integer
 ) where {T}
     Rvec = (center_a - center_b) ./ halfsize
     distancesquared = LinearAlgebra.dot(Rvec, Rvec)
@@ -202,10 +193,7 @@ function isnear(
 end
 
 function isfar(
-    center_a::AbstractVector,
-    center_b::AbstractVector,
-    halfsize::T,
-    bufferboxes::Integer,
+    center_a::AbstractVector, center_b::AbstractVector, halfsize::T, bufferboxes::Integer
 ) where {T}
     return !isnear(center_a, center_b, halfsize, bufferboxes)
 end
@@ -217,15 +205,13 @@ end
 
 function getnontransferingNodes(tree::MLFMMTree, node::Integer, bufferboxes::Integer)
     return Iterators.filter(
-        x -> (!istransferring(tree, node, x, bufferboxes)),
-        samelevelnodes(tree, node),
+        x -> (!istransferring(tree, node, x, bufferboxes)), samelevelnodes(tree, node)
     )
 end
 
 function gettransferingNodes(tree::MLFMMTree, node::Integer, bufferboxes::Integer)
     return Iterators.filter(
-        x -> (istransferring(tree, node, x, bufferboxes)),
-        samelevelnodes(tree, node),
+        x -> (istransferring(tree, node, x, bufferboxes)), samelevelnodes(tree, node)
     )
 end
 
@@ -239,10 +225,7 @@ end
 Returns true if an MLFMM transfer is planned between `tree(node)` and `tree(testnode)`.
 """
 function istransferring(
-    tree::MLFMMTree,
-    node::Integer,
-    testnode::Integer,
-    bufferboxes::Integer,
+    tree::MLFMMTree, node::Integer, testnode::Integer, bufferboxes::Integer
 )
     MLFMMTrees.level(tree, node) < 3 && return false
 
@@ -268,7 +251,6 @@ function istransferring(
     receivenode::Integer,
     bufferboxes::Integer,
 )
-
     if isnear(
         center(sourcetree, sourcenode),
         center(receivetree, receivenode),
@@ -281,7 +263,7 @@ function istransferring(
             return false
         end
     elseif MLFMMTrees.level(sourcetree, sourcenode) > 1 &&
-           MLFMMTrees.level(receivetree, receivenode) > 1
+        MLFMMTrees.level(receivetree, receivenode) > 1
         sourcenodeparent = parent(sourcetree, sourcenode)
         receivenodeparent = parent(receivetree, receivenode)
 
@@ -298,10 +280,7 @@ end
 function nearNodes(tree::MLFMMTree, node::Integer, bufferboxes::Integer)
     return Iterators.filter(
         x -> (isnear(
-            center(tree, node),
-            center(tree, x),
-            halfsize(tree, node),
-            bufferboxes,
+            center(tree, node), center(tree, x), halfsize(tree, node), bufferboxes
         )),
         samelevelnodes(tree, node),
     )
@@ -317,7 +296,7 @@ end
 
 function nearnodeindices(tree::MLFMMTree, node::Integer, bufferboxes::Integer)
     indices = Int[]
-    for n ∈ nearNodes(tree, node, bufferboxes)
+    for n in nearNodes(tree, node, bufferboxes)
         append!(indices, points(tree, n))
     end
     return indices
@@ -325,7 +304,7 @@ end
 
 function farnodeindices(tree::MLFMMTree, node::Integer, bufferboxes::Integer)
     indices = Int[]
-    for n ∈ farNodes(tree, node, bufferboxes)
+    for n in farNodes(tree, node, bufferboxes)
         append!(indices, points(tree, n))
     end
     return indices
@@ -343,13 +322,13 @@ function points(tree::MLFMMTree, node::Integer)
     tree(node).first_child == 0 && return data(tree, node).values
 
     values = Int[]
-    for i ∈ ClusterTrees.leaves(tree, node)
+    for i in ClusterTrees.leaves(tree, node)
         values = [values; points(tree, i)]
     end
     return values
 end
 
-function leafs(tree::MLFMMTree, node::Integer = root(tree))
+function leafs(tree::MLFMMTree, node::Integer=root(tree))
     return collect(Iterators.flatten(ClusterTrees.leaves(tree, node)))
 end
 
@@ -359,7 +338,6 @@ function minhalfsize(tree::MLFMMTree)
 
     return data(tree, nodesatlowestlevel[begin]).halfsize
 end
-
 
 function levels(tree::MLFMMTree)
     return 1:length(nodesatlevel(tree))
@@ -433,12 +411,11 @@ function parents(tree::MLFMMTree, node::Integer)
 end
 
 function findleafnode(tree::MLFMMTree, value::Int)
-    for leaf ∈ leafs(tree)
+    for leaf in leafs(tree)
         (value ∈ points(tree, leaf)) && return leaf
     end
     return 0
 end
-
 
 struct NodeInformation
     info::Union{Nothing,Tuple{Int,Tuple{Int,Int}}}
@@ -521,7 +498,7 @@ function getboundingbox(points::AbstractArray{SVector{D,F},1}) where {D,F}
     max_dim = Vector(points[1])
 
     for i in eachindex(points)
-        for j ∈ 1:D
+        for j in 1:D
             min_dim[j] = min_dim[j] < points[i][j] ? min_dim[j] : points[i][j]
             max_dim[j] = max_dim[j] > points[i][j] ? max_dim[j] : points[i][j]
         end
@@ -530,7 +507,7 @@ function getboundingbox(points::AbstractArray{SVector{D,F},1}) where {D,F}
     center = zeros(F, D)
 
     length_dim = zeros(F, D)
-    for j ∈ 1:D
+    for j in 1:D
         length_dim[j] = max_dim[j] - min_dim[j]
         center[j] = (max_dim[j] + min_dim[j]) / F(2.0)
     end

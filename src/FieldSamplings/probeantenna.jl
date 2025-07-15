@@ -35,9 +35,7 @@ function transmit(aut_field, p::ProbeAntenna{D}) where {D<:DipoleArray{Radiated}
     return transmit(aut_field, p, [0, 0, 0])
 end
 function transmit(
-    aut_field,
-    p::ProbeAntenna{D},
-    R,
+    aut_field, p::ProbeAntenna{D}, R
 ) where {D<:DipoleArray{Radiated,Electric}}
     dipoles = p.aut_field
 
@@ -49,9 +47,7 @@ function transmit(
     return result
 end
 function transmit(
-    aut_field,
-    p::ProbeAntenna{D},
-    R,
+    aut_field, p::ProbeAntenna{D}, R
 ) where {D<:DipoleArray{Radiated,Magnetic}}
     dipoles = p.aut_field
 
@@ -62,4 +58,3 @@ function transmit(
     end
     return result
 end
-

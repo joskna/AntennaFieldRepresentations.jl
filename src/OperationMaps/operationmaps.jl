@@ -7,4 +7,3 @@ Supertype for function-like object which corresponds to a certain method acting 
 - `C <: Complex`
 """
 abstract type OperationMap{C<:Number} <: LinearMaps.LinearMap{C} end
-

@@ -37,7 +37,6 @@ for ϑ in ϑlist, φ in φlist, r in rlist
     @test abs(Fϑ[j] - 1im * goal) / abs(goal) < 1e-10
     @test abs(Fφ[j] - (-cos(ϑ) * goal)) / abs(cos(ϑ) * goal) < 1e-10
 
-
     j = sℓm_to_j(2, 1, -1)
     goal =
         -√3 / (2 * √π) * exp(-1im * φ) * exp(-1im * kr) / (kr^2) * (1 - 1im / kr) * sin(ϑ)
@@ -64,7 +63,6 @@ for ϑ in ϑlist, φ in φlist, r in rlist
     @test abs(Fϑ[j] - cos(ϑ) * goal) / abs(cos(ϑ) * goal) < 1e-10
     @test abs(Fφ[j] - (1im * goal)) / abs(goal) < 1e-10
 
-
     Fr, Fϑ, Fφ = F_sℓm_spherical_array(Jmax, Incident(), r, ϑ, φ, k0)
 
     ckr = cos(kr)
@@ -87,7 +85,6 @@ for ϑ in ϑlist, φ in φlist, r in rlist
     @test abs(Fϑ[j] - 1im * goal) / abs(goal) < 1e-10
     @test abs(Fφ[j] - (-cos(ϑ) * goal)) / abs(cos(ϑ) * goal) < 1e-10
 
-
     j = sℓm_to_j(2, 1, -1)
     goal = √3 / (2 * √π) * exp(-1im * φ) * 1 / (kr^2) * (-ckr + skr / kr) * sin(ϑ)
     @test abs(Fr[j] - goal) < 1e-10 #should be zero
@@ -109,7 +106,6 @@ for ϑ in ϑlist, φ in φlist, r in rlist
     @test abs(Fϑ[j] - cos(ϑ) * goal) / abs(cos(ϑ) * goal) < 1e-10
     @test abs(Fφ[j] - (1im * goal)) / abs(goal) < 1e-10
 end
-
 
 # ϑlist=[ pi/6, pi/2, pi*0.7891]
 # φlist=[0.0,pi/6, pi/2, 1.12345678*pi/2, 1.12345678*pi, 0.9999*2*pi,2*pi ]
@@ -138,7 +134,6 @@ end
 #             @test abs(Fϑ[j]-1im*goal)/abs(goal)<1e-10
 #             @test abs(Fφ[j]- (-cos(ϑ)*goal))/abs(cos(ϑ)*goal)<1e-10
 
-
 #             j=sℓm_to_j(2,1,-1)
 #             goal=-√3/(2*√π)*exp(-1im*φ) * exp(-1im*kr)/(kr^2)*(1-1im/kr)*sin(ϑ)
 #             @test abs(Fr[j]-goal)/abs(goal)<1e-10
@@ -159,7 +154,6 @@ end
 #             goal=-√3/(4*√π)*exp(1im*φ) * exp(-1im*kr)/(kr)*(1im+1/kr-1im/(kr^2))
 #             @test abs(Fϑ[j]-cos(ϑ)*goal)/abs(cos(ϑ)*goal)<1e-10
 #             @test abs(Fφ[j]- (1im*goal))/abs(goal)<1e-10
-
 
 #             Fr, Fϑ, Fφ=F_sℓm_spherical_array(Jmax,IncidentSphericalExpansion{ComplexF64},r,ϑ,φ, k0)
 
@@ -182,7 +176,6 @@ end
 #             @test abs(Fr[j])<1e-10 #should be zero
 #             @test abs(Fϑ[j]-1im*goal)/abs(goal)<1e-10
 #             @test abs(Fφ[j]- (-cos(ϑ)*goal))/abs(cos(ϑ)*goal)<1e-10
-
 
 #             j=sℓm_to_j(2,1,-1)
 #             goal=√3/(2*√π)*exp(-1im*φ) * 1/(kr^2)*(-ckr+skr/kr)*sin(ϑ)
@@ -234,7 +227,6 @@ for ϑ in ϑlist, φ in φlist, r in rlist
     @test abs(Fϑ[j] - 1im * goal) / abs(goal) < 1e-10
     @test abs(Fφ[j] - (-cos(ϑ) * goal)) / abs(cos(ϑ) * goal) < 1e-10
 
-
     j = sℓm_to_j(2, 1, -1)
     goal =
         -√3 / (2 * √π) * exp(-1im * φ) * exp(-1im * kr) / (kr^2) * (1 - 1im / kr) * sin(ϑ)
@@ -261,7 +253,6 @@ for ϑ in ϑlist, φ in φlist, r in rlist
     @test abs(Fϑ[j] - cos(ϑ) * goal) / abs(cos(ϑ) * goal) < 1e-10
     @test abs(Fφ[j] - (1im * goal)) / abs(goal) < 1e-10
 
-
     Fr, Fϑ, Fφ = F_sℓm_spherical_array(Jmax, Incident(), r, ϑ, φ, k0)
 
     ckr = cos(kr)
@@ -283,7 +274,6 @@ for ϑ in ϑlist, φ in φlist, r in rlist
     @test abs(Fr[j]) < 1e-10 #should be zero
     @test abs(Fϑ[j] - 1im * goal) / abs(goal) < 1e-10
     @test abs(Fφ[j] - (-cos(ϑ) * goal)) / abs(cos(ϑ) * goal) < 1e-10
-
 
     j = sℓm_to_j(2, 1, -1)
     goal = √3 / (2 * √π) * exp(-1im * φ) * 1 / (kr^2) * (-ckr + skr / kr) * sin(ϑ)
@@ -318,10 +308,9 @@ for ϑ in ϑlist, φ in φlist, r in rlist
     global goal
     kr = k0 * r
     Fr, Fϑ, Fφ = F_sℓm_spherical_array(Jmax, Radiated(), r, ϑ, φ, k0)
-    for ikkkk = 1:Jmax
+    for ikkkk in 1:Jmax
         @test abs(Fr[ikkkk]) < Inf
         @test abs(Fϑ[ikkkk]) < Inf
         @test abs(Fφ[ikkkk]) < Inf
     end
-
 end

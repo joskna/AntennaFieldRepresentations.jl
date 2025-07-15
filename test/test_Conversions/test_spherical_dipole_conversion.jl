@@ -1,14 +1,9 @@
 using LinearAlgebra
 
-
 # copy from ElectromagneticDipoleUtils to not depend on this library
 function generate_AUTdips(
-    xvec::Array{Float64,1},
-    yvec::Array{Float64,1},
-    zvec::Array{Float64,1},
-    k0::Float64,
+    xvec::Array{Float64,1}, yvec::Array{Float64,1}, zvec::Array{Float64,1}, k0::Float64
 )
-
     nx = length(xvec)
     ny = length(yvec)
     nz = length(zvec)
@@ -20,42 +15,34 @@ function generate_AUTdips(
 
     dipoles = Array{HertzDipole{Float64},1}(undef, ndips)# Array(HertzDipole{Float64},ndips)
     # println(size(dipoles))
-    for kkk = 1:nx
+    for kkk in 1:nx
         dx = maximum(xvec) - xvec[kkk] # determine phase shift for radiation into x direction
 
-        for kk = 1:ny
+        for kk in 1:ny
             dy = abs(yvec[kk] - ycenter) / ysize
             mag = complex(cos(dy) * exp(1im * dx * k0))
-            for k = 1:nz
-
-
+            for k in 1:nz
                 index = (k - 1) * ny * nx + (kk - 1) * nx + kkk # dipole along z-axis
                 # println(index)
                 pos = [xvec[kkk], yvec[kk], zvec[k]]
                 # println(pos)
-                dipoles[index] =
-                    HertzDipole(pos, [0.0 + 0.0im, 0.0 + 0.0im, 1.0 + 0.0im], mag / ndips)
-
+                dipoles[index] = HertzDipole(
+                    pos, [0.0 + 0.0im, 0.0 + 0.0im, 1.0 + 0.0im], mag / ndips
+                )
             end
         end
     end
     return dipoles
-
 end
 # copy from ElectromagneticDipoleUtils to not depend on this library
 function dipoles_on_sphere(
-    deltatheta::Float64,
-    deltaphi::Float64,
-    radius::T;
-    tangential = true,
-    pole = false,
+    deltatheta::Float64, deltaphi::Float64, radius::T; tangential=true, pole=false
 ) where {T<:Number}
-    phi = 0:deltaphi:2*pi-deltaphi
-    theta = deltatheta/2:deltatheta:pi-deltatheta/2
+    phi = 0:deltaphi:(2 * pi - deltaphi)
+    theta = (deltatheta / 2):deltatheta:(pi - deltatheta / 2)
     if pole == true
         theta = 0:deltatheta:pi
     end
-
 
     numtheta = length(theta)
     numphi = length(phi)
@@ -70,13 +57,11 @@ function dipoles_on_sphere(
         dipoles = Array{HertzDipole{typeof(radius)},1}(undef, 3 * numtheta * numphi)
     end
 
-
-
-    for k = 1:numtheta
+    for k in 1:numtheta
         cost = cos(theta[k])
         sint = sin(theta[k])
 
-        for kk = 1:numphi
+        for kk in 1:numphi
             cosp = cos(phi[kk])
             sinp = sin(phi[kk])
 
@@ -85,23 +70,22 @@ function dipoles_on_sphere(
             y = radius * sint * sinp
             z = radius * cost
 
-
             e_θ = [cost * cosp; cost * sinp; -sint]
             e_ϕ = [-sinp; cosp; 0.0]
             dipoles[index] = HertzDipole([x; y; z], complex(e_θ), 1.0 + 0.0im)
-            dipoles[index+numtheta*numphi] =
-                HertzDipole([x; y; z], complex(e_ϕ), fac + 0.0im)
+            dipoles[index + numtheta * numphi] = HertzDipole(
+                [x; y; z], complex(e_ϕ), fac + 0.0im
+            )
             if tangential == false
                 e_r = [sint * cosp; sint * sinp; cost]
-                dipoles[index+2*numtheta*numphi] =
-                    HertzDipole([x; y; z], complex(e_r), fac + 0.0im)
+                dipoles[index + 2 * numtheta * numphi] = HertzDipole(
+                    [x; y; z], complex(e_r), fac + 0.0im
+                )
             end
         end
-
     end
 
     return dipoles
-
 end
 
 # using ElectromagneticUtils
@@ -121,12 +105,10 @@ k0 = 2 * pi / λ
     x_aut = sqrt(rad_aut^2 - (λ / 4)^2) / sqrt(2)
     y_aut = x_aut * 1.25
 
-
-
     autdips = generate_AUTdips(
-        collect(-λ/4:λ/3:λ/4),
-        collect(-x_aut/2:λ/3:x_aut/2),
-        collect(-y_aut/2:λ/3:y_aut/2),
+        collect((-λ / 4):(λ / 3):(λ / 4)),
+        collect((-x_aut / 2):(λ / 3):(x_aut / 2)),
+        collect((-y_aut / 2):(λ / 3):(y_aut / 2)),
         k0,
     )
 
@@ -136,32 +118,31 @@ k0 = 2 * pi / λ
     Fθ, Fϕ = farfield(autdips, θvec, ϕvec, k0)
     Fθ2, Fϕ2 = farfield(α, θvec, ϕvec)
 
+    @test all(isapprox.(Fθ, Fθ2; rtol=1e-6, atol=1e-6))
+    @test all(isapprox.(Fϕ, Fϕ2; rtol=1e-6, atol=1e-6))
 
-    @test all(isapprox.(Fθ, Fθ2; rtol = 1e-6, atol = 1e-6))
-    @test all(isapprox.(Fϕ, Fϕ2; rtol = 1e-6, atol = 1e-6))
-
-    xtest = -1.25*x_aut:0.75*λ:1.25*x_aut
-    ytest = -1.25*y_aut:0.75:1.25*y_aut
+    xtest = (-1.25 * x_aut):(0.75 * λ):(1.25 * x_aut)
+    ytest = (-1.25 * y_aut):0.75:(1.25 * y_aut)
     ztest = [rad_meas]
     for x in xtest, y in ytest, z in ztest
         R = [x, y, z]
         E1 = efield(autdips, R, k0)
         H1 = hfield(autdips, R, k0)
         E2, H2 = ehfield(α, R, k0)
-        @test all(isapprox.(E1, E2; rtol = 1e-4, atol = 1e-6))
-        @test all(isapprox.(H1, H2; rtol = 1e-4, atol = 1e-6))
+        @test all(isapprox.(E1, E2; rtol=1e-4, atol=1e-6))
+        @test all(isapprox.(H1, H2; rtol=1e-4, atol=1e-6))
     end
 
-    ztest = -1.25*x_aut:0.75*λ:1.25*x_aut
-    ytest = -1.25*y_aut:0.75*λ:1.25*y_aut
+    ztest = (-1.25 * x_aut):(0.75 * λ):(1.25 * x_aut)
+    ytest = (-1.25 * y_aut):(0.75 * λ):(1.25 * y_aut)
     xtest = [-rad_meas; rad_meas]
     for x in xtest, y in ytest, z in ztest
         R = [x, y, z]
         E1 = efield(autdips, R, k0)
         H1 = hfield(autdips, R, k0)
         E2, H2 = ehfield(α, R, k0)
-        @test all(isapprox.(E1, E2; rtol = 1e-4, atol = 1e-6))
-        @test all(isapprox.(H1, H2; rtol = 1e-4, atol = 1e-6))
+        @test all(isapprox.(E1, E2; rtol=1e-4, atol=1e-6))
+        @test all(isapprox.(H1, H2; rtol=1e-4, atol=1e-6))
     end
 
     # xtest=-1.25*x_aut:λ/2:1.25*x_aut
@@ -192,27 +173,26 @@ k0 = 2 * pi / λ
     Fθ, Fϕ = farfield(autdipsF, θvec, ϕvec, k0)
     Fθ2, Fϕ2 = farfield(αF, θvec, ϕvec)
 
-    @test all(isapprox.(Fθ, Fθ2; rtol = 1e-6, atol = 1e-6))
-    @test all(isapprox.(Fϕ, Fϕ2; rtol = 1e-6, atol = 1e-6))
+    @test all(isapprox.(Fθ, Fθ2; rtol=1e-6, atol=1e-6))
+    @test all(isapprox.(Fϕ, Fϕ2; rtol=1e-6, atol=1e-6))
 
-
-    xtest = -1.25*x_aut:0.75*λ:1.25*x_aut
-    ztest = -1.25*y_aut:0.75*λ:1.25*y_aut
+    xtest = (-1.25 * x_aut):(0.75 * λ):(1.25 * x_aut)
+    ztest = (-1.25 * y_aut):(0.75 * λ):(1.25 * y_aut)
     ytest = [-rad_meas; rad_meas]
     for x in xtest, y in ytest, z in ztest
         R = [x, y, z]
         E1 = efield(autdipsF, R, k0)
         H1 = hfield(autdipsF, R, k0)
         E2, H2 = ehfield(αF, R, k0)
-        @test all(isapprox.(E1, E2; rtol = 1e-4, atol = 1e-6))
-        @test all(isapprox.(H1, H2; rtol = 1e-4, atol = 1e-6))
+        @test all(isapprox.(E1, E2; rtol=1e-4, atol=1e-6))
+        @test all(isapprox.(H1, H2; rtol=1e-4, atol=1e-6))
 
-        if !all(isapprox.(E1, E2; rtol = 1e-4, atol = 1e-6))
+        if !all(isapprox.(E1, E2; rtol=1e-4, atol=1e-6))
             println(R)
             println("E1:", E1)
             println("E2:", E2)
         end
-        if !all(isapprox.(H1, H2; rtol = 1e-4, atol = 1e-6))
+        if !all(isapprox.(H1, H2; rtol=1e-4, atol=1e-6))
             println(R)
             println("H1:", H1)
             println("H2:", H2)
@@ -224,13 +204,8 @@ k0 = 2 * pi / λ
     Fθ, Fϕ = farfield(autdipsHF, θvec, ϕvec, k0)
     Fθ2, Fϕ2 = farfield(αHF, θvec, ϕvec)
 
-    @test all(isapprox.(Fθ, Fθ2; rtol = 1e-6, atol = 1e-6))
-    @test all(isapprox.(Fϕ, Fϕ2; rtol = 1e-6, atol = 1e-6))
-
-
-
-
-
+    @test all(isapprox.(Fθ, Fθ2; rtol=1e-6, atol=1e-6))
+    @test all(isapprox.(Fϕ, Fϕ2; rtol=1e-6, atol=1e-6))
 
     dipole = HertzDipole([0.0, 0.0, 0.0], [0.0, 0.0, 1.0], complex(1.0))
     αHertz = convertrepresentation(RadiatingSphericalExpansion{ComplexF64}, [dipole], k0)
@@ -238,9 +213,8 @@ k0 = 2 * pi / λ
     Fθ, Fϕ = farfield([dipole], θvec, ϕvec, k0)
     Fθ2, Fϕ2 = farfield(αHertz, θvec, ϕvec)
 
-    @test all(isapprox.(Fθ, Fθ2; rtol = 1e-6, atol = 1e-6))
-    @test all(isapprox.(Fϕ, Fϕ2; rtol = 1e-6, atol = 1e-6))
-
+    @test all(isapprox.(Fθ, Fθ2; rtol=1e-6, atol=1e-6))
+    @test all(isapprox.(Fϕ, Fϕ2; rtol=1e-6, atol=1e-6))
 
     dipole = HertzDipole([0.0, 0.0, 0.0], [0.0, 1.0, 0.0], complex(1.0))
     αHertz = convertrepresentation(RadiatingSphericalExpansion{ComplexF64}, [dipole], k0)
@@ -248,12 +222,8 @@ k0 = 2 * pi / λ
     Fθ, Fϕ = farfield([dipole], θvec, ϕvec, k0)
     Fθ2, Fϕ2 = farfield(αHertz, θvec, ϕvec)
 
-    @test all(isapprox.(Fθ, Fθ2; rtol = 1e-6, atol = 1e-6))
-    @test all(isapprox.(Fϕ, Fϕ2; rtol = 1e-6, atol = 1e-6))
-
-
-
-
+    @test all(isapprox.(Fθ, Fθ2; rtol=1e-6, atol=1e-6))
+    @test all(isapprox.(Fϕ, Fϕ2; rtol=1e-6, atol=1e-6))
 
     dipole = HertzDipole([0.0, 0.0, 0.0], [1.0, 0.0, 0.0], complex(1.0))
     αHertz = convertrepresentation(RadiatingSphericalExpansion{ComplexF64}, [dipole], k0)
@@ -261,10 +231,8 @@ k0 = 2 * pi / λ
     Fθ, Fϕ = farfield([dipole], θvec, ϕvec, k0)
     Fθ2, Fϕ2 = farfield(αHertz, θvec, ϕvec)
 
-    @test all(isapprox.(Fθ, Fθ2; rtol = 1e-6, atol = 1e-6))
-    @test all(isapprox.(Fϕ, Fϕ2; rtol = 1e-6, atol = 1e-6))
-
-
+    @test all(isapprox.(Fθ, Fθ2; rtol=1e-6, atol=1e-6))
+    @test all(isapprox.(Fϕ, Fϕ2; rtol=1e-6, atol=1e-6))
 
     dipole = converttype(
         FitzgeraldDipole{Float64},
@@ -275,9 +243,8 @@ k0 = 2 * pi / λ
     Fθ, Fϕ = farfield([dipole], θvec, ϕvec, k0)
     Fθ2, Fϕ2 = farfield(αHertz, θvec, ϕvec)
 
-    @test all(isapprox.(Fθ, Fθ2; rtol = 1e-6, atol = 1e-6))
-    @test all(isapprox.(Fϕ, Fϕ2; rtol = 1e-6, atol = 1e-6))
-
+    @test all(isapprox.(Fθ, Fθ2; rtol=1e-6, atol=1e-6))
+    @test all(isapprox.(Fϕ, Fϕ2; rtol=1e-6, atol=1e-6))
 
     dipole = converttype(
         FitzgeraldDipole{Float64},
@@ -288,8 +255,8 @@ k0 = 2 * pi / λ
     Fθ, Fϕ = farfield([dipole], θvec, ϕvec, k0)
     Fθ2, Fϕ2 = farfield(αFitz, θvec, ϕvec)
 
-    @test all(isapprox.(Fθ, Fθ2; rtol = 1e-6, atol = 1e-6))
-    @test all(isapprox.(Fϕ, Fϕ2; rtol = 1e-6, atol = 1e-6))
+    @test all(isapprox.(Fθ, Fθ2; rtol=1e-6, atol=1e-6))
+    @test all(isapprox.(Fϕ, Fϕ2; rtol=1e-6, atol=1e-6))
 
     dipole = converttype(
         FitzgeraldDipole{Float64},
@@ -300,8 +267,8 @@ k0 = 2 * pi / λ
     Fθ, Fϕ = farfield([dipole], θvec, ϕvec, k0)
     Fθ2, Fϕ2 = farfield(αFitz, θvec, ϕvec)
 
-    @test all(isapprox.(Fθ, Fθ2; rtol = 1e-6, atol = 1e-6))
-    @test all(isapprox.(Fϕ, Fϕ2; rtol = 1e-6, atol = 1e-6))
+    @test all(isapprox.(Fθ, Fθ2; rtol=1e-6, atol=1e-6))
+    @test all(isapprox.(Fϕ, Fϕ2; rtol=1e-6, atol=1e-6))
 end
 
 @testset verbose = true "Conversions Dipole -> IncidentSpherical" begin
@@ -333,26 +300,24 @@ end
             E1 = efield([dipole], obsdip.pos, k0)
             H1 = hfield([dipole], obsdip.pos, k0)
             E2, H2 = ehfield(αHertz, obsdip.pos, k0)
-            @test all(isapprox.(E1, E2; rtol = 1e-4, atol = 1e-6))
-            @test all(isapprox.(H1, H2; rtol = 1e-4, atol = 1e-6))
+            @test all(isapprox.(E1, E2; rtol=1e-4, atol=1e-6))
+            @test all(isapprox.(H1, H2; rtol=1e-4, atol=1e-6))
             # println(E1)
             # println(E2)
             # println(E1./E2)
 
         end
 
-        xvec = -1.25λ:0.75*λ:1.25λ
-        yvec = -1.25λ:0.75*λ:1.25λ
-        zvec = -1.25λ:0.75*λ:1.25λ
+        xvec = (-1.25λ):(0.75 * λ):(1.25λ)
+        yvec = (-1.25λ):(0.75 * λ):(1.25λ)
+        zvec = (-1.25λ):(0.75 * λ):(1.25λ)
 
         for x in xvec, y in yvec, z in zvec
             E1 = efield([dipole], [x; y; z], k0)
             H1 = hfield([dipole], [x; y; z], k0)
             E2, H2 = ehfield(αHertz, [x; y; z], k0)
-            @test all(isapprox.(E1, E2; rtol = 1e-4, atol = 1e-6))
-            @test all(isapprox.(H1, H2; rtol = 1e-4, atol = 1e-6))
-
+            @test all(isapprox.(E1, E2; rtol=1e-4, atol=1e-6))
+            @test all(isapprox.(H1, H2; rtol=1e-4, atol=1e-6))
         end
     end
 end
-

@@ -2,7 +2,6 @@ using AntennaFieldRepresentations
 using LinearAlgebra
 using Serialization
 
-
 # include("setup_functions.jl")
 
 Z₀ = 376.730313669
@@ -38,10 +37,7 @@ swe .= sphcoeffs
 
 αincext = AntennaFieldRepresentations.αinc_planewave(Lmax + 5)
 
-for Jextraθ = -2:3, Jextraϕ = -2:3
-
-
-
+for Jextraθ in -2:3, Jextraϕ in -2:3
     Jθ = 2 * Lmax + 1 + Jextraθ
     Jϕ = 2 * Lmax + 1 + Jextraϕ
 
@@ -54,30 +50,23 @@ for Jextraθ = -2:3, Jextraϕ = -2:3
     fs = SphericalFieldSampling(regularsamplingstrategy, αincext)
     fsarborder = SphericalFieldSampling(regularsamplingstrategy, αinc_arborder)
 
-
-
-
     filenameb = joinpath("testdata", string("b_", Jextraθ, "_", Jextraϕ, ".afr"))
     # b = transmit(swe, fs)
     # serialize(filenameb, b)
     b = deserialize(filenameb)
 
-
-    filenamebarborder =
-        joinpath("testdata", string("barborder_", Jextraθ, "_", Jextraϕ, ".afr"))
+    filenamebarborder = joinpath(
+        "testdata", string("barborder_", Jextraθ, "_", Jextraϕ, ".afr")
+    )
     # barborder = transmit(swe, fsarborder)
     # serialize(filenamebarborder, barborder)
     barborder = deserialize(filenamebarborder)
 
-
-
-
-
     # @btime b = reshape(transmit(swe, fs), 41,81,2);
 
-
-    θweights, ϕweights, θs, ϕs =
-        AntennaFieldRepresentations.weightsandsamples(regularsamplingstrategy)
+    θweights, ϕweights, θs, ϕs = AntennaFieldRepresentations.weightsandsamples(
+        regularsamplingstrategy
+    )
     filenameffswe = joinpath("testdata", string("ffswe_", Jextraθ, "_", Jextraϕ, ".afr"))
     # ffswe = zeros(ComplexF64, size(fs.S21values))
     # # ffdip= zeros(ComplexF64, size(fs.S21values))
@@ -92,7 +81,6 @@ for Jextraθ = -2:3, Jextraϕ = -2:3
     # end
     # serialize(filenameffswe, ffswe)
     ffswe = deserialize(filenameffswe)
-
 
     @test norm(ffswe - reshape(b, size(ffswe))) / norm(b) < 3e-14
     @test norm(ffswe - reshape(barborder, size(ffswe))) / norm(ffswe) < 1e-14
@@ -154,20 +142,21 @@ for Jextraθ = -2:3, Jextraϕ = -2:3
 
     #    @test norm(A'.-Aᴴ)/ norm(A) < 1e-15
 
-
-
-    gausssamplingstrategy =
-        GaussLegendreθRegularϕSampling(Lmax + 1 + Jextraθ, 2Lmax + 2 + Jextraϕ)
+    gausssamplingstrategy = GaussLegendreθRegularϕSampling(
+        Lmax + 1 + Jextraθ, 2Lmax + 2 + Jextraϕ
+    )
     fsgauss = SphericalFieldSampling(gausssamplingstrategy, αincext)
     # fsarbordergauss = SphericalFieldSampling(gausssamplingstrategy, αinc_arborder) 
     stm.swe .= sphcoeffs
     bgauss = transmit(swe, fsgauss)
     # bgaussarborder = reshape(transmit(swe, fsarbordergauss), size(fsarbordergauss.S21values))
-    θweights, ϕweights, θs, ϕs =
-        AntennaFieldRepresentations.weightsandsamples(gausssamplingstrategy)
+    θweights, ϕweights, θs, ϕs = AntennaFieldRepresentations.weightsandsamples(
+        gausssamplingstrategy
+    )
 
-    filenameffswegauss =
-        joinpath("testdata", string("ffswegauss", Jextraθ, "_", Jextraϕ, ".afr"))
+    filenameffswegauss = joinpath(
+        "testdata", string("ffswegauss", Jextraθ, "_", Jextraϕ, ".afr")
+    )
     # ffswe = zeros(ComplexF64, size(fsgauss.S21values))
     # # ffdip = zeros(ComplexF64, size(fsgauss.S21values))
     # for k in eachindex(θs), kk in eachindex(ϕs)

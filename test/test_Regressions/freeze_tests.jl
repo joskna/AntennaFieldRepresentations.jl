@@ -8,8 +8,9 @@ k0 = 2 * pi / λ
 # fdipole=FitzgeraldDipole([0.0, 0.0, 0.0], complex.([0.0, 1.0, 0.0]),complex(1.0))
 
 hdipole = HertzArray([[0.0, 0.0, 0.0]], [complex.([0.0, 0.0, 1.0])], [complex(1.0)], k0)
-fdipole =
-    FitzgeraldArray([[0.0, 0.0, 0.0]], [complex.([0.0, 1.0, 0.0])], [complex(1.0)], k0)
+fdipole = FitzgeraldArray(
+    [[0.0, 0.0, 0.0]], [complex.([0.0, 1.0, 0.0])], [complex(1.0)], k0
+)
 mixedarray = [hdipole, fdipole]
 
 refvalue = zeros(ComplexF64, 30)
@@ -59,11 +60,10 @@ refvalue = [
 @test hfield(fdipole, R) ≈ refvalue
 @test hfield(fspherical, R) ≈ refvalue
 
-
-
 dR = [0.1, 0.2, 0.3]
-shifted_hdipole =
-    HertzArray([[0.0, 0.0, 0.0] + dR], [complex.([0.0, 0.0, 1.0])], [complex(1.0)], k0)
+shifted_hdipole = HertzArray(
+    [[0.0, 0.0, 0.0] + dR], [complex.([0.0, 0.0, 1.0])], [complex(1.0)], k0
+)
 shifted_hspherical = changerepresentation(SphericalWaveExpansion{Radiated}, shifted_hdipole)
 
 # ff = shiftrepresentation(
@@ -76,8 +76,8 @@ shifted_hspherical = changerepresentation(SphericalWaveExpansion{Radiated}, shif
 
 # @test shifted_hspherical.coefficients ≈ shifted_hspherical2.coefficients
 @test efield(shifted_hspherical, R + dR) ≈
-      efield(shifted_hdipole, R + dR) ≈
-      efield(hdipole, R)
+    efield(shifted_hdipole, R + dR) ≈
+    efield(hdipole, R)
 
 ϑ = pi / 7
 φ = 5pi / 3

@@ -15,8 +15,8 @@ function _aggregate_leafnodes!(A::MLFMMSource)
             A.nodefarfields[leafnode].buffer .= _muladd_or_mulreset!(
                 A.nodefarfields[leafnode],
                 A.basisfunctionfarfields[functionindex],
-                A.buffer[functionindex],
-                reset = reset,
+                A.buffer[functionindex];
+                reset=reset,
             )
             reset = false
         end
@@ -92,14 +92,14 @@ function _aggregate_children!(A::MLFMMSource, parentnode)
         _muladd_or_mulreset!(
             _eθ(A.nodefarfields[parentnode]),
             view(resamplemap.outputbuffermat, :, :, 1),
-            A.phaseshifttoparent[sector, level+1],
-            reset = reset,
+            A.phaseshifttoparent[sector, level + 1];
+            reset=reset,
         )
         _muladd_or_mulreset!(
             _eϕ(A.nodefarfields[parentnode]),
             view(resamplemap.outputbuffermat, :, :, 2),
-            A.phaseshifttoparent[sector, level+1],
-            reset = reset,
+            A.phaseshifttoparent[sector, level + 1];
+            reset=reset,
         )
 
         reset = false
@@ -125,17 +125,16 @@ function _transpose_aggregate_children!(A::MLFMMSource, parentnode)
         sector = tree.nodes[child].data.sector + 1
 
         view(resamplemap.outputbuffermat, :, :, 1) .=
-            _eθ(A.nodefarfields[parentnode]) .* A.phaseshifttoparent[sector, level+1]
+            _eθ(A.nodefarfields[parentnode]) .* A.phaseshifttoparent[sector, level + 1]
         view(resamplemap.outputbuffermat, :, :, 2) .=
-            _eϕ(A.nodefarfields[parentnode]) .* A.phaseshifttoparent[sector, level+1]
+            _eϕ(A.nodefarfields[parentnode]) .* A.phaseshifttoparent[sector, level + 1]
         # A.nodefarfields[child] .=
         _muladd_or_mulreset!(
             A.nodefarfields[child],
             transpose_resamplemat,
-            resamplemap.outputbuffer,
-            reset = !A.nodeisfresh[child],
+            resamplemap.outputbuffer;
+            reset=!A.nodeisfresh[child],
         )
-
 
         # resamplemap.outputbuffer .= mul!(resamplemap.outputbuffer, resamplemap, A.nodefarfields[child])
         # _eθ(A.nodefarfields[parentnode]) .= _muladd_or_mulreset!(_eθ(A.nodefarfields[parentnode]), view(resamplemap.outputbuffermat, :, :, 1),  A.phaseshifttoparent[sector, level+1], reset = reset)
@@ -164,16 +163,17 @@ function _adjoint_aggregate_children!(A::MLFMMSource, parentnode)
         sector = tree.nodes[child].data.sector + 1
 
         view(resamplemap.outputbuffermat, :, :, 1) .=
-            _eθ(A.nodefarfields[parentnode]) .* conj.(A.phaseshifttoparent[sector, level+1])
+            _eθ(A.nodefarfields[parentnode]) .*
+            conj.(A.phaseshifttoparent[sector, level + 1])
         view(resamplemap.outputbuffermat, :, :, 2) .=
-            _eϕ(A.nodefarfields[parentnode]) .* conj.(A.phaseshifttoparent[sector, level+1])
+            _eϕ(A.nodefarfields[parentnode]) .*
+            conj.(A.phaseshifttoparent[sector, level + 1])
         A.nodefarfields[child] .= _muladd_or_mulreset!(
             A.nodefarfields[child].buffer,
             adjoint_resamplemat,
-            resamplemap.outputbuffer,
-            reset = !A.nodeisfresh[child],
+            resamplemap.outputbuffer;
+            reset=!A.nodeisfresh[child],
         )
-
 
         # resamplemap.outputbuffer .= mul!(resamplemap.outputbuffer, resamplemap, A.nodefarfields[child])
         # _eθ(A.nodefarfields[parentnode]) .= _muladd_or_mulreset!(_eθ(A.nodefarfields[parentnode]), view(resamplemap.outputbuffermat, :, :, 1),  A.phaseshifttoparent[sector, level+1], reset = reset)
@@ -203,7 +203,6 @@ function _aggregate_to_aggregationlist!(A::MLFMMSource)
             _aggregate_children!(A, node)
         end
     end
-
 end
 
 """
@@ -218,9 +217,9 @@ function _adjoint_aggregate_to_aggregationlist!(A::MLFMMSource)
 
     for level in eachindex(aggregationlist)
         aggregationlist[level] == [] && continue
-        for sector = 1:8
+        for sector in 1:8
             # Threads.@threads for sector = 1:8
-            conj!(A.phaseshifttoparent[sector, level+1])
+            conj!(A.phaseshifttoparent[sector, level + 1])
         end
 
         for node in aggregationlist[level]
@@ -228,14 +227,13 @@ function _adjoint_aggregate_to_aggregationlist!(A::MLFMMSource)
             _transpose_aggregate_children!(A, node)
         end
 
-        for sector = 1:8
+        for sector in 1:8
             # Threads.@threads for sector = 1:8
-            conj!(A.phaseshifttoparent[sector, level+1])
+            conj!(A.phaseshifttoparent[sector, level + 1])
         end
     end
 
-    _adjoint_aggregate_leafnodes!(A)
-
+    return _adjoint_aggregate_leafnodes!(A)
 end
 
 """
@@ -257,22 +255,19 @@ function _transpose_aggregate_to_aggregationlist!(A::MLFMMSource)
         end
     end
 
-    _transpose_aggregate_leafnodes!(A)
-
+    return _transpose_aggregate_leafnodes!(A)
 end
-
-
 
 """
     _aggregate_to_minlevel!(A::MLFMMSource, [x::AbstractVector]; min_aggregationlevel::Integer=0)
 
 Aggregate `A` up to min_aggregationlevel. 
 """
-function _aggregate_to_minlevel!(A::MLFMMSource, x; min_aggregationlevel::Integer = 0)
+function _aggregate_to_minlevel!(A::MLFMMSource, x; min_aggregationlevel::Integer=0)
     A.buffer .= x
-    _aggregate_to_minlevel!(A, min_aggregationlevel = min_aggregationlevel)
+    return _aggregate_to_minlevel!(A; min_aggregationlevel=min_aggregationlevel)
 end
-function _aggregate_to_minlevel!(A::MLFMMSource; min_aggregationlevel::Integer = 0)
+function _aggregate_to_minlevel!(A::MLFMMSource; min_aggregationlevel::Integer=0)
     A.verbose && @info "Aggregate node far fields"
     tree = A.tree
 
@@ -287,7 +282,6 @@ function _aggregate_to_minlevel!(A::MLFMMSource; min_aggregationlevel::Integer =
             _aggregate_children!(A, parentnode)
         end
     end
-
 end
 """
     _adjoint_aggregate_to_minlevel!(A::MLFMMSource; min_aggregationlevel::Integer=0)
@@ -295,12 +289,12 @@ end
 
 Perform adjoint operation to `aggregate_to_minlevel!`
 """
-function _adjoint_aggregate_to_minlevel!(A::MLFMMSource; min_aggregationlevel::Integer = 0)
+function _adjoint_aggregate_to_minlevel!(A::MLFMMSource; min_aggregationlevel::Integer=0)
     A.verbose && @info "Aggregate node far fields"
     tree = A.tree
 
     levels = AntennaFieldRepresentations.levels(tree)
-    for level = maximum([min_aggregationlevel, level(tree, A.rootnode), 1]):length(levels)
+    for level in maximum([min_aggregationlevel, level(tree, A.rootnode), 1]):length(levels)
         # for parentnode::Int in nodesatlevel(tree, level)
         for parentnode::Int in nodesatlevel(tree, level)
             !(A.nodeisoccupied[parentnode]) && continue
@@ -308,8 +302,7 @@ function _adjoint_aggregate_to_minlevel!(A::MLFMMSource; min_aggregationlevel::I
             _adjoint_aggregate_children!(A, parentnode)
         end
     end
-    _adjoint_aggregate_leafnodes!(A)
-
+    return _adjoint_aggregate_leafnodes!(A)
 end
 """
     _transpose_aggregate_to_minlevel!(A::MLFMMSource; min_aggregationlevel::Integer=0)
@@ -317,15 +310,12 @@ end
 
 Perform transpose operation to `aggregate_to_minlevel!`
 """
-function _transpose_aggregate_to_minlevel!(
-    A::MLFMMSource;
-    min_aggregationlevel::Integer = 0,
-)
+function _transpose_aggregate_to_minlevel!(A::MLFMMSource; min_aggregationlevel::Integer=0)
     A.verbose && @info "Aggregate node far fields"
     tree = A.tree
 
     levels = AntennaFieldRepresentations.levels(tree)
-    for level = maximum([min_aggregationlevel, level(tree, A.rootnode), 1]):length(levels)
+    for level in maximum([min_aggregationlevel, level(tree, A.rootnode), 1]):length(levels)
         # for parentnode::Int in nodesatlevel(tree, level)
         for parentnode::Int in nodesatlevel(tree, level)
             !(A.nodeisoccupied[parentnode]) && continue
@@ -333,7 +323,7 @@ function _transpose_aggregate_to_minlevel!(
             _transpose_aggregate_children!(A, parentnode)
         end
     end
-    _transpose_aggregate_leafnodes!(A)
+    return _transpose_aggregate_leafnodes!(A)
 end
 
 """
@@ -343,13 +333,13 @@ Aggregate `A` to farfield.
 """
 function _aggregate_to_farfield!(A::MLFMMSource, x)
     A.buffer .= x
-    _aggregate_to_farfield!(A)
+    return _aggregate_to_farfield!(A)
 end
 function _aggregate_to_farfield!(A::MLFMMSource)
-    _aggregate_to_minlevel!(A, min_aggregationlevel = level(A.tree, A.rootnode))
+    _aggregate_to_minlevel!(A; min_aggregationlevel=level(A.tree, A.rootnode))
     _eθ(A.nodefarfields[A.rootnode]) .=
         _eθ(A.nodefarfields[A.rootnode]) .* A.globalphaseshift
-    _eϕ(A.nodefarfields[A.rootnode]) .=
+    return _eϕ(A.nodefarfields[A.rootnode]) .=
         _eϕ(A.nodefarfields[A.rootnode]) .* A.globalphaseshift
 end
 """
@@ -362,7 +352,9 @@ function _adjoint_aggregate_to_farfield!(A::MLFMMSource)
         _eθ(A.nodefarfields[A.rootnode]) .* conj.(A.globalphaseshift)
     _eϕ(A.nodefarfields[A.rootnode]) .=
         _eϕ(A.nodefarfields[A.rootnode]) .* conj.(A.globalphaseshift)
-    _adjoint_aggregate_to_minlevel!(A, min_aggregationlevel = level(A.tree, A.rootnode))
+    return _adjoint_aggregate_to_minlevel!(
+        A; min_aggregationlevel=level(A.tree, A.rootnode)
+    )
 end
 """
     _transpose_aggregate_to_farfield!(A::MLFMMSource; min_aggregationlevel::Integer=0)
@@ -374,7 +366,9 @@ function _transpose_aggregate_to_farfield!(A::MLFMMSource)
         _eθ(A.nodefarfields[A.rootnode]) .* A.globalphaseshift
     _eϕ(A.nodefarfields[A.rootnode]) .=
         _eϕ(A.nodefarfields[A.rootnode]) .* A.globalphaseshift
-    _transpose_aggregate_to_minlevel!(A, min_aggregationlevel = level(A.tree, A.rootnode))
+    return _transpose_aggregate_to_minlevel!(
+        A; min_aggregationlevel=level(A.tree, A.rootnode)
+    )
 end
 
 function equivalentorder(A::MLFMMSource)

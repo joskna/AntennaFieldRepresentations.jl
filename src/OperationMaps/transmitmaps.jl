@@ -21,9 +21,7 @@ Linear map which corresponds to a `transmit` method between a `SphericalWaveExpa
 - `C <: Complex`
 """
 struct SphericalTransmitMap{
-    S<:SphericalWaveExpansion{Radiated},
-    F<:SphericalFieldSampling,
-    C<:Complex,
+    S<:SphericalWaveExpansion{Radiated},F<:SphericalFieldSampling,C<:Complex
 } <: TransmitMap{S,F,C}
     swe::S
     fs::F
@@ -59,14 +57,13 @@ function SphericalTransmitMap(
     fs::SphericalFieldSampling{RegularθRegularϕSampling,H,C},
 ) where {C<:Complex,H1<:AbstractSphericalCoefficients,H<:AbstractSphericalCoefficients}
     firstorder = _isfirstorder(H)
-    L, Nθ, Lθ, u, v__, v_, v, S21, Δ, fftplanθ!, fftplanϕ!, Jθoversampled, Jϕoversampled =
-        _storage_fastspherical(
-            asvector(swe),
-            asvector(fs.S21values),
-            fs.samplingstrategy.Jθ,
-            fs.samplingstrategy.Jϕ,
-            firstorder = firstorder,
-        )
+    L, Nθ, Lθ, u, v__, v_, v, S21, Δ, fftplanθ!, fftplanϕ!, Jθoversampled, Jϕoversampled = _storage_fastspherical(
+        asvector(swe),
+        asvector(fs.S21values),
+        fs.samplingstrategy.Jθ,
+        fs.samplingstrategy.Jϕ;
+        firstorder=firstorder,
+    )
     cosmθ = Vector{Vector{Float64}}(undef, 0)
     sinmθ = Vector{Vector{Float64}}(undef, 0)
     return SphericalTransmitMap{
@@ -96,29 +93,19 @@ end
 function SphericalTransmitMap(
     swe::SphericalWaveExpansion{Radiated,H,C},
     fs::SphericalFieldSampling{
-        GaussLegendreθRegularϕSampling,
-        FirstOrderSphericalCoefficients{C},
-        C,
+        GaussLegendreθRegularϕSampling,FirstOrderSphericalCoefficients{C},C
     },
 ) where {C<:Complex,H<:AbstractSphericalCoefficients}
-
     θweights, ϕweights, θs, ϕs = weightsandsamples(fs.samplingstrategy)
 
-    L, u, v_, v, S21, cosmθ, sinmθ, Δ, fftplanϕ, Jϕoversampled =
-        _storage_fastspherical_irregularθ(
-            fs.incidentcoefficients,
-            asvector(swe),
-            θs,
-            fs.samplingstrategy.Jϕ,
-        )
-
+    L, u, v_, v, S21, cosmθ, sinmθ, Δ, fftplanϕ, Jϕoversampled = _storage_fastspherical_irregularθ(
+        fs.incidentcoefficients, asvector(swe), θs, fs.samplingstrategy.Jϕ
+    )
 
     return SphericalTransmitMap{
         SphericalWaveExpansion{Radiated,H,C},
         SphericalFieldSampling{
-            GaussLegendreθRegularϕSampling,
-            FirstOrderSphericalCoefficients{C},
-            C,
+            GaussLegendreθRegularϕSampling,FirstOrderSphericalCoefficients{C},C
         },
         C,
     }(
@@ -155,9 +142,7 @@ As a fallback, it is always possible to approximate the inverse via an iterative
 - `C <: Complex`
 """
 struct InverseSphericalTransmitMap{
-    S<:SphericalWaveExpansion{Radiated},
-    F<:SphericalFieldSampling,
-    C<:Complex,
+    S<:SphericalWaveExpansion{Radiated},F<:SphericalFieldSampling,C<:Complex
 } <: TransmitMap{S,F,C}
     swe::S
     fs::F
@@ -192,18 +177,13 @@ function InverseSphericalTransmitMap(
     if !(_isfirstorder(H2))
         error("InverseSphericalTransmitMap only defined for first-order probe samplings.")
     end
-    L, v, vview, vview2, ifft_planϕ, ifft_planθ, u, P, K, βaut, αaut, Amat, uvectmp, Δ =
-        _storage_fastsphericalinverse(
-            fs.S21values,
-            fs.samplingstrategy.Jθ,
-            fs.samplingstrategy.Jϕ,
-        )
+    L, v, vview, vview2, ifft_planϕ, ifft_planθ, u, P, K, βaut, αaut, Amat, uvectmp, Δ = _storage_fastsphericalinverse(
+        fs.S21values, fs.samplingstrategy.Jθ, fs.samplingstrategy.Jϕ
+    )
     return InverseSphericalTransmitMap{
         SphericalWaveExpansion{Radiated,H,C},
         SphericalFieldSampling{
-            RegularθRegularϕSampling,
-            FirstOrderSphericalCoefficients{C},
-            C,
+            RegularθRegularϕSampling,FirstOrderSphericalCoefficients{C},C
         },
         C,
     }(
@@ -237,17 +217,17 @@ function InverseSphericalTransmitMap(
     if !(_isfirstorder(H2))
         error("InverseSphericalTransmitMap only defined for first-order probe samplings.")
     end
-    θweights, ϕweights, θs, ϕs =
-        AntennaFieldRepresentations.weightsandsamples(fs.samplingstrategy)
-    w, u, v, L, ifft_planϕ!, cosmθ, sinmθ, dvec, βaut, αaut, Amat, uvectmp, Δ =
-        _storage_fastsphericalinverse(fs.S21values, θs)
+    θweights, ϕweights, θs, ϕs = AntennaFieldRepresentations.weightsandsamples(
+        fs.samplingstrategy
+    )
+    w, u, v, L, ifft_planϕ!, cosmθ, sinmθ, dvec, βaut, αaut, Amat, uvectmp, Δ = _storage_fastsphericalinverse(
+        fs.S21values, θs
+    )
 
     return InverseSphericalTransmitMap{
         SphericalWaveExpansion{Radiated,H,C},
         SphericalFieldSampling{
-            GaussLegendreθRegularϕSampling,
-            FirstOrderSphericalCoefficients{C},
-            C,
+            GaussLegendreθRegularϕSampling,FirstOrderSphericalCoefficients{C},C
         },
         C,
     }(
@@ -299,8 +279,8 @@ function fastsphericalforward!(
         stm.fs.S21values,
         stm.Δ,
         stm.fftplanθ!,
-        stm.fftplanϕ!,
-        firstorder = firstorder,
+        stm.fftplanϕ!;
+        firstorder=firstorder,
     )
 end
 
@@ -361,8 +341,8 @@ function fastsphericalforward_ad!(
         stm.fs.S21values,
         stm.Δ,
         stm.fftplanθ!,
-        stm.fftplanϕ!,
-        firstorder = firstorder,
+        stm.fftplanϕ!;
+        firstorder=firstorder,
     )
 end
 function fastsphericalforward_ad!(
@@ -402,9 +382,7 @@ function fastsphericalinverse!(
     istm::InverseSphericalTransmitMap{
         SphericalWaveExpansion{Radiated,H,C},
         SphericalFieldSampling{
-            GaussLegendreθRegularϕSampling,
-            FirstOrderSphericalCoefficients{C},
-            C,
+            GaussLegendreθRegularϕSampling,FirstOrderSphericalCoefficients{C},C
         },
         C,
     },
@@ -434,9 +412,7 @@ function fastsphericalinverse!(
     istm::InverseSphericalTransmitMap{
         SphericalWaveExpansion{Radiated,H,C},
         SphericalFieldSampling{
-            RegularθRegularϕSampling,
-            FirstOrderSphericalCoefficients{C},
-            C,
+            RegularθRegularϕSampling,FirstOrderSphericalCoefficients{C},C
         },
         C,
     },
@@ -471,8 +447,7 @@ function _isfirstorder(::Type{SphericalCoefficients{C}}) where {C}
 end
 
 function transmit(
-    swe::SphericalWaveExpansion{Radiated,H,C},
-    fs::SphericalFieldSampling,
+    swe::SphericalWaveExpansion{Radiated,H,C}, fs::SphericalFieldSampling
 ) where {C<:Complex,H<:AbstractSphericalCoefficients}
     stm = SphericalTransmitMap(swe, fs)
     stm.swe .= αtoβ(stm.swe)
@@ -500,9 +475,7 @@ function LinearMaps._unsafe_mul!(y, istm::InverseSphericalTransmitMap, x::Abstra
 end
 
 function LinearMaps._unsafe_mul!(
-    y,
-    stm_ad::LinearMaps.AdjointMap{C,SphericalTransmitMap{A,B,C}},
-    x::AbstractVector,
+    y, stm_ad::LinearMaps.AdjointMap{C,SphericalTransmitMap{A,B,C}}, x::AbstractVector
 ) where {A,B,C}
     stm = stm_ad.lmap
     stm.fs.S21values .= reshape(x, size(stm.fs.S21values))
@@ -511,9 +484,7 @@ function LinearMaps._unsafe_mul!(
 end
 
 function LinearMaps._unsafe_mul!(
-    y,
-    stm_ad::LinearMaps.TransposeMap{C,SphericalTransmitMap{A,B,C}},
-    x::AbstractVector,
+    y, stm_ad::LinearMaps.TransposeMap{C,SphericalTransmitMap{A,B,C}}, x::AbstractVector
 ) where {A,B,C}
     stm = stm_ad.lmap
     stm.fs.S21values .= reshape(conj.(x), size(stm.fs.S21values))

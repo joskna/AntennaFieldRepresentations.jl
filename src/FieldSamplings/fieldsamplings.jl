@@ -32,7 +32,6 @@ struct IrregularFieldSampling{P<:ProbeAntenna,T<:Real,C<:Complex} <: FieldSampli
         probes::Vector{P},
         S21values::Array{C},
     ) where {P,T,C}
-
         (size(positions) != size(eulerangles)) && throw(
             DimensionMismatch(
                 "Input dimensions of position list and rotation angle list do not match.",
@@ -40,12 +39,12 @@ struct IrregularFieldSampling{P<:ProbeAntenna,T<:Real,C<:Complex} <: FieldSampli
         )
         (size(positions) != size(probeIDs)) && throw(
             DimensionMismatch(
-                "Input dimensions of position list and probeID list do not match.",
+                "Input dimensions of position list and probeID list do not match."
             ),
         )
         (size(positions) != size(S21values)) && throw(
             DimensionMismatch(
-                "Input dimensions of position list and S₂₁-list do not match.",
+                "Input dimensions of position list and S₂₁-list do not match."
             ),
         )
         return new{P,T,C}(positions, eulerangles, probeIDs, probes, S21values)
@@ -56,11 +55,7 @@ Base.getindex(fs::IrregularFieldSampling, i) = getindex(fs.S21values, i)
 Base.setindex!(fs::IrregularFieldSampling, i, v) = setindex!(fs.S21values, i, v)
 function Base.similar(fs::IrregularFieldSampling)
     return IrregularFieldSampling(
-        fs.positions,
-        fs.eulerangles,
-        fs.probeIDs,
-        fs.probes,
-        similar(fs.S21values),
+        fs.positions, fs.eulerangles, fs.probeIDs, fs.probes, similar(fs.S21values)
     )
 end
 function asvector(fs::IrregularFieldSampling)
@@ -72,7 +67,6 @@ function IrregularFieldSampling(
     probeIDs::Array{<:Integer},
     probes::Vector{P},
 ) where {P<:ProbeAntenna,T<:Real}
-
     S21values = zeros(Complex{T}, size(positions))
     return IrregularFieldSampling(positions, eulerangles, probeIDs, probes, S21values)
 end
@@ -133,10 +127,7 @@ function EfieldSampling(positions::Vector{V}) where {V}
     probes = [
         ProbeAntenna(
             HertzianArray(
-                [T.([0, 0, 0])],
-                [Complex{T}.([0, 0, 1])],
-                [Complex{T}.(2)],
-                Complex{T}(0.0),
+                [T.([0, 0, 0])], [Complex{T}.([0, 0, 1])], [Complex{T}.(2)], Complex{T}(0.0)
             ),
             0.0,
         ),
@@ -175,10 +166,7 @@ function HfieldSampling(positions::Vector{V}) where {V}
     probes = [
         ProbeAntenna(
             FitzgeraldArray(
-                [T.([0, 0, 0])],
-                [Complex{T}.([0, 0, 1])],
-                [Complex{T}.(2)],
-                Complex{T}(0.0),
+                [T.([0, 0, 0])], [Complex{T}.([0, 0, 1])], [Complex{T}.(2)], Complex{T}(0.0)
             ),
             0.0,
         ),
@@ -231,17 +219,14 @@ Field sampling on spherical measurement surface with measurement positions distr
 - `C <: Complex`
 """
 struct SphericalFieldSampling{
-    Y<:SphereSamplingStrategy,
-    H<:AbstractSphericalCoefficients,
-    C<:Complex,
+    Y<:SphereSamplingStrategy,H<:AbstractSphericalCoefficients,C<:Complex
 } <: FieldSampling{C}
     incidentcoefficients::H
     samplingstrategy::Y
     S21values::Array{C,3}
 end
 function SphericalFieldSampling(
-    samplingstrategy::Y,
-    incidentcoefficiens::A,
+    samplingstrategy::Y, incidentcoefficiens::A
 ) where {C,Y<:SphereSamplingStrategy,A<:AbstractSphericalCoefficients{C}}
     samplecountθ, samplecountϕ = _countsamples(samplingstrategy)
     S21values = zeros(C, samplecountθ, samplecountϕ, 2)
@@ -255,9 +240,7 @@ Base.getindex(fs::SphericalFieldSampling, i) = getindex(fs.S21values, i)
 Base.setindex!(fs::SphericalFieldSampling, i, v) = setindex!(fs.S21values, i, v)
 function Base.similar(fs::SphericalFieldSampling)
     return SphericalFieldSampling(
-        deepcopy(fs.incidentcoefficients),
-        fs.samplingstrategy,
-        similar(fs.S21values),
+        deepcopy(fs.incidentcoefficients), fs.samplingstrategy, similar(fs.S21values)
     )
 end
 

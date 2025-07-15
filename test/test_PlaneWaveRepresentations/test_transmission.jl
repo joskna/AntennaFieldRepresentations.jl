@@ -10,7 +10,7 @@ rng = MersenneTwister(1234);
 
 L = 15
 
-for k = 1:3
+for k in 1:3
     αradiated = RadiatingSphericalExpansion(randn(ComplexF64, sℓm_to_j(2, L, L)))
     αincident = IncidentSphericalExpansion(randn(ComplexF64, sℓm_to_j(2, L, L)))
 

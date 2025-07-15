@@ -1,11 +1,7 @@
 # TODO: docstrings
 # TODO: Keep original representation in inputbuffer for later reference
 struct MLFMMSource{
-    A<:AntennaFieldRepresentation,
-    M<:ResampleMap,
-    Y<:SphereSamplingStrategy,
-    C,
-    X<:MLFMMTree,
+    A<:AntennaFieldRepresentation,M<:ResampleMap,Y<:SphereSamplingStrategy,C,X<:MLFMMTree
 } <: AntennaFieldRepresentation{Radiated,C}
     tree::X
     expectedaccuracy::Real
@@ -34,10 +30,10 @@ Base.setindex!(p::MLFMMSource, i, v) = Base.setindex!(asvector(p), i, v)
 function Base.copy(p::MLFMMSource{A,M,Y,C,X}) where {A,M,Y,C,X}
     return deepcopy(p)
 end
-function rotate(p::MLFMMSource, χ, θ, ϕ; orderθ::Integer=12, orderϕ::Integer=12,)
-    rotated_aut = rotate(p, χ, θ, ϕ; orderθ=orderθ, orderϕ=orderϕ,)
+function rotate(p::MLFMMSource, χ, θ, ϕ; orderθ::Integer=12, orderϕ::Integer=12)
+    rotated_aut = rotate(p, χ, θ, ϕ; orderθ=orderθ, orderϕ=orderϕ)
 
-    MLFMMSource(
+    return MLFMMSource(
         rotated_aut,
         p.wavenumber;
         expectedaccuracy=p.expectedaccuracy,
@@ -136,9 +132,10 @@ function MLFMMSource(
     verbose && @info "Initialize source tree"
     points = _getpoints(basisfunctions)
     tree = _initialize_tree(points, minhalfsize)
-    levelcutoffparameters =
-        _initializelevelcutoffparameters(tree, expectedaccuracy, wavenumber)
-    nodeisfresh = [false for _ = 1:length(tree.nodes)]
+    levelcutoffparameters = _initializelevelcutoffparameters(
+        tree, expectedaccuracy, wavenumber
+    )
+    nodeisfresh = [false for _ in 1:length(tree.nodes)]
 
     verbose && @info "Allocate  node buffers"
     nodeisoccupied = _findoccupiednodes(tree)
@@ -171,18 +168,10 @@ function MLFMMSource(
 
     verbose && @info "Assemble resample maps"
     levelresamplemaps = _initializelevelresamplemaps(
-        T,
-        tree,
-        orderθ,
-        orderϕ,
-        levelcutoffparameters;
-        samplingtype=samplingtype,
+        T, tree, orderθ, orderϕ, levelcutoffparameters; samplingtype=samplingtype
     )
     phaseshifttoparent = _initializephaseshifttoparent(
-        tree,
-        levelcutoffparameters,
-        T(wavenumber);
-        samplingtype=samplingtype,
+        tree, levelcutoffparameters, T(wavenumber); samplingtype=samplingtype
     )
     L = levelcutoffparameters[min_aggregationlevel]
 
@@ -195,7 +184,7 @@ function MLFMMSource(
 
     numlevels = length(levels(tree))
     # aggregationlist = Vector{Vector{Int}}(undef, numlevels)
-    aggregationlist = [Vector{Int}([]) for _ = 1:numlevels]
+    aggregationlist = [Vector{Int}([]) for _ in 1:numlevels]
 
     verbose && println("------------------------------")
 
@@ -224,5 +213,4 @@ function MLFMMSource(
         sourceoutputbuffer,
         verbose,
     )
-
 end

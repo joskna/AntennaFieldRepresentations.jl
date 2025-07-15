@@ -6,7 +6,6 @@ Nmax = 4
 ct = cos(ϑ)
 st = sin(ϑ)
 
-
 m = 0
 P1, P2 = Plm_deriv_array(Nmax, m, ct)
 
@@ -67,12 +66,10 @@ P1, P2 = Plm_deriv_array(Nmax, m, ct)
 goal = 105 * st^4
 @test abs(P1[1] - goal) / abs(goal) < 1e-10
 
-
 Nmax = 4
 ϑ = pi / 2
 ct = cos(ϑ)
 st = sin(ϑ)
-
 
 m = 0
 P1, P2 = Plm_deriv_array(Nmax, m, ct)
@@ -139,7 +136,6 @@ Nmax = 4
 ct = cos(ϑ)
 st = sin(ϑ)
 
-
 m = 0
 P1, P2 = Plm_deriv_array(Nmax, m, ct)
 
@@ -200,12 +196,10 @@ P1, P2 = Plm_deriv_array(Nmax, m, ct)
 goal = 105 * st^4
 @test abs(P1[1] - goal) / abs(goal) < 1e-10 || (abs(P1[1] - goal) < 1e-16)
 
-
 Nmax = 4
 ϑ = pi
 ct = cos(big(ϑ))
 st = sin(big(ϑ))
-
 
 m = 0
 P1, P2 = Plm_deriv_array(Nmax, m, ct)

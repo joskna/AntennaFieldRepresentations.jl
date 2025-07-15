@@ -57,7 +57,7 @@ function _initialize_transfermatrix!(
     k0::T,
     sampling::S,
     L::Integer;
-    multiplyweights::Bool = false,
+    multiplyweights::Bool=false,
 ) where {T<:Real,S<:SphereSamplingStrategy}
 
     # R = SVector{3,T}(Rin)
@@ -66,11 +66,10 @@ function _initialize_transfermatrix!(
     kd = (k0 * d)
     h2 = collectsphericalHankel2(L + 1, kd)
 
-    Pℓ = view(Pℓstorage, 1:L+1)
-    θweights::Vector{Float64},
-    ϕweights::Vector{Float64},
-    θs::Vector{Float64},
-    ϕs::Vector{Float64} = weightsandsamples(sampling)
+    Pℓ = view(Pℓstorage, 1:(L + 1))
+    θweights::Vector{Float64}, ϕweights::Vector{Float64}, θs::Vector{Float64}, ϕs::Vector{Float64} = weightsandsamples(
+        sampling
+    )
 
     C = Complex{T}
 
@@ -88,8 +87,8 @@ function _initialize_transfermatrix!(
             er .= sint .* cosp, sint .* sinp, cost
             fac = C(0.0)
             _collectPl!(Pℓ, L, udot(er, Rhat))
-            for ℓ = 0:(L)
-                fac += _imaginarypowerofℓ(ℓ) .* (2 .* ℓ .+ 1) .* h2[ℓ.+1] .* Pℓ[ℓ.+1]
+            for ℓ in 0:(L)
+                fac += _imaginarypowerofℓ(ℓ) .* (2 .* ℓ .+ 1) .* h2[ℓ .+ 1] .* Pℓ[ℓ .+ 1]
             end
             # transfermatrix[kk, k] = C(0, -0.5) * fac / pi * k0
             transfermatrix[kk, k] = 0.5 * fac / Z₀
@@ -108,15 +107,10 @@ function _initialize_plannedtransfer!(
     k0::T,
     sampling::S,
     L::Integer;
-    multiplyweights::Bool = false,
+    multiplyweights::Bool=false,
 ) where {T<:Real,S<:SphereSamplingStrategy}
     transfermatrix = _initialize_transfermatrix!(
-        Pℓstorage,
-        Rin,
-        k0,
-        sampling,
-        L;
-        multiplyweights = multiplyweights,
+        Pℓstorage, Rin, k0, sampling, L; multiplyweights=multiplyweights
     )
 
     return PlannedTransfer{S,Complex{T},T}(Rin, k0, L, sampling, transfermatrix)
@@ -133,8 +127,7 @@ end
 # end
 
 function transfer(
-    pattern::PlaneWaveExpansion{Radiated,Y,C},
-    tr::OnTheFlyTransfer{T},
+    pattern::PlaneWaveExpansion{Radiated,Y,C}, tr::OnTheFlyTransfer{T}
 ) where {T,Y,C}
     # L=transfer.L
     # pattern.L != L && ErrorException("FarFieldPattern and PlannedTransfer must have the same order L !")
@@ -158,7 +151,6 @@ function transfer(
 
     h2 = collectsphericalHankel2(L + 1, kd)
 
-
     θvec, ϕvec = samples(pattern.samplingstrategy)
 
     for k in eachindex(ϕvec)
@@ -168,8 +160,8 @@ function transfer(
             er = [sint * cosp; sint * sinp; cost]
             fac = C(0)
             Pℓ = collectPl(tr.L, er ⋅ real(R) / norm(real(R)))
-            for ℓ = 0:L
-                fac += _imaginarypowerofℓ(ℓ) .* (2 .* ℓ .+ 1) .* h2[ℓ.+1] .* Pℓ[ℓ.+1]
+            for ℓ in 0:L
+                fac += _imaginarypowerofℓ(ℓ) .* (2 .* ℓ .+ 1) .* h2[ℓ .+ 1] .* Pℓ[ℓ .+ 1]
             end
             fac = C(0, -0.25) * fac / pi * getwavenumber(pattern)
             _eθ(patternout)[kk, k] = _eθ(pattern)[kk, k] * fac
@@ -178,7 +170,6 @@ function transfer(
     end
     return patternout
 end
-
 
 function _imaginarypowerofℓ(ℓ::I) where {I<:Integer}
     ℓmod4 = mod(ℓ, 4)
@@ -196,22 +187,17 @@ function _imaginarypowerofℓ(ℓ::I) where {I<:Integer}
 end
 
 function transfer(
-    pattern::PlaneWaveExpansion{Radiated},
-    R::AbstractVector{T},
+    pattern::PlaneWaveExpansion{Radiated}, R::AbstractVector{T}
 ) where {T<:Real}
     L = equivalentorder(pattern)
     tr = OnTheFlyTransfer{typeof(pattern.samplingstrategy),T}(
-        SVector{3,T}(R),
-        getwavenumber(pattern),
-        L,
-        pattern.samplingstrategy,
+        SVector{3,T}(R), getwavenumber(pattern), L, pattern.samplingstrategy
     )
     return transfer(pattern, tr)
 end
 
 function transfer(
-    pattern::PlaneWaveExpansion{Radiated,Y,C},
-    tr::PlannedTransfer{C},
+    pattern::PlaneWaveExpansion{Radiated,Y,C}, tr::PlannedTransfer{C}
 ) where {Y,C}
     return PlaneWaveExpansion{Incident,Y,C}(
         pattern.samplingstrategy,
@@ -222,24 +208,10 @@ function transfer(
 end
 
 function transfer!(
-    incidentfield::P,
-    farfield::F,
-    tr::PlannedTransfer{C};
-    reset::Bool = true,
+    incidentfield::P, farfield::F, tr::PlannedTransfer{C}; reset::Bool=true
 ) where {C,F<:PlaneWaveExpansion{Radiated},P<:PlaneWaveExpansion{Incident}}
-
-    _muladd_or_mulreset!(
-        _eθ(incidentfield),
-        _eθ(farfield),
-        tr.transfermatrix;
-        reset = reset,
-    )
-    _muladd_or_mulreset!(
-        _eϕ(incidentfield),
-        _eϕ(farfield),
-        tr.transfermatrix;
-        reset = reset,
-    )
+    _muladd_or_mulreset!(_eθ(incidentfield), _eθ(farfield), tr.transfermatrix; reset=reset)
+    _muladd_or_mulreset!(_eϕ(incidentfield), _eϕ(farfield), tr.transfermatrix; reset=reset)
     return incidentfield
 end
 # function translate!(incidentfield::P, farfield::F, transfer::OnTheFlyTransfer{L,C}; reset::Bool=true) where{L, C, F<:FarfieldPattern, P<:PlaneWaveSpectrum}  
@@ -250,61 +222,31 @@ function transfer!(
     incidentfield::PlaneWaveExpansion{Incident},
     farfield::PlaneWaveExpansion{Radiated},
     R::AbstractVector{T};
-    reset::Bool = true,
+    reset::Bool=true,
 ) where {T<:Real}
     transfer = OnTheFlyTransfer{pattern.L,T}(SVector{3,T}(R), getwavenumber(farfield))
-    return transfer!(incidentfield, farfield, transfer, reset = reset)
+    return transfer!(incidentfield, farfield, transfer; reset=reset)
 end
 
-
 function _adjoint_transfer!(
-    incidentfield::P,
-    farfield::F,
-    tr::PlannedTransfer{C};
-    reset::Bool = true,
+    incidentfield::P, farfield::F, tr::PlannedTransfer{C}; reset::Bool=true
 ) where {C,F<:PlaneWaveExpansion{Radiated},P<:PlaneWaveExpansion{Incident}}
     conj!(tr.transfermatrix)
 
-    _muladd_or_mulreset!(
-        _eθ(farfield),
-        _eθ(incidentfield),
-        tr.transfermatrix;
-        reset = reset,
-    )
-    _muladd_or_mulreset!(
-        _eϕ(farfield),
-        _eϕ(incidentfield),
-        tr.transfermatrix;
-        reset = reset,
-    )
+    _muladd_or_mulreset!(_eθ(farfield), _eθ(incidentfield), tr.transfermatrix; reset=reset)
+    _muladd_or_mulreset!(_eϕ(farfield), _eϕ(incidentfield), tr.transfermatrix; reset=reset)
 
     conj!(tr.transfermatrix)
     return farfield
 end
 
 function _transpose_transfer!(
-    incidentfield::P,
-    farfield::F,
-    tr::PlannedTransfer{C};
-    reset::Bool = true,
+    incidentfield::P, farfield::F, tr::PlannedTransfer{C}; reset::Bool=true
 ) where {C,F<:PlaneWaveExpansion{Radiated},P<:PlaneWaveExpansion{Incident}}
-
-    _muladd_or_mulreset!(
-        _eθ(farfield),
-        _eθ(incidentfield),
-        tr.transfermatrix;
-        reset = reset,
-    )
-    _muladd_or_mulreset!(
-        _eϕ(farfield),
-        _eϕ(incidentfield),
-        tr.transfermatrix;
-        reset = reset,
-    )
+    _muladd_or_mulreset!(_eθ(farfield), _eθ(incidentfield), tr.transfermatrix; reset=reset)
+    _muladd_or_mulreset!(_eϕ(farfield), _eϕ(incidentfield), tr.transfermatrix; reset=reset)
     return incidentfield
 end
-
-
 
 """
     collectPl(Lmax,x)
@@ -312,7 +254,6 @@ end
 Return Legendre polynomials up to Lmax
 """
 function collectPl(Lmax::I, x::T) where {I<:Integer,T<:Number}
-
     Pℓ = zeros(T, Lmax + 1)
     Pℓ[1] = one(T)
     if Lmax > 0
@@ -320,8 +261,8 @@ function collectPl(Lmax::I, x::T) where {I<:Integer,T<:Number}
     end
 
     # use two-term recurrence relation for Pℓ in direction of increasing ℓ
-    for ℓ = 2:Lmax
-        Pℓ[ℓ+1] = ((2 * ℓ - 1) * x * Pℓ[ℓ] - (ℓ - 1) * Pℓ[ℓ-1]) / ℓ
+    for ℓ in 2:Lmax
+        Pℓ[ℓ + 1] = ((2 * ℓ - 1) * x * Pℓ[ℓ] - (ℓ - 1) * Pℓ[ℓ - 1]) / ℓ
     end
 
     return Pℓ
@@ -332,9 +273,7 @@ end
 Return Legendre polynomials up to Lmax with preallocated storage
 """
 function _collectPl!(
-    Pℓstorage::AbstractVector{T},
-    Lmax::I,
-    x::T,
+    Pℓstorage::AbstractVector{T}, Lmax::I, x::T
 ) where {I<:Integer,T<:Number}
 
     # Pℓ = zeros(T, Lmax + 1)
@@ -344,13 +283,13 @@ function _collectPl!(
     end
 
     # use two-term recurrence relation for Pℓ in direction of increasing ℓ
-    for ℓ = 2:Lmax
+    for ℓ in 2:Lmax
         # floatℓ = T(ℓ)
         floatℓ = ℓ
-        Pℓstorage[ℓ+1] =
+        Pℓstorage[ℓ + 1] =
             (
                 (T(2) .* floatℓ .- T(1)) .* x .* Pℓstorage[ℓ] -
-                (floatℓ .- T(1)) .* Pℓstorage[ℓ-1]
+                (floatℓ .- T(1)) .* Pℓstorage[ℓ - 1]
             ) ./ floatℓ
     end
 
@@ -364,8 +303,8 @@ function collectsphericalHankel2(Lmax::Integer, kA::N) where {N<:Number}
 
     if Lmax > 0
         zℓ[2] = (1im - kA) * expfac / (kA^2)
-        for ℓ = 2:Lmax
-            zℓ[ℓ+1] = (2 * ℓ - 1) / kA * zℓ[ℓ] - zℓ[ℓ-1]
+        for ℓ in 2:Lmax
+            zℓ[ℓ + 1] = (2 * ℓ - 1) / kA * zℓ[ℓ] - zℓ[ℓ - 1]
         end
     end
 

@@ -17,7 +17,6 @@ for ϑ in ϑlist, φ in φlist
     # for ik= 1:length(ϑlist)
     #     for ikk= 1:length(φlist)
 
-
     #         global ϑ, goal
     #         ϑ=ϑlist[ik]
     #         φ=φlist[ikk]
@@ -39,7 +38,6 @@ for ϑ in ϑlist, φ in φlist
     @test abs(Kϑ[j] - 1im * goal) / abs(goal) < 1e-10
     @test abs(Kφ[j] - (-cos(ϑ) * goal)) / abs(cos(ϑ) * goal) < 1e-10
 
-
     j = sℓm_to_j(2, 1, -1)
     goal = -1im * √3 / (2) * exp(-1im * φ) / √(4π)
     @test abs(Kϑ[j] - (-cos(ϑ) * goal)) / abs(cos(ϑ) * goal) < 1e-10
@@ -60,7 +58,6 @@ end
 ϑlist = [0.0, pi]
 φlist = [0.0, pi / 6, 0.9999 * 2 * pi, 2 * pi]
 
-
 for ϑ in ϑlist, φ in φlist
     global goal
 
@@ -80,7 +77,6 @@ for ϑ in ϑlist, φ in φlist
     goal = √3 / (2) * exp(1im * φ) / √(4π)
     @test abs(Kϑ[j] - 1im * goal) / abs(goal) < 1e-10
     @test abs(Kφ[j] - (-cos(ϑ) * goal)) / abs(cos(ϑ) * goal) < 1e-10
-
 
     j = sℓm_to_j(2, 1, -1)
     goal = -1im * √3 / (2) * exp(-1im * φ) / √(4π)

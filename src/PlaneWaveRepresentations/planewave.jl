@@ -48,9 +48,7 @@ function PlaneWaveExpansion(
     return PlaneWaveExpansion{P,S,C}(samplingstrategy, Eθϕ, wavenumber, buffer)
 end
 function PlaneWaveExpansion(
-    ::P,
-    samplingstrategy::S,
-    wavenumber::Number,
+    ::P, samplingstrategy::S, wavenumber::Number
 ) where {P<:PropagationType,S<:SphereSamplingStrategy}
     a, b = _countsamples(samplingstrategy)
     Eθϕ = Array{ComplexF64}(undef, a, b, 2)
@@ -62,7 +60,6 @@ end
 #     return view(p.EθEϕ, :, 1:s2)
 # end
 function _eθ(p::PlaneWaveExpansion{P,Y,C}) where {P,Y,C}
-
     return view(p.EθEϕ, :, :, 1)
 end
 # function _eϕ(p::PlaneWaveExpansion)
@@ -81,19 +78,13 @@ Base.setindex!(p::PlaneWaveExpansion, i, v) = Base.setindex!(asvector(p), i, v)
 function Base.similar(p::PlaneWaveExpansion{P,S,C}) where {P,S,C}
     EθEϕ = similar(p.EθEϕ)
     return PlaneWaveExpansion{P,S,C}(
-        p.samplingstrategy,
-        EθEϕ,
-        p.wavenumber,
-        reshape(EθEϕ, length(EθEϕ)),
+        p.samplingstrategy, EθEϕ, p.wavenumber, reshape(EθEϕ, length(EθEϕ))
     )
 end
 function Base.copy(p::PlaneWaveExpansion{P,S,C}) where {P,S,C}
     EθEϕ = copy(p.EθEϕ)
     return PlaneWaveExpansion{P,S,C}(
-        p.samplingstrategy,
-        EθEϕ,
-        p.wavenumber,
-        reshape(EθEϕ, length(EθEϕ)),
+        p.samplingstrategy, EθEϕ, p.wavenumber, reshape(EθEϕ, length(EθEϕ))
     )
 end
 function setwavenumber!(p::PlaneWaveExpansion{P,S,C}, val) where {P,C,S}
@@ -102,10 +93,7 @@ function setwavenumber!(p::PlaneWaveExpansion{P,S,C}, val) where {P,C,S}
 end
 
 function efield!(
-    storage,
-    pwe::PlaneWaveExpansion{Incident,S,C},
-    R;
-    reset = true,
+    storage, pwe::PlaneWaveExpansion{Incident,S,C}, R; reset=true
 ) where {S<:SphereSamplingStrategy,C<:Complex}
     θweights, ϕweights, θs, ϕs = weightsandsamples(pwe.samplingstrategy)
     k₀ = getwavenumber(pwe)
@@ -137,10 +125,7 @@ function efield!(
 end
 
 function hfield!(
-    storage,
-    pwe::PlaneWaveExpansion{Incident,S,C},
-    R;
-    reset = true,
+    storage, pwe::PlaneWaveExpansion{Incident,S,C}, R; reset=true
 ) where {S<:SphereSamplingStrategy,C<:Complex}
     θweights, ϕweights, θs, ϕs = weightsandsamples(pwe.samplingstrategy)
 
@@ -171,11 +156,7 @@ function hfield!(
 end
 
 function ehfield!(
-    estorage,
-    hstorage,
-    pwe::PlaneWaveExpansion{Incident,S,C},
-    R;
-    reset = true,
+    estorage, hstorage, pwe::PlaneWaveExpansion{Incident,S,C}, R; reset=true
 ) where {S<:SphereSamplingStrategy,C<:Complex}
     θweights, ϕweights, θs, ϕs = weightsandsamples(pwe.samplingstrategy)
 
@@ -210,9 +191,7 @@ function ehfield!(
 end
 
 function _add_or_reset!(
-    storage::PlaneWaveExpansion,
-    summand::PlaneWaveExpansion;
-    reset::Bool = false,
+    storage::PlaneWaveExpansion, summand::PlaneWaveExpansion; reset::Bool=false
 )
     if reset
         storage.EθEϕ .= summand.EθEϕ
@@ -221,11 +200,7 @@ function _add_or_reset!(
     end
     return storage
 end
-function _add_or_reset!(
-    storage::AbstractMatrix,
-    summand::AbstractMatrix;
-    reset::Bool = false,
-)
+function _add_or_reset!(storage::AbstractMatrix, summand::AbstractMatrix; reset::Bool=false)
     if reset
         storage .= summand
     else
@@ -234,12 +209,11 @@ function _add_or_reset!(
     return storage
 end
 
-
 function _muladd_or_mulreset!(
     storage::AbstractMatrix,
     summand::AbstractMatrix,
     factor::AbstractMatrix;
-    reset::Bool = false,
+    reset::Bool=false,
 )
     if reset
         storage .= factor .* summand
@@ -252,7 +226,7 @@ function _muladd_or_mulreset!(
     storage::PlaneWaveExpansion,
     summand::PlaneWaveExpansion,
     factor::Number;
-    reset::Bool = false,
+    reset::Bool=false,
 )
     if reset
         storage.EθEϕ .= summand.EθEϕ
@@ -264,10 +238,7 @@ function _muladd_or_mulreset!(
 end
 
 function _muladd_or_mulreset!(
-    storage::AbstractVector,
-    operator,
-    summand::AbstractVector;
-    reset::Bool = false,
+    storage::AbstractVector, operator, summand::AbstractVector; reset::Bool=false
 )
     if reset
         mul!(storage, operator, summand)
@@ -284,9 +255,7 @@ function _muladd(storage::AbstractVector, operator, summand::AbstractVector)
 end
 
 function _mul_or_reset!(
-    storage::PlaneWaveExpansion,
-    factor::PlaneWaveExpansion;
-    reset::Bool = false,
+    storage::PlaneWaveExpansion, factor::PlaneWaveExpansion; reset::Bool=false
 )
     if reset
         storage.EθEϕ .= factor.EθEϕ
@@ -296,7 +265,7 @@ function _mul_or_reset!(
     return storage
 end
 
-function _mul_or_reset!(storage::PlaneWaveExpansion, factor::Number; reset::Bool = false)
+function _mul_or_reset!(storage::PlaneWaveExpansion, factor::Number; reset::Bool=false)
     if reset
         fill!(storage.EθEϕ, factor)
     else
@@ -304,12 +273,12 @@ function _mul_or_reset!(storage::PlaneWaveExpansion, factor::Number; reset::Bool
     end
     return storage
 end
-function _mul_or_reset!(factor::Number, storage::PlaneWaveExpansion; reset::Bool = false)
-    _mul_or_reset!(storage, factor, reset = reset)
+function _mul_or_reset!(factor::Number, storage::PlaneWaveExpansion; reset::Bool=false)
+    _mul_or_reset!(storage, factor; reset=reset)
     return storage
 end
 
-function equivalentorder(pwe::PlaneWaveExpansion; ϵ = 1e-7)
+function equivalentorder(pwe::PlaneWaveExpansion; ϵ=1e-7)
     a, b, c = size(pwe.EθEϕ)
     L = minimum([a - 1, (b - 1) ÷ 2])
     return L
@@ -322,10 +291,7 @@ In-place calculation of phaseshiftmatrix which needs to be element-wise multipli
 Assumes that size(storagematrix) mathces the matrices in PlaneWaveRepresentation.
 """
 function _phaseshiftmatrix!(
-    storagematrix::AbstractMatrix,
-    R,
-    k₀::Number,
-    sampling::Y,
+    storagematrix::AbstractMatrix, R, k₀::Number, sampling::Y
 ) where {Y<:SphereSamplingStrategy}
     # T = Float64
     a, b = size(storagematrix)
@@ -354,23 +320,12 @@ end
 include("interpolation.jl")
 
 function rotate(
-    pattern::W,
-    χ::T,
-    θ::T,
-    ϕ::T;
-    orderθ::Integer = 12,
-    orderϕ::Integer = 12,
+    pattern::W, χ::T, θ::T, ϕ::T; orderθ::Integer=12, orderϕ::Integer=12
 ) where {W<:PlaneWaveExpansion,T<:Number}
-    return rotate!(similar(pattern), pattern, χ, θ, ϕ; orderθ = orderθ, orderϕ = orderϕ)
+    return rotate!(similar(pattern), pattern, χ, θ, ϕ; orderθ=orderθ, orderϕ=orderϕ)
 end
 function rotate!(
-    rotated_pattern::W,
-    pattern::W,
-    χ::T,
-    θ::T,
-    ϕ::T;
-    orderθ::Integer = 12,
-    orderϕ::Integer = 12,
+    rotated_pattern::W, pattern::W, χ::T, θ::T, ϕ::T; orderθ::Integer=12, orderϕ::Integer=12
 ) where {W<:PlaneWaveExpansion,T<:Number}
     R = rot_mat_zyz(-ϕ, -θ, -χ) # rotate sampling points in reverse direction to rotate sampled pattern
     θvec, ϕvec = samples(pattern.samplingstrategy)
@@ -384,7 +339,6 @@ function rotate!(
             eᵣ = SVector{3}([cosp * sint; sinp * sint; cost])
             eθ = SVector{3}([cosp * cost; sinp * cost; -sint])
             eϕ = SVector{3}([-sinp; cosp; 0])
-
 
             # rotate unit vectors
             eᵣ_rot = R * eᵣ
@@ -403,10 +357,7 @@ function rotate!(
             eϕ_i = [-sinpr, cospr, 0]
 
             Eθ, Eϕ = interpolate_single_planewave(
-                (θ_rot, ϕ_rot),
-                pattern;
-                orderθ = orderθ,
-                orderϕ = orderϕ,
+                (θ_rot, ϕ_rot), pattern; orderθ=orderθ, orderϕ=orderϕ
             )
 
             rotated_pattern.EθEϕ[kθ, kϕ, 1] = (eθ_rot ⋅ eϕ_i) * Eϕ + (eθ_rot ⋅ eθ_i) * Eθ
@@ -417,19 +368,15 @@ function rotate!(
 end
 
 function interpolate(
-    θϕ::Tuple{T,T},
-    pattern::PlaneWaveExpansion;
-    orderθ = 12,
-    orderϕ = 12,
+    θϕ::Tuple{T,T}, pattern::PlaneWaveExpansion; orderθ=12, orderϕ=12
 ) where {T}
-    Eθ, Eϕ = interpolate_single_planewave(θϕ, pattern, orderθ = orderθ, orderϕ = orderϕ)
+    Eθ, Eϕ = interpolate_single_planewave(θϕ, pattern; orderθ=orderθ, orderϕ=orderϕ)
     return Eθ, Eϕ
 end
 
 include("resampling.jl")
 function resample(
-    newsamplingstrategy::Y1,
-    pwe::PlaneWaveExpansion{P,Y2,C},
+    newsamplingstrategy::Y1, pwe::PlaneWaveExpansion{P,Y2,C}
 ) where {Y1<:SphereSamplingStrategy,Y2<:SphereSamplingStrategy,P<:PropagationType,C}
     rsm = ResampleMap(newsamplingstrategy, pwe.samplingstrategy)
     y = rsm * pwe
@@ -541,37 +488,25 @@ function ehfield!(
     storage_hfield,
     aut_field::PlaneWaveExpansion{Radiated,Y,C},
     R;
-    reset = true,
+    reset=true,
 ) where {Y,C}
     incident_pws = transfer(aut_field, R)
-    ehfield!(
-        storage_efield,
-        storage_hfield,
-        incident_pws,
-        zeros(eltype(R), 3);
-        reset = reset,
-    )
+    ehfield!(storage_efield, storage_hfield, incident_pws, zeros(eltype(R), 3); reset=reset)
     return storage_efield, storage_hfield
 end
 
 function efield!(
-    storage_efield,
-    aut_field::PlaneWaveExpansion{Radiated,Y,C},
-    R;
-    reset = true,
+    storage_efield, aut_field::PlaneWaveExpansion{Radiated,Y,C}, R; reset=true
 ) where {Y,C}
     incident_pws = transfer(aut_field, R)
-    efield!(storage_efield, incident_pws, zeros(eltype(R), 3); reset = reset)
+    efield!(storage_efield, incident_pws, zeros(eltype(R), 3); reset=reset)
     return storage_efield
 end
 
 function hfield!(
-    storage_hfield,
-    aut_field::PlaneWaveExpansion{Radiated,Y,C},
-    R;
-    reset = true,
+    storage_hfield, aut_field::PlaneWaveExpansion{Radiated,Y,C}, R; reset=true
 ) where {Y,C}
     incident_pws = transfer(aut_field, R)
-    hfield!(storage_hfield, incident_pws, zeros(eltype(R), 3); reset = reset)
+    hfield!(storage_hfield, incident_pws, zeros(eltype(R), 3); reset=reset)
     return storage_hfield
 end

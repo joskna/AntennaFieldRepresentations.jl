@@ -42,14 +42,7 @@ function quaddata(op::BEAST.MWFarField, rs, els, qs::BEAST.SingleNumQStrat)
 end
 
 function quadrule(
-    op::BEAST.MWFarField3D,
-    refspace,
-    p,
-    y,
-    q,
-    el,
-    qdata,
-    qs::BEAST.SingleNumQStrat,
+    op::BEAST.MWFarField3D, refspace, p, y, q, el, qdata, qs::BEAST.SingleNumQStrat
 )
     return qdata[1, q]
 end
@@ -70,24 +63,16 @@ function localpotential(
     op,
     points,
     basis;
-    t::typeindicator{T} = typeindicator{SVector{3,ComplexF64}}(),
-    quadstrat = BEAST.SingleNumQStrat(7),
-    verbose = false,
+    t::typeindicator{T}=typeindicator{SVector{3,ComplexF64}}(),
+    quadstrat=BEAST.SingleNumQStrat(7),
+    verbose=false,
 ) where {T}
     ff = zeros(T, length(points), BEAST.numfunctions(basis))
     # ff = Vector{Array{type}}(undef,numfunctions(basis))
     # fill!(ff,fill!(Array{type}(undef,size(points)), type([0;0;0])))
     # store(v, p, n) = (ff[n][p] += v)
     store(v, m, n) = (ff[m, n] += v)
-    localpotential!(
-        store,
-        op,
-        points,
-        basis;
-        t = t,
-        quadstrat = quadstrat,
-        verbose = verbose,
-    )
+    localpotential!(store, op, points, basis; t=t, quadstrat=quadstrat, verbose=verbose)
     return ff
 end
 
@@ -99,9 +84,9 @@ function localpotential!(
     op,
     points,
     basis;
-    t::typeindicator{T} = typeindicator{SVector{3,ComplexF64}}(),
-    quadstrat = BEAST.SingleNumQStrat(7),
-    verbose = false,
+    t::typeindicator{T}=typeindicator{SVector{3,ComplexF64}}(),
+    quadstrat=BEAST.SingleNumQStrat(7),
+    verbose=false,
 ) where {T}
     verbose && @info "Multi-threaded assembly: ($(Threads.nthreads()) threads)"
     # z = zeros(type, length(points))
@@ -110,7 +95,7 @@ function localpotential!(
     rs = refspace(basis)
     Nthreads = Threads.nthreads()
     # zlocal = Array{T}(undef, BEAST.numfunctions(rs))
-    zlocal = [Array{T}(undef, BEAST.numfunctions(rs)) for _ = 1:Nthreads]
+    zlocal = [Array{T}(undef, BEAST.numfunctions(rs)) for _ in 1:Nthreads]
     qdata = quaddata(op, rs, els, quadstrat)
 
     # pointsiterator = verbose ? ProgressBar(enumerate(points)) : enumerate(points)
@@ -118,18 +103,18 @@ function localpotential!(
     # pointsiterator = collect(enumerate(points))
     # for (p, y) ∈ pointsiterator
     # Threads.@threads for p ∈ eachindex(points)
-    for p ∈ eachindex(points)
+    for p in eachindex(points)
         # threadid = Threads.threadid()
         threadid = 1
         y = points[p]
-        for (q, el) ∈ enumerate(els)
+        for (q, el) in enumerate(els)
             fill!(zlocal[threadid], zero(T))
             qr = quadrule(op, rs, p, y, q, el, qdata, quadstrat)
             BEAST.farfieldlocal!(zlocal[threadid], op, rs, y, el, qr)
 
             # assemble from local contributions
-            for (r, z) ∈ enumerate(zlocal[threadid])
-                for (n, b) ∈ ad[q, r]
+            for (r, z) in enumerate(zlocal[threadid])
+                for (n, b) in ad[q, r]
                     store(z * b, p, n)
                 end
             end
@@ -140,15 +125,15 @@ function individualcartesianfarfields(
     basisfunctions::SurfaceCurrentDensity,
     pts;
     # quadstrat = BEAST.SingleNumQStrat(1),
-    quadstrat = BEAST.SingleNumQStrat(4),
-    verbose = false,
+    quadstrat=BEAST.SingleNumQStrat(4),
+    verbose=false,
 )
     return individualcartesianfarfields(
         basisfunctions,
         pts,
         getwavenumber(basisfunctions);
-        quadstrat = quadstrat,
-        verbose = verbose,
+        quadstrat=quadstrat,
+        verbose=verbose,
     )
 end
 function individualcartesianfarfields(
@@ -156,18 +141,18 @@ function individualcartesianfarfields(
     pts,
     k0::T;
     # quadstrat = BEAST.SingleNumQStrat(1),
-    quadstrat = BEAST.SingleNumQStrat(4),
-    verbose = false,
+    quadstrat=BEAST.SingleNumQStrat(4),
+    verbose=false,
 ) where {T<:Real,S<:BEAST.Space{T},C}
     funspace = functionspace(basisfunctions)
     factor = complex(zero(T), -k0) * Z₀ / (4π)
     ffs = localpotential(
-        MWFarField3D(; wavenumber = k0),
+        MWFarField3D(; wavenumber=k0),
         pts,
         funspace;
-        t = typeindicator{SVector{3,Complex{T}}}(),
-        quadstrat = quadstrat,
-        verbose = verbose,
+        t=typeindicator{SVector{3,Complex{T}}}(),
+        quadstrat=quadstrat,
+        verbose=verbose,
     )
     ffs .*= factor
     return ffs
@@ -177,8 +162,8 @@ function individualcartesianfarfields(
     pts,
     k0::T;
     # quadstrat = BEAST.SingleNumQStrat(1),
-    quadstrat = BEAST.SingleNumQStrat(4),
-    verbose = false,
+    quadstrat=BEAST.SingleNumQStrat(4),
+    verbose=false,
 ) where {T<:Real,S<:BEAST.Space{T},C}
     funspace = functionspace(basisfunctions)
     #TODO: check this factor
@@ -186,17 +171,16 @@ function individualcartesianfarfields(
     factor = complex(zero(T), -k0) * Z₀ / (4π) # same factor as for electric currents
     # factor=1
     ffs = localpotential(
-        BEAST.MWDoubleLayerFarField3D(; wavenumber = k0),
+        BEAST.MWDoubleLayerFarField3D(; wavenumber=k0),
         pts,
         funspace;
-        t = typeindicator{SVector{3,C}}(),
-        quadstrat = quadstrat,
-        verbose = verbose,
+        t=typeindicator{SVector{3,C}}(),
+        quadstrat=quadstrat,
+        verbose=verbose,
     )
     ffs .*= factor
     return ffs #.* factor
 end
-
 
 function functionspace(basisfunctions)
     return basisfunctions.functionspace
