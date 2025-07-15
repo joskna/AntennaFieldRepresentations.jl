@@ -185,3 +185,52 @@ end
 function functionspace(basisfunctions)
     return basisfunctions.functionspace
 end
+
+struct MultiFunctional <: BEAST.Functional
+    field
+    valuecount::Integer
+end
+
+function (MF::MultiFunctional)(p)
+    F = MF.field
+    x = cartesian(p)
+    return F(x)
+end
+
+function BEAST.assemble(
+    multifield::MultiFunctional, tfs; quaddata=BEAST.quaddata, quadrule=BEAST.quadrule
+)
+    R = scalartype(tfs)
+    b = fill(zeros(Complex{R}, multifield.valuecount), numfunctions(tfs))
+    store(v, m) = (b[m] .+= v)
+    BEAST.assemble!(multifield, tfs, store; quaddata=quaddata, quadrule=quadrule)
+    return b
+end
+
+function BEAST.celltestvalues(
+    tshs::BEAST.RefSpace{T,NF}, tcell, field::MultiFunctional, qr
+) where {T,NF}
+    num_tshs = BEAST.numfunctions(tshs)
+    interactions = fill(zeros(Complex{T}, field.valuecount), num_tshs)
+    storeinteractions(w, m) = (interactions[m] .+= w)
+
+    num_oqp = length(qr)
+
+    for p in 1:num_oqp
+        mp = BEAST.cartesian(qr[p].point)
+
+        dx = qr[p].weight
+
+        Fx, Fy, Fz = field.field(mp)
+        Fvec = [Fx Fy Fz]
+        tvals = qr[p].value
+
+        for m in 1:num_tshs
+            tval = tvals[m]
+            # interactions[:,m] += Fvec* tval[1] *dx
+            storeinteractions(Fvec * tval[1] * dx, m)
+        end
+    end
+
+    return interactions
+end

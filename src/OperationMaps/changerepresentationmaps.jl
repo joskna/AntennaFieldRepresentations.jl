@@ -118,11 +118,14 @@ struct PlaneWaveToSphericalMap{
     lmap::InverseSphericalTransmitMap
 end
 function PlaneWaveToSphericalMap(
-    ::Type{SphericalWaveExpansion{P,H,C}}, pwe::PlaneWaveExpansion{P,Y,C}; kwargs...
+    ::Type{SphericalWaveExpansion{P,H,C}},
+    pwe::PlaneWaveExpansion{P,Y,C};
+    ϵ=1e-7,
+    L=equivalentorder(pwe),
 ) where {
     P<:PropagationType,C<:Number,H<:AbstractSphericalCoefficients,Y<:SphereSamplingStrategy
 }
-    Lmax = equivalentorder(pwe)
+    Lmax = L
     coefficients = H(zeros(C, sℓm_to_j(2, Lmax, Lmax)))
     swe = SphericalWaveExpansion(P(), coefficients, getwavenumber(pwe))
     αinc = αinc_planewave(Lmax)
@@ -317,22 +320,22 @@ function changerepresentation(
 end
 function changerepresentation(
     Tnew::Type{SphericalWaveExpansion{Psph}},
-    dipoles::DipoleArray{Pdip,E,T,C};
+    aut_field::DipoleArray{P,E,T,C};
     ϵ=1e-7,
-    L=definemodeorder(Psph, dipoles, ϵ),
-) where {Psph,C,Pdip,E,T}
+    L=definemodeorder(Psph, aut_field, ϵ),
+) where {Psph,P,E,T,C}
     return changerepresentation(
-        SphericalWaveExpansion{Psph,SphericalCoefficients{C},C}, dipoles; ϵ=ϵ, L=L
+        SphericalWaveExpansion{Psph,SphericalCoefficients{C},C}, aut_field; ϵ=ϵ, L=L
     )
 end
 function changerepresentation(
     Tnew::Type{SphericalWaveExpansion},
-    dipoles::DipoleArray{Pdip,E,T,C};
+    aut_field::DipoleArray{P,E,T,C};
     ϵ=1e-7,
-    L=definemodeorder(Pdip, dipoles, ϵ),
-) where {C,Pdip,E,T}
+    L=definemodeorder(P, aut_field, ϵ),
+) where {P,E,T,C}
     return changerepresentation(
-        SphericalWaveExpansion{Pdip,SphericalCoefficients{C},C}, dipoles; ϵ=ϵ, L=L
+        SphericalWaveExpansion{P,SphericalCoefficients{C},C}, aut_field; ϵ=ϵ, L=L
     )
 end
 
@@ -358,6 +361,26 @@ function changerepresentation(
 
     return map.targetrepresentation
 end
+# function changerepresentation(
+#     T::Type{SphericalWaveExpansion},
+#     originalrepresentation::PlaneWaveExpansion{P,Y,C};
+#     kwargs...,
+# ) where {A<:SphericalWaveExpansion,P,Y,C}
+#     map = ChangeRepresentationMap(T, originalrepresentation; kwargs...)
+
+#     map.targetrepresentation .= map * deepcopy(asvector(originalrepresentation))
+
+#     return map.targetrepresentation
+# end
+# function changerepresentation(
+#     T::Type{A}, originalrepresentation::PlaneWaveExpansion{P,Y,C}; kwargs...
+# ) where {A<:SphericalWaveExpansion,P,Y,C}
+#     map = ChangeRepresentationMap(T, originalrepresentation; kwargs...)
+
+#     map.targetrepresentation .= map * deepcopy(asvector(originalrepresentation))
+
+#     return map.targetrepresentation
+# end
 
 # function changerepresentation(
 #     ::Type{PlaneWaveExpansion},
@@ -579,5 +602,62 @@ function ChangeRepresentationMap(
 ) where {W<:PlaneWaveExpansion}
     return MLFMMSourceToPlaneWaveMap(
         W, originalrepresentation; orderθ=orderθ, orderϕ=orderϕ
+    )
+end
+
+function changerepresentation(
+    Tnew::Type{SphericalWaveExpansion{Radiated,H,C}},
+    currents::SurfaceCurrentDensity{Radiated,E,S,C};
+    ϵ=1e-7,
+    L=definemodeorder(Radiated, currents, ϵ),
+) where {H,E,S,C}
+    Jmax = sℓm_to_j(2, L, L)
+    # αvec = zeros(C, Jmax)
+    # currenttype = typeof(currents)
+    k₀ = getwavenumber(currents)
+
+    fieldop = _sphericalwavefieldoperator(E, Incident, Jmax, k₀)
+    multifield = MultiFunctional(fieldop, Jmax)
+
+    tested_incident_field = BEAST.assemble(multifield, currents.functionspace)
+    coefficients = k₀ * _fieldfactor(E) * sum(tested_incident_field .* currents.excitations)
+    return Tnew(SphericalCoefficients(coefficients), k₀)
+end
+function changerepresentation(
+    Tnew::Type{SphericalWaveExpansion{Incident,H,C}},
+    currents::SurfaceCurrentDensity{Radiated,E,S,C};
+    ϵ=1e-7,
+    L=definemodeorder(Incident, currents, ϵ),
+) where {H,E,S,C}
+    Jmax = sℓm_to_j(2, L, L)
+    # αvec = zeros(C, Jmax)
+    # currenttype = typeof(currents)
+    k₀ = getwavenumber(currents)
+
+    fieldop = _sphericalwavefieldoperator(E, Radiated, Jmax, k₀)
+    multifield = MultiFunctional(fieldop, Jmax)
+
+    tested_incident_field = BEAST.assemble(multifield, currents.functionspace)
+    coefficients = k₀ * _fieldfactor(E) * sum(tested_incident_field .* currents.excitations)
+    return Tnew(SphericalCoefficients(coefficients), k₀)
+end
+function changerepresentation(
+    Tnew::Type{SphericalWaveExpansion{Psph}},
+    currents::SurfaceCurrentDensity{P,E,S,C};
+    ϵ=1e-7,
+    L=definemodeorder(Psph, currents, ϵ),
+) where {Psph,P,E,S,C}
+    return changerepresentation(
+        SphericalWaveExpansion{Psph,SphericalCoefficients{C},C}, currents; ϵ=ϵ, L=L
+    )
+end
+function changerepresentation(
+    Tnew::Type{SphericalWaveExpansion},
+    currents::SurfaceCurrentDensity{P,E,S,C};
+    ϵ=1e-7,
+    L=definemodeorder(P, currents, ϵ),
+) where {P,E,S,C}
+    return changerepresentation(
+        SphericalWaveExpansion{P,SphericalCoefficients{C},C}, currents; ϵ=ϵ, L=L
     )
 end

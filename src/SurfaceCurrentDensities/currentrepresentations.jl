@@ -24,7 +24,7 @@ function Base.similar(s::SurfaceCurrentDensity{P,E,S,C}) where {P,E,S,C}
 end
 function Base.copy(s::SurfaceCurrentDensity{P,E,S,C}) where {P,E,S,C}
     return SurfaceCurrentDensity{P,E,S,C}(
-        deepcopy(s.functionspace), copy(s.excitations), s.wavenumber
+        deepcopy(s.functionspace), Base.copy(s.excitations), s.wavenumber
     )
 end
 function getwavenumber(currents::SurfaceCurrentDensity)
@@ -164,3 +164,24 @@ function spatialshift!(
     CompScienceMeshes.translate!(shifted_currents.functionspace.geo, -R)
     return shifted_currents
 end
+function _rmax(currents::SurfaceCurrentDensity)
+    rmax = 0.0
+    for pos in currents.functionspace.geo.vertices
+        if norm(pos) > rmax
+            rmax = norm(pos)
+        end
+    end
+    return rmax
+end
+
+function _rmin(currents::SurfaceCurrentDensity)
+    rmin = Inf
+    for pos in currents.functionspace.geo.vertices
+        if norm(pos) < rmin
+            rmin = norm(pos)
+        end
+    end
+    return rmin
+end
+
+include("beastglue.jl")

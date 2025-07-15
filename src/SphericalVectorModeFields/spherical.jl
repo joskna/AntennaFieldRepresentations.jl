@@ -41,7 +41,7 @@ end
 function Base.similar(swe::SphericalCoefficients)
     return SphericalCoefficients(similar(swe.coefficients))
 end
-function copy(swe::SphericalCoefficients)
+function Base.copy(swe::SphericalCoefficients)
     return SphericalCoefficients(copy(swe.coefficients))
 end
 function Base.size(swe::SphericalCoefficients)
@@ -499,36 +499,51 @@ function _dipole_spherical_innerprod(dipoles, Jmax::Integer, P::PropagationType,
 end
 function _dipole_spherical_innerprod!(
     tempcoeffs::AbstractVector,
-    dipoles::FitzgeraldArray{T,C},
+    dipoles::DipoleArray{Radiated,E,T,C},
     Jmax::Integer,
     P::PropagationType,
     k0::Number,
-) where {C,T}
+) where {E,C,T}
     fill!(tempcoeffs, zero(eltype(tempcoeffs)))
     for (i, position) in enumerate(dipoles.positions)
-        Fx, Fy, Fz = curlF_sℓm_cartesian_array(Jmax, P, position, k0)
+        modefunction_operator = _sphericalwavefieldoperator(E, P, Jmax, k0)
+        Fx, Fy, Fz = modefunction_operator(position)
+        # Fx, Fy, Fz = curlF_sℓm_cartesian_array(Jmax, P, position, k0)
         tempcoeffs .+=
             [Fx Fy Fz] *
             dipoles.orientations[i] *
             dipoles.dipolemoments[i] *
-            complex(0.0, -k0) / sqrt(Z₀)
+            k0 *
+            _fieldfactor(E)
     end
     return tempcoeffs
 end
-function _dipole_spherical_innerprod!(
-    tempcoeffs::AbstractVector,
-    dipoles::HertzArray{T,C},
-    Jmax::Integer,
-    P::PropagationType,
-    k0::Number,
-) where {C,T}
-    fill!(tempcoeffs, zero(eltype(tempcoeffs)))
-    for (i, position) in enumerate(dipoles.positions)
-        Fx, Fy, Fz = F_sℓm_cartesian_array(Jmax, P, position, k0)
-        tempcoeffs .+=
-            [Fx Fy Fz] * dipoles.orientations[i] * dipoles.dipolemoments[i] * k0 * sqrt(Z₀)
-    end
-    return tempcoeffs
+# function _dipole_spherical_innerprod!(
+#     tempcoeffs::AbstractVector,
+#     dipoles::HertzArray{T,C},
+#     Jmax::Integer,
+#     P::PropagationType,
+#     k0::Number,
+# ) where {C,T}
+#     fill!(tempcoeffs, zero(eltype(tempcoeffs)))
+#     for (i, position) in enumerate(dipoles.positions)
+#         modefunction_operator = _sphericalwavefieldoperator(Electric, P, Jmax, k0)
+#         Fx, Fy, Fz = modefunction_operator(position)
+#         # Fx, Fy, Fz = F_sℓm_cartesian_array(Jmax, P, position, k0)
+#         tempcoeffs .+=
+#             [Fx Fy Fz] *
+#             dipoles.orientations[i] *
+#             dipoles.dipolemoments[i] *
+#             k0 *
+#             _fieldfactor(Electric)
+#     end
+#     return tempcoeffs
+# end
+function _fieldfactor(::Type{Magnetic})
+    return complex(0.0, 1.0) / sqrt(Z₀)
+end
+function _fieldfactor(::Type{Electric})
+    return (sqrt(Z₀))
 end
 
 """
@@ -583,4 +598,11 @@ function equivalentorder(coefficients::AbstractSphericalCoefficients; ϵ=1e-7)
 end
 function equivalentorder(swe::SphericalWaveExpansion; ϵ=1e-7)
     return equivalentorder(swe.coefficients; ϵ=ϵ)
+end
+
+function _sphericalwavefieldoperator(::Type{Magnetic}, P::PropagationType, Jmax, k₀)
+    return (x -> curlF_sℓm_cartesian_array(Jmax, P, x, k₀))
+end
+function _sphericalwavefieldoperator(::Type{Electric}, P::PropagationType, Jmax, k₀)
+    return (x -> F_sℓm_cartesian_array(Jmax, P, x, k₀))
 end
