@@ -56,8 +56,9 @@ end
 
 #### Field evaluations
 function farfield(
-    currents::SurfaceCurrentDensity{P,E,B,C}, θϕ::Tuple{T,T}, k₀::Number
-) where {P<:PropagationType,E<:ElmagType,B<:BEAST.Space{<:Real},C,T}
+    currents::SurfaceCurrentDensity{Radiated,E,B,C}, θϕ::Tuple{T,T}
+) where {E<:ElmagType,B<:BEAST.Space{<:Real},C,T}
+    k₀ = getwavenumber(currents)
     θ, ϕ = θϕ
 
     sinθ, cosθ = sincos(θ)
@@ -68,16 +69,21 @@ function farfield(
         MWFarField3D(; wavenumber=k₀), pts, currents.excitations, currents.functionspace
     )[1]
     Eθ = convert.(Complex{T}, udot([cosθ * cosϕ, cosθ * sinϕ, -sinθ], ffd))
-    Eϕ = convert.(Complex{T}, udot([-sinϕ, cosϕ, zero(eltype(θvec))], ffd))
+    Eϕ = convert.(Complex{T}, udot([-sinϕ, cosϕ, zero(eltype(θ))], ffd))
 
-    return _weightedfarfieldpolarization(E(), Eθ, Eϕ)
+    return _weightedfarfieldpolarization(E(), Eθ, Eϕ, k₀)
+end
+function farfield(
+    currents::SurfaceCurrentDensity{Radiated,E,B,C}, θ, ϕ
+) where {E<:ElmagType,B<:BEAST.Space{<:Real},C}
+    return farfield(currents, (θ, ϕ))
 end
 
-function _weightedfarfieldpolarization(::Electric, Eθ, Eϕ)
+function _weightedfarfieldpolarization(::Electric, Eθ, Eϕ, k₀)
     factor = complex(0.0, -k₀) * Z₀ / (4π)
     return factor * Eθ, factor * Eϕ
 end
-function _weightedfarfieldpolarization(::Magnetic, Eθ, Eϕ)
+function _weightedfarfieldpolarization(::Magnetic, Eθ, Eϕ, k₀)
     factor = complex(0.0, -k₀) / (4π)
     return factor * Eϕ, -factor * Eθ
 end

@@ -365,17 +365,15 @@ Return Eθ,Eϕ-far-field tuple for radiating field representation into direction
 
 See also: [`efield`](@ref), [`hfield`](@ref)
 """
-function farfield(
-    aut_field::AntennaFieldRepresentation{Radiated,C}, θϕ::Tuple{<:Number,<:Real}
-) where {C}
+function farfield(aut_field::AntennaFieldRepresentation, θϕ)
     θ, ϕ = θϕ
     return farfield(aut_field, θ, ϕ)
 end
-function farfield(
-    aut_field::AntennaFieldRepresentation{Radiated,C}, θ::Number, ϕ::Real
-) where {C}
-    throw(MethodError())
-end
+# function farfield(
+#     aut_field::AntennaFieldRepresentation{Radiated,C}, θ::Number, ϕ::Real
+# ) where {C}
+#     throw(MethodError())
+# end
 
 """
     getwavenumber(aut_field::AntennaFieldRepresentation)

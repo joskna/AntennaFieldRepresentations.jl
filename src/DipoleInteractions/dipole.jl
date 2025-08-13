@@ -225,7 +225,7 @@ function _dipolefarfield!(
         cis.(k₀ * udot.(Ref(eᵣ), dipoles.positions))
 
     for (i, dir) in enumerate(dipoles.orientations)
-        Epolθ, Epolϕ = _dipoledarfieldpolarization(eθ, eϕ, dir, E())
+        Epolθ, Epolϕ = _dipolefarfieldpolarization(eθ, eϕ, dir, E())
         Eθ += E_FF[i] * Epolθ
         Eϕ += E_FF[i] * Epolϕ
     end
@@ -233,7 +233,7 @@ function _dipolefarfield!(
     return Eθ, Eϕ
 end
 
-function _dipoledarfieldpolarization(eθ, eϕ, dir::SVector{3,C}, ::Electric) where {C}
+function _dipolefarfieldpolarization(eθ, eϕ, dir::SVector{3,C}, ::Electric) where {C}
     Eθ = C(udot(eθ, dir))
     Eϕ = C(udot(eϕ, dir))
     return Eθ, Eϕ

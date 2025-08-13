@@ -445,6 +445,27 @@ function changerepresentation(
     )
 end
 
+function changerepresentation(
+    ::Type{PlaneWaveExpansion},
+    currents::SurfaceCurrentDensity{P,E,S,C};
+    ϵ=1e-7,
+    L=definemodeorder(P, currents, ϵ),
+    samplingstrategy=_standardsampling(L),
+) where {C,P,E,S}
+    # L = equivalentorder(dipoles; ϵ=ϵ)
+    # samplingstrategy = GaussLegendreθRegularϕSampling(L + 1, 2L + 2)
+    _, __, θs, ϕs = weightsandsamples(samplingstrategy)
+    EθEϕ = zeros(C, length(θs), length(ϕs), 2)
+    for (kθ, θ) in enumerate(θs)
+        for (kϕ, ϕ) in enumerate(ϕs)
+            EθEϕ[kθ, kϕ, 1], EθEϕ[kθ, kϕ, 2] = farfield(currents, (θ, ϕ))
+        end
+    end
+    return PlaneWaveExpansion{P,typeof(samplingstrategy),C}(
+        samplingstrategy, EθEϕ, getwavenumber(currents), vec(EθEϕ)
+    )
+end
+
 """
     SimpleMLFMMSourceToPlaneWaveMap{M,W,C} <: ChangeRepresentationMap{M,W,C}
 
@@ -616,13 +637,45 @@ function changerepresentation(
     # currenttype = typeof(currents)
     k₀ = getwavenumber(currents)
 
-    fieldop = _sphericalwavefieldoperator(E, Incident, Jmax, k₀)
+    fieldop = _sphericalwavefieldoperator(E, Incident(), Jmax, k₀)
+    # fieldop = _sphericalwavefieldoperator(_dualtype(E), Incident(), Jmax, k₀)
     multifield = MultiFunctional(fieldop, Jmax)
 
-    tested_incident_field = BEAST.assemble(multifield, currents.functionspace)
-    coefficients = k₀ * _fieldfactor(E) * sum(tested_incident_field .* currents.excitations)
+    coefficients = zeros(C, Jmax)
+
+    tempcoeffs = zeros(C, Jmax)
+    for k in eachindex(1:Jmax)
+        singlefield = SingleFunctional(x -> kthentry(fieldop(x), k))
+        tested_incident_field = BEAST.assemble(singlefield, currents.functionspace)
+        tempcoeffs[k] =
+            k₀ * _fieldfactor(E) * sum((tested_incident_field) .* currents.excitations)[1]
+    end
+
+    # tested_incident_field = BEAST.assemble(multifield, currents.functionspace)
+    # println(typeof(tested_incident_field))
+    # println(length(tested_incident_field))
+    # println(length(tested_incident_field[1]))
+    # tempcoeffs = k₀ * _fieldfactor(E) * sum((tested_incident_field) .* currents.excitations)
+
+    # coefficients = zeros(C, Jmax)
+    for (j, val) in enumerate(tempcoeffs)
+        s, ℓ, m = j_to_sℓm(j)
+        coefficients[sℓm_to_j(s, ℓ, -m)] = (-1)^(m + 1) * val
+    end
     return Tnew(SphericalCoefficients(coefficients), k₀)
 end
+function kthentry(Ftuple, k)
+    Fx, Fy, Fz = Ftuple
+    return kthentry(Fx, Fy, Fz, k)
+end
+function kthentry(Fx, Fy, Fz, k)
+    return Fx[k], Fy[k], Fz[k]
+end
+
+_dualtype(::Type{Electric}) = Magnetic
+_dualtype(::Type{Magnetic}) = Electric
+_dualtype(::Electric) = Magnetic()
+_dualtype(::Magnetic) = Electric()
 function changerepresentation(
     Tnew::Type{SphericalWaveExpansion{Incident,H,C}},
     currents::SurfaceCurrentDensity{Radiated,E,S,C};
@@ -634,13 +687,22 @@ function changerepresentation(
     # currenttype = typeof(currents)
     k₀ = getwavenumber(currents)
 
-    fieldop = _sphericalwavefieldoperator(E, Radiated, Jmax, k₀)
+    fieldop = _sphericalwavefieldoperator(E, Radiated(), Jmax, k₀)
+    # fieldop = _sphericalwavefieldoperator(_dualtype(E), Radiated, Jmax, k₀)
     multifield = MultiFunctional(fieldop, Jmax)
 
     tested_incident_field = BEAST.assemble(multifield, currents.functionspace)
-    coefficients = k₀ * _fieldfactor(E) * sum(tested_incident_field .* currents.excitations)
+    tempcoeffs =
+        k₀ * _fieldfactor(E) * sum(conj.(tested_incident_field) .* currents.excitations)
+
+    coefficients = zeros(C, Jmax)
+    for (j, val) in enumerate(tempcoeffs)
+        s, ℓ, m = j_to_sℓm(j)
+        coefficients[sℓm_to_j(s, ℓ, -m)] = (-1)^(m + 1) * val
+    end
     return Tnew(SphericalCoefficients(coefficients), k₀)
 end
+
 function changerepresentation(
     Tnew::Type{SphericalWaveExpansion{Psph}},
     currents::SurfaceCurrentDensity{P,E,S,C};

@@ -600,9 +600,9 @@ function equivalentorder(swe::SphericalWaveExpansion; ϵ=1e-7)
     return equivalentorder(swe.coefficients; ϵ=ϵ)
 end
 
-function _sphericalwavefieldoperator(::Type{Magnetic}, P::PropagationType, Jmax, k₀)
-    return (x -> curlF_sℓm_cartesian_array(Jmax, P, x, k₀))
+function _sphericalwavefieldoperator(::Type{Magnetic}, P, Jmax, k₀)
+    return (x -> (curlF_sℓm_cartesian_array(Jmax, P, x, k₀)))
 end
-function _sphericalwavefieldoperator(::Type{Electric}, P::PropagationType, Jmax, k₀)
-    return (x -> F_sℓm_cartesian_array(Jmax, P, x, k₀))
+function _sphericalwavefieldoperator(::Type{Electric}, P, Jmax, k₀)
+    return (x -> (F_sℓm_cartesian_array(Jmax, P, x, k₀)))
 end
