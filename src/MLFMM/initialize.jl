@@ -673,7 +673,7 @@ function individualfarfields(
             C(0.0, -k₀) * _dipolefarfieldscalingfactor(E()) / (4π) .*
             cis.(k₀ * udot.(Ref(eᵣ[kθ, kϕ]), dipoles.positions))
         for (i, dir) in enumerate(dipoles.orientations)
-            Epolθ, Epolϕ = _dipoledarfieldpolarization(eθ[kθ, kϕ], eϕ[kϕ], dir, E())
+            Epolθ, Epolϕ = _dipolefarfieldpolarization(eθ[kθ, kϕ], eϕ[kϕ], dir, E())
             _eθ(basisfunctionfarfields[i])[kθ, kϕ] = E_FF[i] * Epolθ
             _eϕ(basisfunctionfarfields[i])[kθ, kϕ] = E_FF[i] * Epolϕ
         end
