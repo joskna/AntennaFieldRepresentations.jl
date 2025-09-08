@@ -84,7 +84,7 @@ function SphericalToPlaneWaveMap(
     return SphericalToPlaneWaveMap(
         PlaneWaveExpansion{P,typeof(samplingstrategy)},
         swe;
-        samplingstrategy=_standardsampling(equivalentorder(swe)),
+        samplingstrategy=samplingstrategy,
         kwargs...,
     )
 end
@@ -268,6 +268,7 @@ function LinearMaps._unsafe_mul!(y, crm::DipoleToSphericalMap, x::AbstractVector
     Jmax = length(crm.tempcoeffs)
 
     _dipole_spherical_innerprod!(tempcoeffs, dipoles, Jmax, Ptmp, k0)
+    crm.targetrepresentation .= tempcoeffs
     for (j, val) in enumerate(tempcoeffs)
         s, ℓ, m = j_to_sℓm(j)
         crm.targetrepresentation[sℓm_to_j(s, ℓ, -m)] = (-1)^(m + 1) * val
@@ -531,7 +532,7 @@ function SimpleMLFMMSourceToPlaneWaveMap(originalrepresentation::M) where {M<:ML
 end
 
 """
-    MLFMMSourceToPlaneWaveMap{M,W,CRM,C} <: ChangeRepresentationMap{M,W,C}
+    MLFMMSourceToPlaneWaveMap{M,W,RM,C} <: ChangeRepresentationMap{M,W,C}
 
 Linear map representing a `changerepresentation` operation from a `MLFMMSource` into a `PlaneWaveExpansion`.
 
@@ -626,43 +627,171 @@ function ChangeRepresentationMap(
     )
 end
 
+function ChangeRepresentationMap(
+    Tnew::Type{SphericalWaveExpansion{Radiated,H,C}},
+    currents::SurfaceCurrentDensity{Radiated,E,S,C};
+    ϵ=1e-7,
+    L=equivalentorder(currents; ϵ=ϵ),
+) where {H,E,S,C}
+    currents2pws_map = ChangeRepresentationMap(
+        PlaneWaveExpansion,
+        currents;
+        samplingstrategy=_standardsampling(RegularθRegularϕSampling, L),
+    )
+
+    pws2spherical_map = ChangeRepresentationMap(Tnew, currents2pws_map.targetrepresentation)
+
+    return pws2spherical_map * currents2pws_map
+end
+function ChangeRepresentationMap(
+    Tnew::Type{SphericalWaveExpansion{P,H}},
+    currents::SurfaceCurrentDensity{P,E,S,C};
+    ϵ=1e-7,
+    L=equivalentorder(currents; ϵ=ϵ),
+) where {P,H,E,S,C}
+    return ChangeRepresentationMap(SphericalWaveExpansion{P,H,C}, currents; ϵ=ϵ, L=L)
+end
+function ChangeRepresentationMap(
+    Tnew::Type{SphericalWaveExpansion{P}},
+    currents::SurfaceCurrentDensity{P,E,S,C};
+    ϵ=1e-7,
+    L=equivalentorder(currents; ϵ=ϵ),
+) where {P,E,S,C}
+    H = SphericalCoefficients{C}
+    return ChangeRepresentationMap(SphericalWaveExpansion{P,H,C}, currents; ϵ=ϵ, L=L)
+end
+function ChangeRepresentationMap(
+    Tnew::Type{SphericalWaveExpansion},
+    currents::SurfaceCurrentDensity{P,E,S,C};
+    ϵ=1e-7,
+    L=equivalentorder(currents; ϵ=ϵ),
+) where {P,E,S,C}
+    H = SphericalCoefficients{C}
+    return ChangeRepresentationMap(SphericalWaveExpansion{P,H,C}, currents; ϵ=ϵ, L=L)
+end
+
+"""
+    CurrentToPlaneWaveMap{D,W,C} <: ChangeRepresentationMap{D,W,C}
+
+Linear map representing a `changerepresentation` operation from a `SurfaceCurrentDensity` into a `PlaneWaveExpansion`.
+
+The resulting `PlaneWaveExpansion` has an arbitrary samplingstrategy.
+
+
+# Type Parameters
+- `D <: SurfaceCurrentDensity`: Type of the original representation
+- `W <: PlaneWaveExpansion` : Type of the target representation
+- `C <: Complex`
+"""
+struct CurrentToPlaneWaveMap{D<:SurfaceCurrentDensity,W<:PlaneWaveExpansion,C<:Complex} <:
+       ChangeRepresentationMap{D,W,C}
+    originalrepresentation::D
+    targetrepresentation::W
+    lmap::Matrix{C}
+end
+
+function ChangeRepresentationMap(
+    ::Type{PlaneWaveExpansion{Radiated,Y,C}},
+    currents::SurfaceCurrentDensity{Radiated,E,S,C};
+    samplingstrategy=_standardsampling(Y, equivalentorder(currents)),
+) where {C<:Number,Y<:SphereSamplingStrategy,E,S}
+    θs, ϕs = samples(samplingstrategy)
+    lmap = zeros(C, 2 * length(θs) * length(ϕs), length(currents))
+    tmp_currents = copy(currents)
+    for k in 1:length(tmp_currents)
+        tmp_currents .= 0
+        tmp_currents[k] = 1
+
+        lmap[:, k] .= changerepresentation(
+            PlaneWaveExpansion, tmp_currents; samplingstrategy
+        )
+    end
+
+    return CurrentToPlaneWaveMap(
+        currents,
+        changerepresentation(PlaneWaveExpansion, tmp_currents; samplingstrategy),
+        lmap,
+    )
+end
+function ChangeRepresentationMap(
+    ::Type{PlaneWaveExpansion{P,Y}},
+    currents::SurfaceCurrentDensity{P,E,S,C};
+    samplingstrategy=_standardsampling(Y, equivalentorder(currents)),
+) where {P,C<:Number,Y<:SphereSamplingStrategy,E,S}
+    return ChangeRepresentationMap(
+        PlaneWaveExpansion{P,Y,C}, currents; samplingstrategy=samplingstrategy
+    )
+end
+function ChangeRepresentationMap(
+    ::Type{PlaneWaveExpansion{P}},
+    currents::SurfaceCurrentDensity{P,E,S,C};
+    samplingstrategy=_standardsampling(
+        GaussLegendreθRegularϕSampling, equivalentorder(originacurrentslrepresentation)
+    ),
+) where {P,C<:Number,E,S}
+    Y = GaussLegendreθRegularϕSampling
+    return ChangeRepresentationMap(
+        PlaneWaveExpansion{P,Y,C}, currents; samplingstrategy=samplingstrategy
+    )
+end
+function ChangeRepresentationMap(
+    ::Type{PlaneWaveExpansion},
+    currents::SurfaceCurrentDensity{P,E,S,C};
+    samplingstrategy=_standardsampling(
+        GaussLegendreθRegularϕSampling, equivalentorder(originacurrentslrepresentation)
+    ),
+) where {P,C<:Number,E,S}
+    Y = GaussLegendreθRegularϕSampling
+    return ChangeRepresentationMap(
+        PlaneWaveExpansion{P,Y,C}, currents; samplingstrategy=samplingstrategy
+    )
+end
+
 function changerepresentation(
     Tnew::Type{SphericalWaveExpansion{Radiated,H,C}},
     currents::SurfaceCurrentDensity{Radiated,E,S,C};
     ϵ=1e-7,
-    L=definemodeorder(Radiated, currents, ϵ),
+    L=equivalentorder(currents, ϵ),
 ) where {H,E,S,C}
     Jmax = sℓm_to_j(2, L, L)
     # αvec = zeros(C, Jmax)
     # currenttype = typeof(currents)
     k₀ = getwavenumber(currents)
 
-    fieldop = _sphericalwavefieldoperator(E, Incident(), Jmax, k₀)
-    # fieldop = _sphericalwavefieldoperator(_dualtype(E), Incident(), Jmax, k₀)
-    multifield = MultiFunctional(fieldop, Jmax)
+    tmp_pws = changerepresentation(
+        PlaneWaveExpansion,
+        currents;
+        samplingstrategy=_standardsampling(RegularθRegularϕSampling, L),
+    )
+    return changerepresentation(Tnew, tmp_pws)
 
-    coefficients = zeros(C, Jmax)
-
-    tempcoeffs = zeros(C, Jmax)
-    for k in eachindex(1:Jmax)
-        singlefield = SingleFunctional(x -> kthentry(fieldop(x), k))
-        tested_incident_field = BEAST.assemble(singlefield, currents.functionspace)
-        tempcoeffs[k] =
-            k₀ * _fieldfactor(E) * sum((tested_incident_field) .* currents.excitations)[1]
-    end
-
-    # tested_incident_field = BEAST.assemble(multifield, currents.functionspace)
-    # println(typeof(tested_incident_field))
-    # println(length(tested_incident_field))
-    # println(length(tested_incident_field[1]))
-    # tempcoeffs = k₀ * _fieldfactor(E) * sum((tested_incident_field) .* currents.excitations)
+    # fieldop = _sphericalwavefieldoperator(E, Incident(), Jmax, k₀)
+    # # fieldop = _sphericalwavefieldoperator(_dualtype(E), Incident(), Jmax, k₀)
+    # multifield = MultiFunctional(fieldop, Jmax)
 
     # coefficients = zeros(C, Jmax)
-    for (j, val) in enumerate(tempcoeffs)
-        s, ℓ, m = j_to_sℓm(j)
-        coefficients[sℓm_to_j(s, ℓ, -m)] = (-1)^(m + 1) * val
-    end
-    return Tnew(SphericalCoefficients(coefficients), k₀)
+
+    # tempcoeffs = zeros(C, Jmax)
+    # for k in eachindex(1:Jmax)
+    #     singlefield = SingleFunctional(x -> kthentry(fieldop(x), k))
+    #     tested_incident_field = BEAST.assemble(singlefield, currents.functionspace)
+    #     tempcoeffs[k] =
+    #         k₀ * _fieldfactor(E) * sum((tested_incident_field) .* currents.excitations)[1]
+    # end
+
+    # # tested_incident_field = BEAST.assemble(multifield, currents.functionspace)
+    # # println(typeof(tested_incident_field))
+    # # println(length(tested_incident_field))
+    # # println(length(tested_incident_field[1]))
+    # # tempcoeffs = k₀ * _fieldfactor(E) * sum((tested_incident_field) .* currents.excitations)
+
+    # # coefficients = zeros(C, Jmax)
+    # for (j, val) in enumerate(tempcoeffs)
+    #     s, ℓ, m = j_to_sℓm(j)
+    #     coefficients[sℓm_to_j(s, ℓ, -m)] = (-1)^(m + 1) * val
+    # end
+    # return Tnew(SphericalCoefficients(coefficients), k₀)
+
 end
 function kthentry(Ftuple, k)
     Fx, Fy, Fz = Ftuple

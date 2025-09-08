@@ -540,7 +540,7 @@ end
 #     return tempcoeffs
 # end
 function _fieldfactor(::Type{Magnetic})
-    return complex(0.0, 1.0) / sqrt(Z₀)
+    return complex(0.0, -1.0) / sqrt(Z₀)
 end
 function _fieldfactor(::Type{Electric})
     return (sqrt(Z₀))

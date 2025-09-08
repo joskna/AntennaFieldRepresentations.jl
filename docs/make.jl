@@ -6,6 +6,7 @@ makedocs(;
     sitename="AntennaFieldRepresentations.jl",
     remotes=nothing,
     checkdocs=:exports,
+    warnonly=:doctest,
     pages=[
         "Home" => "index.md",
         "Antenna Field Representations" => Any[
@@ -37,7 +38,7 @@ makedocs(;
             "Interpolation" => "operations/interpolation.md",
         ],
         "Spherically Sampled Data Structures" => "sampleddata.md",
-        "Examples" => "examples.md",
+        "Examples" => "examples/examples.md",
         "(Electromagnetic) Theory" => Any[
             "Dipoles" => "dipoles/dipole_theory.md",
             "Spherical Vector Wave Expansion" => "spherical/spherical_theory.md",

@@ -1,5 +1,20 @@
 # TODO: docstrings
 # TODO: Keep original representation in inputbuffer for later reference
+
+"""
+    MLFMMSource{A,M,Y,C,X} <: AntennaFieldRepresentation{Radiated,C}
+
+MLFMM representation of the contained `Radiated` `AntennaFieldRepresentation`.
+
+Behaves like an `AbstractVector{C}` with extra context.
+
+# Type Parameters
+- `A <: AntennaFieldRepresentation`: Type of the contained field representation
+- `M<:ResampleMap`: Type of the resample map to aggregate the internal plane wave representations
+- `Y <: SphereSamplingStrategy` : Sampling strategy for the internal plane wave representations
+- `C <: Number`
+- `X <: MLFMMTree`: Type of the underlying tree structure
+"""
 struct MLFMMSource{
     A<:AntennaFieldRepresentation,M<:ResampleMap,Y<:SphereSamplingStrategy,C,X<:MLFMMTree
 } <: AntennaFieldRepresentation{Radiated,C}

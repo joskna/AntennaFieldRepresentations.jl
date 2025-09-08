@@ -81,6 +81,9 @@ using Test
         # @testset "Conversions Spherical <-> PlaneWave" begin
         #     include(joinpath("test_Conversions", "test_planewave_spherical_conversion.jl"))
         # end
+        @testset "Conversions Surfacecurrent <-> PlaneWave, Spherical" begin
+            include(joinpath("test_Conversions", "test_currentconversions.jl"))
+        end
     end
 
     @testset verbose = true "Multilevel Fast Multipole Method" begin

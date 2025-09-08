@@ -49,8 +49,8 @@ function numfunctions(currentdensity::SurfaceCurrentDensity)
     return BEAST.numfunctions(functionspace(currentdensity))
 end
 
-function equivalentorder(currentdensity::SurfaceCurrentDensity; ϵ=1e-7)
-    L = _modeorder(rsph, k0; ϵ=ϵ)
+function equivalentorder(currents::SurfaceCurrentDensity{P,E,B,C}; ϵ=1e-7) where {P,E,B,C}
+    L = definemodeorder(P, currents, ϵ)
     return L
 end
 
