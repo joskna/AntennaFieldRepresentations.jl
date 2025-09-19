@@ -38,7 +38,13 @@ makedocs(;
             "Interpolation" => "operations/interpolation.md",
         ],
         "Spherically Sampled Data Structures" => "sampleddata.md",
-        "Examples" => "examples/examples.md",
+        "Examples" => Any[
+            "Overview" => "examples/examples.md",
+            "Conversion onto Other AntennaFieldRepresentations" => "examples/examplehertz.md",
+            "Equivalent Surface Currents on a Huygens Surface " => "examples/examplehuygens.md",
+            "MLFMMTransmitMap" => "examples/examplemlfmm.md",
+            "SphericalTransmitMap" => "examples/examplespherical.md",
+        ],
         "(Electromagnetic) Theory" => Any[
             "Dipoles" => "dipoles/dipole_theory.md",
             "Spherical Vector Wave Expansion" => "spherical/spherical_theory.md",
