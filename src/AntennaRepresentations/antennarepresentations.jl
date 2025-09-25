@@ -411,8 +411,17 @@ shifted_hspherical=changerepresentation(SphericalWaveExpansion{Radiated}, shifte
 
 `Tnew <: SphericalWaveExpansion`:
 
-- `ϵ=1e-7` : Estimated accuracy of the new representation. Will be overwriten if `Lmax` is defined.
-- `Lmax=definemodeorder(Pdip, aut_field, ϵ)` : Equivalent mode order of the resulting spherical expansion.
+- `ϵ::Real = 1e-7` : Estimated accuracy of the new representation. Will be overwriten if `Lmax` is defined.
+- `Lmax::Int = definemodeorder(Pdip, aut_field, ϵ)` : Equivalent mode order of the resulting spherical expansion.
+
+`Tnew <: PlaneWaveExpansion`:
+
+- `ϵ::Real = 1e-7` : Estimated accuracy of the new representation. Will be overwriten if `Lmax` is defined.
+- `Lmax::Int = definemodeorder(Pdip, aut_field, ϵ)` : Equivalent mode order of the resulting spherical expansion.
+- `samplingstrategy::SphereSamplingStrategy = _standardsampling(Lmax),`: Samplingstrategy for the resulting `PlaneWaveExpansion`  
+
+# See also
+`ChangeRepresentationMap`
 
 """
 function changerepresentation end
