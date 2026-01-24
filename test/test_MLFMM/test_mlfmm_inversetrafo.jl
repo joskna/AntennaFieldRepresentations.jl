@@ -12,7 +12,7 @@ dipoles = generate_AUTdips(
     collect((-1λ):(λ / 4):(1λ)),
     k0,
 )
-dipoles = rotate(dipoles, 0.0, 0.9, 1.3)
+dipoles = AntennaFieldRepresentations.rotate(dipoles, 0.0, 0.9, 1.3)
 
 pwe = changerepresentation(PlaneWaveExpansion, dipoles)
 
@@ -71,7 +71,7 @@ bref = Matrix{ComplexF64}(undef, size(positions))
 for k in eachindex(positions)
     χ, θ, ϕ = orientationsco[k]
     tmp_probe = probes[probeIDs[k]]
-    probe = rotate(tmp_probe.aut_field, χ, θ, ϕ)
+    probe = AntennaFieldRepresentations.rotate(tmp_probe.aut_field, χ, θ, ϕ)
     bref[k] = transmit((dipoles), ProbeAntenna(probe, λ / 10), positions[k])
 end
 #######################

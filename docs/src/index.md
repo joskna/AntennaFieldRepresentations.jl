@@ -48,10 +48,3 @@ With `AntennaFieldRepresentations.jl` the user can (besides other useful things)
 - calculate the expansion coefficients of an antenna representation given a field sampling and the received signals (i.e, solve a source reconstruction problem)
 - accelerate the evaluation of the interaction operator beween suitable antenna representations and field samplings by means of the multilevel fast multipole method
 
-## Known Issues
-
-- Resampling works only if for every sampling point in the target `SphereSamplingStrategy` the point on the opposite side of the sphere is also included in the sampling.
-- Resampling only works if the original `SphereSamplingStrategy` is a `GaussLegendreθRegularϕSampling` with an even number of `ϕ`-samples
-- `ChangeRepresentationMap`s and `changerepresentation` methods not completely implemented
-- changerepresentations to SphericalWaveExpansions and PlaneWaveExpansions of dipoles and currents of Incident type are wrong
-- `MLFMMSource` does not completely implement the `AntennaRepresentations` API

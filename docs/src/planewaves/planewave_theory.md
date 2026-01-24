@@ -26,11 +26,22 @@ and
 \, \sin \vartheta\,
 \mathrm{d}\vartheta\, \mathrm{d}\varphi\, ,
 ```
-respectively, where the so-called plane-wave propagation vector direction denotes the direction of propagation
+respectively, where the so-called plane-wave propagation vector ``\bm{k}`` simultaneously encodes the direction of propagation ``\hat{\bm{k}}`` (i.e., the direction of ``\bm{k}``) and the wavelength ``\lambda`` (from its magnitude ``\lVert \bm{k} \rVert =k_0`` via ``\lambda= 2\pi / k_0``) of any plane-wave component.
+The plane-wave spectrum ``\bm{P}(\vartheta, \varphi)`` is always perpendicular to the propagation direction ``\bm{k}(\vartheta, \varphi)``. We have
 ```math
 \bm{k}(\vartheta, \varphi)
 =
-k_0\left(
+k_0 \, \hat{\bm{k}}(\vartheta, \varphi)
+```
+with 
+```math
+k_0 = \lVert \bm{k} \rVert = \frac{2\pi}{\lambda} 
+```
+and
+```math
+\hat{\bm{k}}(\vartheta, \varphi)
+=
+\left(
 \sin \vartheta\, \cos \varphi \,\bm{e}_x 
 + 
 \sin \vartheta\, \sin \varphi \,\bm{e}_y
@@ -38,8 +49,6 @@ k_0\left(
 \cos \vartheta\, \bm{e}_z 
 \right)
 ```
-simultaneously encodes the direction of propagation (i.e., the direction of ``\bm{k}``) and the wavelength ``\lambda`` (from its magnitude ``\lVert \bm{k} \rVert =k_0`` via ``\lambda= 2\pi / k_0``) of any plane-wave component.
-The plane-wave spectrum ``\bm{P}(\vartheta, \varphi)`` is always perpendicular to the propagation direction ``\bm{k}(\vartheta, \varphi)``.
 
 !!! note
     The above representation of the electric and magnetic field is purely solenoidal, i.e., divergence-free. As such, the representation is only good for representing source-free field solutions of Maxwell's equations. There exists a close relationship between the [spherical vector-wave expansion of incident fields](@ref spherical_incident_expansion) which uses only spherical vector-wave modes ``\bm{F}_{s \ell m}^{(1)}(r, \vartheta, \varphi)`` of incident type and the above representation of the fields as an integral over propagating plane waves.
@@ -48,6 +57,10 @@ The plane-wave spectrum ``\bm{P}(\vartheta, \varphi)`` is always perpendicular t
 !!! note
     Since the propagation vector ``\bm{k}`` and the corresponding unit vector into the same direction ``\hat{\bm{k}}`` encode the propagation direction of the plane wave, we may use the shorthand notation ``\bm{P}(\hat{\bm{k}})`` to represent the slightly longer expression ``\bm{P}(\vartheta, \varphi)`` whenever convenient (sometimes we may even mix ``\vartheta, \varphi`` with ``\hat{\bm{k}}`` in the same expression). 
     This should not lead to any ambiguities because the relation between ``\hat{\bm{k}}`` and the tuple ``\vartheta, \varphi`` is one-to one, as each encodings uniquely define the same point on the unit sphere.
+---
+
+!!! info
+    The plane wave expansion in the form above is sometimes called homogeneous plane wave expansion (because it only contains one type of plane waves, namely non-evanescent, propagating waves) or Whittaker-type expansion.
 ---
 
 ## [Far-Field Pattern Representation of Radiated Fields](@id planewave_radiated)
@@ -62,7 +75,10 @@ Thus, we may represent any radiated field by its far-field pattern.
     Do not confuse the spherical vector-wave modes ``\bm{F}_{s \ell m}^{(1)}(r, \vartheta, \varphi)`` with the far-field pattern ``\bm{F}(\vartheta, \varphi)``!
 ---
 
-Note, that evaluating the near-fields of a radiated field given in terms of its far-field pattern ``\bm{F}(\vartheta, \varphi)`` is not straightforward. Strictly speaking, it is necessary to reconstruct the spherical vector-wave expansion of the radiated field from its far-field pattern before one can evaluate the spherical expansion at the desired location ``\bm{r}``.
+!!! note
+    Despite the fact that the far-field pattern alone contains all relevant information about the radiated field of a source distribution everywhere in space (even in the near field!), evaluating the near-fields of a radiated field given in terms of its far-field pattern ``\bm{F}(\vartheta, \varphi)`` is not straightforward. It is more or less necessary to reconstruct the spherical vector-wave expansion of the radiated field from its far-field pattern before one can evaluate the spherical expansion at the desired location ``\bm{r}`` (or to perform an equivalent transformation operation).
+---
+
 
 
 ## [Translation of a Far-Field Pattern into a Plane Wave Spectrum in Different Coordinate System](@id planewave_translation)
@@ -143,3 +159,74 @@ The geometric situation for the calculation of the ``S_{21}``-parameter is depic
 <br/>
 ```
 
+## Plane-Wave Representation of Upwards Traveling Fields
+Apart from the homogeneous plane wave representation of Whittaker type, there exists another common plane wave representation of antenna fields: the inhomogeneous plane wave representation of Wyle-type. Here, the fields are represented by an integral over the cartesian spectral coordinates ``\kappa_x\, \kappa_y`` as
+```math
+\bm{E}(\bm{r})
+=
+\int \limits_{-\infty}^{\infty}
+\int \limits_{-\infty}^{\infty}
+\bm{\tau}(k_x, k_y)\,
+\mathrm{e}^{-\mathrm{j} \bm{\kappa}(\kappa_x, \kappa_y) \cdot \bm{r}}\, 
+\mathrm{d}\kappa_x\, \mathrm{d}\kappa_y\, , 
+```
+where 
+```math
+\bm{\kappa}({\kappa_x, \kappa_y}) = \kappa_x \bm{e}_x+ \kappa_y \bm{e}_y+\sqrt{k_0^2-\kappa_x^2-\kappa_y^2}\, \bm{e}_z
+```
+is a wave vector with a ``z``-component which is either purely real (if ``\kappa_x^2-\kappa_y^2\leq k_0^2``) or purely imaginary (if ``\kappa_x^2-\kappa_y^2> k_0^2``).
+The portion of the spectrum with a purely real ``z``-component is called the visible portion of the spectrum and it contains unattenuated propagating plane waves. Conversely, the portion of the spectrum with a purely imaginary ``z``-component is called the invisible portion and contains only evanescent waves which are exponentially attenuated in ``z``-direction. Since propagating and also evanescent plane waves are involved, this type of expansion is referred to as inhomogeneous plane wave expansion. 
+!!! note
+    It is helpful to think about the spectral domains defined by the wave vectors ``\bm{k}`` and ``\bm{kappa}`` as two different entities at this point of the discussion, but we will see that there exists a close relationship between the two spectral representations.
+---
+
+Using the coordinate transformations
+```math
+	\kappa_x= k_0\, \sin(\alpha){\cos}({\beta})
+```
+and
+```math
+	\kappa_y= k_0\,{\sin}({\alpha}){\sin}({\beta}) \,,
+```
+the expansion can be brought into the form
+```math
+   {\bm{E}}({\bm{r}})
+   =
+    \int \limits_{0}^{2\pi}
+    \int \limits_{C^\pm}
+    \mathrm{e}^{-\mathrm{j} k_0 \,\hat{\bm{k}}\cdot \bm{r}}\,
+    {\bm{\tau}}({{\kappa_x}({\alpha, \beta}),{\kappa_y}({\alpha, \beta})})
+    \, k_0^2\,
+    \cos \alpha
+    \, \sin  \alpha\,
+    \mathrm{d}\alpha \mathrm{d} \beta
+     \\
+    =
+    \int \limits_{0}^{2\pi}
+    \int \limits_{\mathcal{C}^\pm}
+    \mathrm{e}^{-\mathrm{j} k_0 \,\hat{\bm{k}}\cdot \bm{r}}\,
+    {\bm{F}}({\hat{\bm{\kappa}}}({\alpha, \beta}))
+    \, \sin  \alpha\,
+    \mathrm{d} \alpha \mathrm{d} \beta\, ,
+```
+where 
+```math
+	{\hat{\bm{\kappa}}}({\alpha, \beta})
+%	= \dfrac{1}{k_0}\vec{k}
+	=
+	{\sin}({\alpha}) {\cos}({\beta})\vec{e}_x
+	+
+	{\sin}({\alpha}) {\sin}({\beta}) \vec{e}_y
+	+
+	 {\cos}({\alpha}) {e}_z\, ,
+```
+and 
+```math
+   {\bm{F}}({\hat{\bm{\kappa}}}({\alpha, \beta}))
+   =
+   {\bm{\tau}}({{\kappa_x}({\alpha, \beta}),{\kappa_y}({\alpha, \beta})})
+    \, k_0^2\,
+    \cos \alpha
+    \,.
+```
+The integration starts at ``\alpha=0`` and ends at ``\alpha= \pi/2+ \mathrm{j} \infty`` for ``\mathcal{C}^+`` and the integration for ``\mathcal{C}^-`` begins at ``\alpha= \pi/2- \mathrm{j} \infty`` and ends at ``\alpha=\pi``.

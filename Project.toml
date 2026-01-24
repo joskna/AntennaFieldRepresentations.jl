@@ -1,7 +1,7 @@
 name = "AntennaFieldRepresentations"
 uuid = "28938b31-3778-4757-998f-436de032caa4"
-authors = ["Josef Knapp <josef.knapp@tum.de>, Danijel Jukic, and Simon B.Adrian"]
 version = "0.0.2"
+authors = ["Josef Knapp <josef.knapp@tum.de>, Danijel Jukic, and Simon B.Adrian"]
 
 [deps]
 BEAST = "bb4162c7-ba94-5a20-af32-d8ec4428bdd1"
@@ -24,11 +24,11 @@ FFTW = "1"
 FastGaussQuadrature = "0.5.1, 1"
 JuliaFormatter = "1"
 LinearMaps = "3"
+SparseArrays = "1"
 SpecialFunctions = "2"
 StaticArrays = "1"
-SparseArrays = "1"
 WignerD = "0.1"
-julia = "1.9, 1.10"
+julia = "1.9, 1.10, 1.12"
 
 [extras]
 Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"

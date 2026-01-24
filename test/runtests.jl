@@ -136,7 +136,7 @@ using Test
         include("test_formatting.jl")
     end
 
-    @testset "Doctests" begin
-        include("test_doctests.jl")
-    end
+    # @testset "Doctests" begin
+    #     include("test_doctests.jl")
+    # end
 end

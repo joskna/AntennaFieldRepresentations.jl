@@ -50,7 +50,7 @@ f = 1.5e9
 λ = AntennaFieldRepresentations.c₀ / f
 k0 = 2 * pi / λ
 
-dipoles = rotate(
+dipoles = AntennaFieldRepresentations.rotate(
     generate_AUTdips(
         collect((-0.5λ):(λ / 4):(0.5λ)),
         collect((-0.5λ):(λ / 4):(0λ)),

@@ -4,7 +4,7 @@ makedocs(;
     modules=[AntennaFieldRepresentations],
     authors="Josef Knapp <josef.knapp@tum.de>, Danijel Jukic, and Simon B. Adrian",
     sitename="AntennaFieldRepresentations.jl",
-    remotes=nothing,
+    # remotes=nothing,
     checkdocs=:exports,
     warnonly=:doctest,
     pages=[
@@ -59,4 +59,10 @@ makedocs(;
         "API" => "api.md",
     ],
 )
-deploydocs(; repo="github.com/joskna/AntennaFieldRepresentations.jl.git")
+deploydocs(;
+    repo="github.com/joskna/AntennaFieldRepresentations.jl.git",
+    target="build",
+    branch="gh-pages",
+    devbranch="main",
+    versions=["stable" => "v^", "v#.#"],
+)

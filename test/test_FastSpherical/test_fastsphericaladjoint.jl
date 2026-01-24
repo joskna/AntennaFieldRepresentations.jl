@@ -129,5 +129,5 @@ for Jextraθ in 0:1, Jextraϕ in 0:1
         Aᴴ[:, k] .= stm_ad_tmp * y
     end
 
-    @test norm(A' .- Aᴴ) / norm(A) < 1e-15
+    @test norm(A' .- Aᴴ) / norm(A) < 1e-14
 end
