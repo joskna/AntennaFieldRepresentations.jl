@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Equivalent Surface Currents on a Huygens Surface  · AntennaFieldRepresentations.jl</title><meta name="title" content="Equivalent Surface Currents on a Huygens Surface  · AntennaFieldRepresentations.jl"/><meta property="og:title" content="Equivalent Surface Currents on a Huygens Surface  · AntennaFieldRepresentations.jl"/><meta property="twitter:title" content="Equivalent Surface Currents on a Huygens Surface  · AntennaFieldRepresentations.jl"/><meta name="description" content="Documentation for AntennaFieldRepresentations.jl."/><meta property="og:description" content="Documentation for AntennaFieldRepresentations.jl."/><meta property="twitter:description" content="Documentation for AntennaFieldRepresentations.jl."/><script data-outdated-warner src="../../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.050/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../search_index.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-mocha.css" data-theme-name="catppuccin-mocha"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-macchiato.css" data-theme-name="catppuccin-macchiato"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-frappe.css" data-theme-name="catppuccin-frappe"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-latte.css" data-theme-name="catppuccin-latte"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><a class="docs-logo" href="../../"><img class="docs-light-only" src="../../assets/logo.svg" alt="AntennaFieldRepresentations.jl logo"/><img class="docs-dark-only" src="../../assets/logo-dark.svg" alt="AntennaFieldRepresentations.jl logo"/></a><div class="docs-package-name"><span class="docs-autofit"><a href="../../">AntennaFieldRepresentations.jl</a></span></div><button class="docs-search-query input is-rounded is-small is-clickable my-2 mx-auto py-1 px-2" id="documenter-search-query">Search docs (Ctrl + /)</button><ul class="docs-menu"><li><a class="tocitem" href="../../">Home</a></li><li><span class="tocitem">Antenna Field Representations</span><ul><li><a class="tocitem" href="../../fieldrepresentations/">General Field Representation Interface</a></li><li><a class="tocitem" href="../../dipoles/dipole_representations/">Dipole Representations</a></li><li><a class="tocitem" href="../../spherical/spherical_representations/">Spherical Mode Representations</a></li><li><a class="tocitem" href="../../planewaves/planewave_representations/">Plane Wave Representations</a></li><li><a class="tocitem" href="../../surfacecurrents/surface_representations/">Equivalent Surface Currents</a></li><li><a class="tocitem" href="../../mlfmm/mlfmm_source/">MLFMM Representation</a></li></ul></li><li><a class="tocitem" href="../../sampling/probe/">Probe Antennas</a></li><li><span class="tocitem">Field Samplings</span><ul><li><a class="tocitem" href="../../sampling/fieldsamplings/">General Field Sampling Interface</a></li><li><a class="tocitem" href="../../sampling/irregularsampling/">Irregularly Distributed Field Samplings</a></li><li><a class="tocitem" href="../../sampling/sphericalsampling/">Spherical Field Samplings</a></li></ul></li><li><span class="tocitem">Transmission</span><ul><li><a class="tocitem" href="../../transmission/transmitmaps/">Transmission between an <code>AntennaFieldRepresentation</code> and  <code>ProbeAntenna</code>s</a></li><li><a class="tocitem" href="../../transmission/directtransmitmap/">DirectTransmitMaps</a></li><li><a class="tocitem" href="../../transmission/mlfmmtransmitmap/">MLFMMTransmitMaps</a></li><li><a class="tocitem" href="../../transmission/sphericaltransmitmap/">SphericalTransmitMaps</a></li><li><a class="tocitem" href="../../transmission/planewavesphericalmap/">PlaneWaveSphericalTransmitMaps</a></li><li><a class="tocitem" href="../../transmission/mlfmmsphericalmap/">MLFMMSphericalTransmitMaps</a></li></ul></li><li><span class="tocitem">Operations</span><ul><li><a class="tocitem" href="../../operations/operationmaps/">OperationMaps</a></li><li><a class="tocitem" href="../../operations/coordinate_trafos/">Coordinate Transformations</a></li><li><a class="tocitem" href="../../operations/conversions/">Conversion into Other Field Representations</a></li><li><a class="tocitem" href="../../operations/interpolation/">Interpolation</a></li></ul></li><li><a class="tocitem" href="../../sampleddata/">Spherically Sampled Data Structures</a></li><li><span class="tocitem">Examples</span><ul><li><a class="tocitem" href="../examples/">Overview</a></li><li><a class="tocitem" href="../examplehertz/">Conversion onto Other AntennaFieldRepresentations</a></li><li class="is-active"><a class="tocitem" href>Equivalent Surface Currents on a Huygens Surface </a><ul class="internal"><li><a class="tocitem" href="#Equivalent-Surface-Currents-on-a-Huygens-Surface-Around-a-Huygens-Radiator"><span>Equivalent Surface Currents on a Huygens Surface Around a Huygens Radiator</span></a></li></ul></li><li><a class="tocitem" href="../examplemlfmm/">MLFMMTransmitMap</a></li><li><a class="tocitem" href="../examplespherical/">SphericalTransmitMap</a></li></ul></li><li><span class="tocitem">(Electromagnetic) Theory</span><ul><li><a class="tocitem" href="../../dipoles/dipole_theory/">Dipoles</a></li><li><a class="tocitem" href="../../spherical/spherical_theory/">Spherical Vector Wave Expansion</a></li><li><a class="tocitem" href="../../planewaves/planewave_theory/">Plane Wave Expansion</a></li><li><a class="tocitem" href="../../surfacecurrents/surface_theory/">Equivalent Surface Currents</a></li><li><input class="collapse-toggle" id="menuitem-9-5" type="checkbox"/><label class="tocitem" for="menuitem-9-5"><span class="docs-label">Fast Algorithms</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../spherical/spherical_fast/">Spherical Wacker Algorithm</a></li><li><a class="tocitem" href="../../mlfmm/mlfmm_theory/">Multilevel Fast Multipole Method</a></li></ul></li><li><a class="tocitem" href="../../operations/interpolation_theory/">Interpolation of Spherically Sampled Data</a></li></ul></li><li><a class="tocitem" href="../../api/">API</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><a class="docs-sidebar-button docs-navbar-link fa-solid fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Examples</a></li><li class="is-active"><a href>Equivalent Surface Currents on a Huygens Surface </a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Equivalent Surface Currents on a Huygens Surface </a></li></ul></nav><div class="docs-right"><a class="docs-navbar-link" href="https://github.com/joskna/AntennaFieldRepresentations.jl" title="View the repository on GitHub"><span class="docs-icon fa-brands"></span><span class="docs-label is-hidden-touch">GitHub</span></a><a class="docs-navbar-link" href="https://github.com/joskna/AntennaFieldRepresentations.jl/blob/main/docs/src/examples/examplehuygens.md" title="Edit source on GitHub"><span class="docs-icon fa-solid"></span></a><a class="docs-settings-button docs-navbar-link fa-solid fa-gear" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-article-toggle-button fa-solid fa-chevron-up" id="documenter-article-toggle-button" href="javascript:;" title="Collapse all docstrings"></a></div></header><article class="content" id="documenter-page"><h2 id="Equivalent-Surface-Currents-on-a-Huygens-Surface-Around-a-Huygens-Radiator"><a class="docs-heading-anchor" href="#Equivalent-Surface-Currents-on-a-Huygens-Surface-Around-a-Huygens-Radiator">Equivalent Surface Currents on a Huygens Surface Around a Huygens Radiator</a><a id="Equivalent-Surface-Currents-on-a-Huygens-Surface-Around-a-Huygens-Radiator-1"></a><a class="docs-heading-anchor-permalink" href="#Equivalent-Surface-Currents-on-a-Huygens-Surface-Around-a-Huygens-Radiator" title="Permalink"></a></h2><p>In this example, we will define equivalent currents on a surface (the so-called Huygens surface) enclosing a distribution of sources such that the equivalent currents will radiate the same field as the original sources. </p><ul><li class="no-marker"><ul><li><a href="#Equivalent-Surface-Currents-on-a-Huygens-Surface-Around-a-Huygens-Radiator">Equivalent Surface Currents on a Huygens Surface Around a Huygens Radiator</a></li><li class="no-marker"><ul><li><a href="#Setup-of-the-Original-Sources">Setup of the Original Sources</a></li><li><a href="#Setup-of-the-Equivalent-Surface-Current-Density-Model">Setup of the Equivalent Surface Current Density Model</a></li><li><a href="#Finding-the-Correct-Excitation-Coefficients-for-the-Equivalent-Surface-Current-Density">Finding the Correct Excitation Coefficients for the Equivalent Surface Current Density</a></li></ul></li></ul></li></ul><h3 id="Setup-of-the-Original-Sources"><a class="docs-heading-anchor" href="#Setup-of-the-Original-Sources">Setup of the Original Sources</a><a id="Setup-of-the-Original-Sources-1"></a><a class="docs-heading-anchor-permalink" href="#Setup-of-the-Original-Sources" title="Permalink"></a></h3><p>For the original sources, we take a suitable combination of a <code>z</code>-oriented electric dipole and a <code>y</code>-oriented magnetic dipole to generate a source distribution which predominantly radiates into the positive <code>x</code>-direction: </p><pre><code class="language-julia hljs">using AntennaFieldRepresentations
+using LinearAlgebra
+
+λ = 2.0 # set an arbitrary wavelength
+k0 = λ / (2π) # determine the corresponding wavenumber
+
+# setup a &quot;collection&quot; of electrical dipoles (= Hertzian dipoles) consisting of only one element
+# oriented in z-direction at R= [0.5, 0.5, 0.5]] with unit excitation
+eldips = HertzArray([[0.5, 0.5, 0.5]], [complex.([0.0, 0.0, 1.0])], [complex(1.0)], k0)
+
+# setup a &quot;collection&quot; of corresponding magnetic dipoles (= Fitzgerald dipoles) consisting of only one element
+# oriented in negative y-direction at R= [0.5, 0.5, 0.5]] with excitation scaled by the free space impedance Z₀ 
+magdips = FitzgeraldArray(
+    [[0.5, 0.5, 0.5]],
+    [complex.([0.0, -1.0, 0.0])],
+    AntennaFieldRepresentations.Z₀ * [complex(1.0)],
+    k0,
+)
+
+length(magdips)</code></pre><figure>
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="../assets/HuygensDipoles.png" width="800">
+  <source media="(prefers-color-scheme: light)" srcset="../assets/HuygensDipoles.png" width="800" >
+  <img alt="" src="" width="200">
+</picture>
+
+  <figcaption>
+    Original field representation: A combination of a Hertzian (green) and a Fitzgerald dipole (purple). 
+  </figcaption>
+</figure>
+<br/><p>Such a combination of an electric and a magnetic dipole is sometimes called a Hygens radiator. We can confirm that the Huygens radiator mainly radiates in <code>x</code>-direction by converting the antenna field representation into a far-field representation:</p><pre><code class="language-julia hljs"># convert each DipoleArray into a plane wave representation
+pwe_el = changerepresentation(PlaneWaveExpansion, eldips)
+pwe_mag = changerepresentation(PlaneWaveExpansion, magdips)
+
+# copy the structure of the plane wave representation
+pwe_dipoles = copy(pwe_el)
+
+# the plane-wave coefficients of the total field are the sum of the plane wave coefficients of the separate dipole fields.
+pwe_dipoles .= pwe_el + pwe_mag
+ #evaluates to 106.4275744120224
+round(norm(pwe_dipoles), digits =2)</code></pre><figure>
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="../assets/HuygensFarfield.png" width="800">
+  <source media="(prefers-color-scheme: light)" srcset="../assets/Huygensfarfield.png" width="800" >
+  <img alt="" src="" width="200">
+</picture>
+
+  <figcaption>
+    The far field of the Huygens radiator has its main beam in x-direction. 
+  </figcaption>
+</figure>
+<br/><h3 id="Setup-of-the-Equivalent-Surface-Current-Density-Model"><a class="docs-heading-anchor" href="#Setup-of-the-Equivalent-Surface-Current-Density-Model">Setup of the Equivalent Surface Current Density Model</a><a id="Setup-of-the-Equivalent-Surface-Current-Density-Model-1"></a><a class="docs-heading-anchor-permalink" href="#Setup-of-the-Equivalent-Surface-Current-Density-Model" title="Permalink"></a></h3><p>Now, we define a triangulated Huygens surface with a suitable set of basis functions for the equivalent surface currents. The creation of the mesh is simple: Define an array of 3D arrays to define the vertices of the mesh and define a second array of integer triples which define the three vertices which generate a triangular face of the mesh like so:</p><pre><code class="language-julia hljs">vertices = [
+    [0.0, 0.0, 0.0],
+    [0.0, 0.0, 1.0],
+    [0.0, 1.0, 0.0],
+    [0.0, 1.0, 1.0],
+    [1.0, 0.0, 0.0],
+    [1.0, 0.0, 1.0],
+    [1.0, 1.0, 0.0],
+    [1.0, 1.0, 1.0],
+    [0.5, 0.5, 0.0],
+    [0.5, 0.0, 0.5],
+    [0.0, 0.5, 0.5],
+    [0.5, 0.5, 1.0],
+    [0.5, 1.0, 0.5],
+    [1.0, 0.5, 0.5],
+]
+
+faces = [
+    # front
+    [1, 5, 10],
+    [5, 6, 10],
+    [6, 2, 10],
+    [2, 1, 10],
+
+    # bottom
+    [1, 9, 5],
+    [5, 9, 7],
+    [7, 9, 3],
+    [3, 9, 1],
+
+    # left
+    [1, 2, 11],
+    [2, 4, 11],
+    [4, 3, 11],
+    [3, 1, 11],
+
+    # right
+    [5, 7, 14],
+    [7, 8, 14],
+    [8, 6, 14],
+    [6, 5, 14],
+
+    # back 
+    [7, 13, 8],
+    [8, 13, 4],
+    [4, 13, 3],
+    [3, 13, 7],
+
+    # top
+    [2, 6, 12],
+    [6, 8, 12],
+    [8, 4, 12],
+    [4, 2, 12],
+]</code></pre><p>The rest of the heavy lifting for the generation of basis functions is offloaded to <code>CompScienceMeshes.jl</code> and <code>BEAST.jl</code>:</p><pre><code class="language-julia hljs">using CompScienceMeshes: Mesh
+using BEAST: raviartthomas
+using StaticArrays: SVector
+
+
+mesh = Mesh(SVector{3}.(vertices), SVector{3}.(faces))
+Γ = raviartthomas(mesh)
+
+
+excitations = zeros(ComplexF64, length(Γ))</code></pre><p>Finally, we transform the set of RWG basis functions (aka Raviart-Thomas basis functions) into a <code>SurfaceCurrentDensity</code>:</p><pre><code class="language-julia hljs">currents = SurfaceCurrentDensity{Radiated,Electric,typeof(Γ),ComplexF64}(Γ, excitations, k0)</code></pre><figure>
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="../assets/HuygensCurrentsEmpty.png" width="800">
+  <source media="(prefers-color-scheme: light)" srcset="../assets/HuygensCurrentsEmpty.png" width="800" >
+  <img alt="" src="" width="200">
+</picture>
+
+  <figcaption>
+    The basis functions for the equivalent surface currents are defined as RWG functions on a triangulated, box shaped surface around the original soures.
+  </figcaption>
+</figure>
+<br/><h3 id="Finding-the-Correct-Excitation-Coefficients-for-the-Equivalent-Surface-Current-Density"><a class="docs-heading-anchor" href="#Finding-the-Correct-Excitation-Coefficients-for-the-Equivalent-Surface-Current-Density">Finding the Correct Excitation Coefficients for the Equivalent Surface Current Density</a><a id="Finding-the-Correct-Excitation-Coefficients-for-the-Equivalent-Surface-Current-Density-1"></a><a class="docs-heading-anchor-permalink" href="#Finding-the-Correct-Excitation-Coefficients-for-the-Equivalent-Surface-Current-Density" title="Permalink"></a></h3><p>We are half way done with replacing the original sources by an equivalent electrical surface current density.  We are missing the correct excitation coefficients for the RWG-basis functions on the surface (at the moment, all excitation coefficients are zero). To find the correct coefficients, we have to ensure that the radiated fields of the <code>SurfaceCurrentDensity</code> are (almost) identical to the radiated fields of the original sources. Fortunately, we only have to enforce the radiated far-fields to be identical. The radiated near-fields then must also coincide<sup class="footnote-reference"><a id="citeref-1" href="#footnote-1" class="footnote-ref">[1]</a><span class="footnote-preview" id="fn-1"></span></sup>.</p><p>To this end, we store the radiated far fields of each individual RWG-basis function in a matrix <code>A_farfield</code> (i.e., every coloumn of the matrix <code>A_farfield</code> corresponds to the radiated far-field of a single RWG-basis function)<sup class="footnote-reference"><a id="citeref-2" href="#footnote-2" class="footnote-ref">[2]</a><span class="footnote-preview" id="fn-2"></span></sup>:</p><pre><code class="language-julia hljs"># initialize zero-filled matrix
+A_farfield = zeros(ComplexF64, length(pwe_dipoles), length(currents))
+
+# fill the matrix
+for k in 1:length(currents)
+    currents .= 0
+    currents[k] = 1
+
+    A_farfield[:, k] .= changerepresentation(PlaneWaveExpansion, currents; samplingstrategy=pwe_dipoles.samplingstrategy)
+end</code></pre><p>Finally, we solve for the desired excitation coefficients by solving a linear system of equations. The desired right-hand side is the vector of far-field coefficients stored in the variable <code>pwe_dipoles</code> (remember that all <code>AntennaFieldRepresentations</code> behave like an <code>AbstractVector</code>).</p><pre><code class="language-julia hljs">currents .= A_farfield \ pwe_dipoles
+length(currents)</code></pre><figure>
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="../assets/HuygensCurrents.png" width="800">
+  <source media="(prefers-color-scheme: light)" srcset="../assets/HuygensCurrents.png" width="800" >
+  <img alt="" src="" width="200">
+</picture>
+
+  <figcaption>
+    Visualization of the equivalent electric surface currents on the Huygens box which radiates the same field as the original sources.
+  </figcaption>
+</figure>
+<br/><p>The newly found equivalent surface currents provide a complete representation of the radiated fields and can be utilized for various post-processing applications. As a final step for this example, we want to verify that the corresponding far fields actually match the far fields of the original sources:</p><pre><code class="language-julia hljs">using LinearAlgebra
+pwe_currents = changerepresentation(PlaneWaveExpansion, currents; samplingstrategy=pwe_dipoles.samplingstrategy)
+
+norm(pwe_dipoles - pwe_currents)/norm(pwe_dipoles) &lt; 2e-6 # true</code></pre><section class="footnotes is-size-7"><ul><li class="footnote" id="footnote-1"><a class="tag is-link" href="#citeref-1">1</a>In principle, evanescent fields can lead to deviations between the very-near fields of the equivalent <code>SurfaceCurrentDensity</code> and the original sources. For the sake of simplicity we neglect all technical issues with evanescent fields.</li><li class="footnote" id="footnote-2"><a class="tag is-link" href="#citeref-2">2</a>This is an illustrative example. For realistic cases, the matrix size usually prohibits to calculate all matrix elements explicitly. In such scenarios, we can use <code>AntennaFieldRepresentations.jl</code>&#39;s  <code>TransmitMap</code>s which neatly integrate with iterative solvers, e.g., from <a href="https://github.com/JuliaLinearAlgebra/IterativeSolvers.jl"><code>IterativeSolvers.jl</code></a>.</li></ul></section></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../examplehertz/">« Conversion onto Other AntennaFieldRepresentations</a><a class="docs-footer-nextpage" href="../examplemlfmm/">MLFMMTransmitMap »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.16.1 on <span class="colophon-date" title="Saturday 24 January 2026 23:30">Saturday 24 January 2026</span>. Using Julia version 1.12.4.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
