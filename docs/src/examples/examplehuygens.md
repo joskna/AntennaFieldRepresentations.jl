@@ -12,6 +12,7 @@ For the original sources, we take a suitable combination of a `z`-oriented elect
 
 ```jldoctest huygensexample ; output=false
 using AntennaFieldRepresentations
+using LinearAlgebra
 
 λ = 2.0 # set an arbitrary wavelength
 k0 = λ / (2π) # determine the corresponding wavenumber
@@ -29,10 +30,10 @@ magdips = FitzgeraldArray(
     k0,
 )
 
+length(magdips)
 # output
 
-1-element FitzgeraldArray{Float64, ComplexF64}:
- 376.73031366686996 + 0.0im
+1
 
 ```
 ```@raw html
@@ -62,30 +63,12 @@ pwe_dipoles = copy(pwe_el)
 
 # the plane-wave coefficients of the total field are the sum of the plane wave coefficients of the separate dipole fields.
 pwe_dipoles .= pwe_el + pwe_mag
+ #evaluates to 106.4275744120224
+round(norm(pwe_dipoles), digits =2)
 
 # output
 
-196-element PlaneWaveExpansion{Radiated, GaussLegendreθRegularϕSampling, ComplexF64}:
-      -2.507461811441103 + 12.29508945871003im
-      -3.554309025967161 + 15.543864561707764im
-     -3.8082481186806953 + 17.86271487494979im
-     -3.0247253020703613 + 18.844171281879387im
-     -1.4753417863809353 + 18.20446931526832im
-     0.17919273579267136 + 15.944049928679517im
-      1.2643276978190043 + 12.484312756657681im
-     -2.5091139861471126 + 11.328608703711998im
-      -3.864245379246303 + 14.493743842503624im
-      -4.431616542349483 + 16.74255276176831im
-                         ⋮
-     -0.7442018868542088 - 5.482115441164023im
-     -1.1210998092957607 - 6.991769960174524im
-     -0.6821359032386382 + 3.870046675223574im
-     -0.5130571603587533 + 3.027078197822951im
-    -0.22205406878586972 + 1.6656322337757892im
- -1.8829602583702385e-17 + 2.528272837396797e-16im
-    0.005627840829237915 - 1.68035921012886im
-      -0.209054152967389 - 3.063123638813411im
-       -0.50023468457528 - 3.8977347163761804im
+106.43
 
 ```
 ```@raw html
@@ -301,31 +284,11 @@ Finally, we solve for the desired excitation coefficients by solving a linear sy
 
 ```jldoctest huygensexample ; output=false 
 currents .= A_farfield \ pwe_dipoles
+length(currents)
 
 # output
 
-36-element SurfaceCurrentDensity{Radiated, Electric, BEAST.RTBasis{Float64, Mesh{3, 3, Float64}, SVector{3, Float64}}, ComplexF64}:
- -0.12599404604722858 - 0.0014105146213536307im
- 7.492148395128541e-9 - 1.5757718018659355im
-   0.1259940310048704 + 1.5757717167798422im
-  -0.2523956434097737 - 3.158767714407309im
- 9.056014724688309e-9 - 4.990083599449007e-9im
-   0.2523956254112038 + 4.943777054914383e-9im
- 7.507966032954928e-9 + 1.5757717936312878im
-  -0.1259940460643345 + 0.0014105229089590705im
-  9.08089751949105e-9 - 4.997434211502562e-9im
-  -0.1259940309773886 + 1.5757717084946292im
-                      ⋮
-  -0.2523956252740142 + 3.158767714302966im
-  0.12599404610205847 - 1.575771716818354im
-  -0.1259940309474584 + 0.0014105145865028193im
- 7.606307412308501e-9 - 1.5757718019492395im
-  -0.2523956435497995 + 5.040879940648099e-9im
-  0.12599403094719086 + 0.0014105229383432995im
- -0.12599404608976275 - 1.575771708469698im
-  -0.2523956253018469 - 3.158767724377384im
- 7.605682896331188e-9 + 1.5757717935542572im
-
+36
 ```
 
 
