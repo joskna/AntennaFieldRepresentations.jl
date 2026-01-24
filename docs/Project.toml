@@ -1,5 +1,15 @@
 [deps]
+BEAST = "bb4162c7-ba94-5a20-af32-d8ec4428bdd1"
+CompScienceMeshes = "3e66a162-7b8c-5da0-b8f8-124ecd2c3ae1"
 Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
+LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
+LinearMaps = "7a12625a-238d-50fd-b39a-03d52299707e"
+StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 
 [compat]
+BEAST = "2"
+CompScienceMeshes = "0.6,0.7, 0.8"
 Documenter = "1.2"
+LinearMaps = "3"
+StaticArrays = "1"
+julia = "1.9, 1.10, 1.12"
