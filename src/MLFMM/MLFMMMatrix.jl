@@ -40,7 +40,7 @@ struct MLFMMTransmitMap{
     transferplan::Vector{SparseVector{Int,Int}}
     uniquetransfers::Vector{Vector{TP}}
     firetranslationnodes::Vector{Int}
-    mintranslationlevel::Int
+    mintransferlevel::Int
     receivetranslationnodes::Vector{Int}
     verbose::Bool
     # tmpmatrix::Matrix{C}
@@ -54,18 +54,20 @@ function MLFMMTransmitMap(
     wavenumber::T;
     expectedaccuracy::T=T(1e-3),
     verbose=false,
-    minhalfsize=π / (2 * wavenumber),
+    minboxlength=π / (2 * wavenumber),
     orderθ=8,
     orderϕ=8,
     samplingtype::Type{S}=GaussLegendreθRegularϕSampling,
     num_bufferboxes::Integer=1,
     transfertype::Type{AT}=PlannedTransfer{samplingtype,Complex{T},T},
-    mintranslationlevel::Integer=0,
+    mintransferlevel::Integer=0,
 ) where {T<:Real,S<:SphereSamplingStrategy,AT<:AbstractTransfer}
     C = Complex{T}
 
     sourcepoints = _getpoints(basisfunctions)
     receivepoints = _getpoints(fieldsampling)
+
+    minhalfsize = minboxlength / 2
 
     # points = [sourcepoints; receivepoints]
     # sourcetree = _initialize_tree(points, minhalfsize, verbose=verbose)
@@ -156,10 +158,10 @@ function MLFMMTransmitMap(
         verbose=verbose,
     )
 
-    if mintranslationlevel < 3
-        mintranslationlevel = maximum([minsourcelevel, minreceivelevel])
+    if mintransferlevel < 3
+        mintransferlevel = maximum([minsourcelevel, minreceivelevel])
     else
-        mintranslationlevel = maximum([3, mintranslationlevel])
+        mintransferlevel = maximum([3, mintransferlevel])
     end
 
     transmitnodeisfresh = [false for k in 1:length(sourcetree.nodes)]
@@ -181,11 +183,11 @@ function MLFMMTransmitMap(
         levelcutoffparameters,
         receivenodeisoccupied,
         wavenumber;
-        minlevel=mintranslationlevel,
+        minlevel=mintransferlevel,
         verbose=verbose,
     )
 
-    transferlist, adjoint_transferlist, mintranslationlevel, receivetranslationnodes, firetranslationnodes, transferplan, uniquetransfers = _initialize_transfers(
+    transferlist, adjoint_transferlist, mintransferlevel, receivetranslationnodes, firetranslationnodes, transferplan, uniquetransfers = _initialize_transfers(
         sourcetree,
         receivetree,
         num_bufferboxes,
@@ -194,7 +196,7 @@ function MLFMMTransmitMap(
         nodefarfields,
         nodespectra,
         levelcutoffparameters;
-        mintranslationlevel=mintranslationlevel,
+        mintransferlevel=mintransferlevel,
         verbose=verbose,
     )
 
@@ -276,7 +278,7 @@ function MLFMMTransmitMap(
         transferplan,
         uniquetransfers,
         firetranslationnodes,
-        mintranslationlevel,
+        mintransferlevel,
         receivetranslationnodes,
         verbose,
     )

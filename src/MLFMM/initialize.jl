@@ -85,7 +85,7 @@ function _initialize_transfers(
     nodefarfields,
     nodespectra,
     levelcutoffparameters;
-    mintranslationlevel=3,
+    mintransferlevel=3,
     transfertype::P=PlannedTransfer{
         typeof(_firstdefinedpattern(nodespectra).samplingstrategy),
         eltype(_firstdefinedpattern(nodespectra).EθEϕ),
@@ -97,7 +97,7 @@ function _initialize_transfers(
 
     transferlist = [Int[] for _ in 1:numberofnodes(receivetree)]
     adjoint_transferlist = [Int[] for _ in 1:numberofnodes(sourcetree)]
-    # mintranslationlevel = typemax(Int)
+    # mintransferlevel = typemax(Int)
     uniquetransfers = [transfertype[] for _ in levels(receivetree)]
 
     transferplan = [spzeros(Int, length(sourcetree.nodes)) for _ in eachindex(transferlist)]
@@ -119,11 +119,11 @@ function _initialize_transfers(
                 receivenode,
                 sourcetree;
                 numbufferboxes=numbufferboxes,
-                mintranslationlevel=mintranslationlevel,
+                mintransferlevel=mintransferlevel,
             )
                 append!(transferlist[receivenode], sourcenode)
                 append!(adjoint_transferlist[sourcenode], receivenode)
-                # mintranslationlevel = minimum([Int(receivelevel), mintranslationlevel])
+                # mintransferlevel = minimum([Int(receivelevel), mintransferlevel])
                 boxhalfsize = halfsize(receivetree, receivenode)
                 transvector =
                     center(receivetree, receivenode) - center(sourcetree, sourcenode)
@@ -140,7 +140,7 @@ function _initialize_transfers(
                 end
 
                 if isnew
-                    mintranslationlevel = minimum([mintranslationlevel, receivelevel])
+                    mintransferlevel = minimum([mintransferlevel, receivelevel])
 
                     receivesampling = nodespectra[receivenode].samplingstrategy
                     sourcesampling = nodefarfields[sourcenode].samplingstrategy
@@ -216,7 +216,7 @@ function _initialize_transfers(
     ]
     return transferlist,
     adjoint_transferlist,
-    mintranslationlevel,
+    mintransferlevel,
     receivetranslationnodes,
     firetranslationnodes,
     transferplan,
@@ -237,7 +237,7 @@ Inputs:
 
 """
 function _transfercanhappen(
-    sourcenode, receivenode, tree; numbufferboxes::Int=1, mintranslationlevel::Int=3
+    sourcenode, receivenode, tree; numbufferboxes::Int=1, mintransferlevel::Int=3
 )
     numbufferboxes = maximum([one(typeof(numbufferboxes)), numbufferboxes])
     sourcelevel = level(tree, sourcenode)
@@ -245,7 +245,7 @@ function _transfercanhappen(
     sourcelevel < 3 && return false
     sourcelevel != receivelevel && return false
 
-    sourcelevel < mintranslationlevel && return false
+    sourcelevel < mintransferlevel && return false
 
     isnearmlfmmbox(
         center(tree, sourcenode),
@@ -263,7 +263,7 @@ function _transfercanhappen(
             halfsize(tree, sourceparent),
             numbufferboxes,
         ) &&
-        sourcelevel > mintranslationlevel &&
+        sourcelevel > mintransferlevel &&
         return false
 
     return true
