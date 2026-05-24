@@ -81,7 +81,7 @@ sampling = IrregularFieldSampling(positions, orientationsco, probeIDs, probes)
 
 ##########################################################
 A = AntennaFieldRepresentations.MLFMMTransmitMap(
-    dipoles, sampling, dipoles.wavenumber; mintranslationlevel=0, verbose=false
+    dipoles, sampling, dipoles.wavenumber; mintransferlevel=0, verbose=false
 )
 
 b = reshape(A * dipoles, size(bref))
